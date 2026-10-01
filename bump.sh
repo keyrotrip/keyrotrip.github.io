@@ -18,6 +18,11 @@ set -e
 NEW="$1"
 [ -z "$NEW" ] && { echo "사용법: sh bump.sh b297"; exit 1; }
 
+# 바꾸면 안 되는 값(아이콘을 담는 순간 굳는 상태바 방식·앱 주소·manifest id·로그인 저장 이름·초대 링크…)이
+# 그대로인지 먼저 봅니다. 하나라도 다르면 판을 안 올립니다 — 2026-10-01 에 이걸 몰라 모두 아이콘을 다시 담았습니다.
+# 일부러 바꿀 때의 절차는 tools/frozen.pl 머리말.
+perl tools/frozen.pl || { echo "판을 안 올렸습니다 — 위 ✗ 부터 보십시오"; exit 1; }
+
 OLD=$(grep -o 'app\.css?v=b[0-9]*' index.html | head -1 | sed 's/.*?v=//')
 [ -z "$OLD" ] && { echo "index.html 에서 지금 판을 못 찾았습니다"; exit 1; }
 [ "$OLD" = "$NEW" ] && { echo "이미 $NEW 입니다"; exit 1; }
