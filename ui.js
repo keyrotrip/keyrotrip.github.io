@@ -7,7 +7,7 @@
  *
  * 층: dom.js 만 씁니다. app.js 를 거꾸로 부르지 않습니다 —
  * 하나 필요한 것(AI 시트 닫기)은 setSheetCloser 로 받아 둡니다. */
-import { $ } from './dom.js?v=b819';
+import { $ } from './dom.js?v=b820';
 
 /* ── 좌우로 쓸기 ────────────────────────────────────────────────────
  * 상단의 구역 알약(일정·지출·준비·일행)은 화면 **왼쪽 위**에 있습니다.
@@ -669,6 +669,30 @@ if (window.visualViewport){
         d.innerHTML = s;
         document.body.appendChild(d);
       });
+      /* b820: **화면 높이(screen.height)만큼** 긴 초록 띠 하나 더(가운데). 새로 담은 홈 화면 앱에서 레이아웃이
+         화면보다 59 짧게 잡혀 탭바가 떴습니다(사용자 사진). 그 59 자리를 «우리가 칠할 수 있나»가 고치는 길을
+         가릅니다 — 초록 S 눈금이 화면 맨 아래까지 보이면 칠할 수 있는 자리, 793 근처에서 잘리면 iOS 자리. */
+      const g = document.createElement('div');
+      g.className = 'kbprobe';
+      const gh = Math.round(screen.height || 0);
+      g.style.cssText = `position:fixed; left:calc(50% - 27px); top:0; width:54px; height:${gh}px; z-index:99998;` +
+        'pointer-events:none; background:rgba(0,150,60,.8); color:#fff; font:bold 12px/1 ui-monospace,monospace';
+      let gs = '';
+      for (let y = 0; y < gh; y += 40)
+        gs += `<span style="position:absolute; top:${y}px; left:3px; border-top:1px solid #fff; width:48px;` +
+              `padding-top:1px">S${y}</span>`;
+      g.innerHTML = gs;
+      document.body.appendChild(g);
+    };
+    /* b820: 안전영역(env)은 JS 로 바로 못 읽어서 잠깐 상자를 세워 잽니다. */
+    const 안전영역 = () => {
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed; top:0; left:0; width:1px; visibility:hidden; pointer-events:none;' +
+        'padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom)';
+      document.body.appendChild(t);
+      const cs = getComputedStyle(t), r = [parseFloat(cs.paddingTop) || 0, parseFloat(cs.paddingBottom) || 0];
+      t.remove();
+      return r;
     };
 
     window.startRuler = () => {
@@ -748,6 +772,10 @@ if (window.visualViewport){
           `  합 ${Math.round(vv.height + vv.offsetTop)}\n` +
           `재는중?   ${typing() ? 'Y' : 'N'}  <${(el?.tagName || '-').toLowerCase()}>` +
           `${el?.isContentEditable ? ' CE' : ''}  ${STANDALONE ? '홈앱' : '사파리'}\n` +
+          /* b820: 새 홈 화면 앱에서 탭바가 59 떠 있던 것을 재려고 — 안전영역과 탭바가 실제로 어디 앉았는지. */
+          `안전영역  위 ${안전영역()[0]}  아래 ${안전영역()[1]}\n` +
+          `탭바      ${(() => { const t = document.querySelector('.tabbar'); if (!t) return '없음';
+            const q = t.getBoundingClientRect(); return `top ${Math.round(q.top)}  bottom ${Math.round(q.bottom)}`; })()}\n` +
           /* b173 에서 contenteditable 로 바꿔봤지만 vv.h 가 424 그대로였습니다.
              **iOS 는 contenteditable 에도 그 막대를 붙입니다.** 없앨 수 없습니다.
              남은 길은 덮는 것이고, 그러려면 자(위 probe)를 눌러 켜서
