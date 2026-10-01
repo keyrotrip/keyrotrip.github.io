@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
          400 을 줍니다(2026-09-30 재 봄). 그래서 이름표를 붙이고, 폭은 고르는 쪽에서 정해진 값으로 보냅니다. */
       const grab = async (src: string) => {
         const res = await fetch(src, { signal: AbortSignal.timeout(25000),
-          headers: { 'User-Agent': 'KiroCityPhotos/1.0 (https://honeychelsea123.github.io/Travel-app/)' } });
+          headers: { 'User-Agent': 'KiroCityPhotos/1.0 (https://keyrotrip.github.io/)' } });
         if (!res.ok) throw new Error(`받기 ${res.status}`);
         const type = (res.headers.get('content-type') || 'image/jpeg').split(';')[0];
         const buf = new Uint8Array(await res.arrayBuffer());

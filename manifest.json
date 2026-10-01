@@ -2,7 +2,7 @@
   "name": "기로",
   "short_name": "기로",
   "description": "기록이 길이 되다 — 다녀온 도시를 매기면 여행 성향과 세계지도가 남는 앱. 일정도 여기서 짭니다.",
-  "id": "/Travel-app/",
+  "id": "/",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

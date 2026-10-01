@@ -17,8 +17,8 @@
     (supabase 의 detectSessionInUrl 이 꼬리를 먼저 만지지 않게).
   ⚠ 들어가면 앱 로그인(t2-auth)이 이 계정으로 바뀝니다 — 같은 계정이면 그대로입니다.
   ⚠ 이름에 `_` 를 안 붙였습니다 — `.gitignore` 의 `_*.html` 에 걸려 안 올라갑니다. 그래서 bump.sh 가 아래 `db.js?v=` 도 같이 올립니다.
-  구글 콘솔에 넣어야 하는 것: 승인된 JS 원본 https://honeychelsea123.github.io ·
-    승인된 리디렉션 URI https://honeychelsea123.github.io/Travel-app/gsitest.html (②만).
+  구글 콘솔에 넣어야 하는 것: 승인된 JS 원본 https://keyrotrip.github.io ·
+    승인된 리디렉션 URI https://keyrotrip.github.io/gsitest.html (②만 — 옛 주소 때 넣은 것은 honeychelsea123.github.io/Travel-app/…).
   들어가는 길: 관리자 화면 「구글 로그인 시험 ›」(index.html #adm_gsitest). 결과를 보고 정식으로 옮기거나 걷습니다.
 -->
 <style>
@@ -135,7 +135,7 @@ const 속 = t => { try {
   return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(p + '==='.slice((p.length + 3) % 4)), c => c.charCodeAt(0))));
 } catch { return null; } };
 
-const { sb } = await import('./db.js?v=b815');
+const { sb } = await import('./db.js?v=b816');
 
 /* 지금 상태 */
 const 홈앱 = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F3F0E8">
+<title>로그인 · 기로</title>
+<!--
+  ── 구글이 돌려보내는 곳(b816) ─────────────────────────────────────────────
+  첫 화면 「구글로 시작」(app.js → glogin.js googleLogin) → 구글 → 여기(#id_token=…&state=…) → signInWithIdToken → 앱.
+  시험 페이지(gsitest.html, b814)의 ② 와 같은 길입니다 — PC·아이폰 홈 화면 앱에서 재 보고 고른 것.
+  ⚠ 구글 콘솔 「승인된 리디렉션 URI」에 이 페이지 주소가 **글자까지 같게** 있어야 합니다(glogin.js 머리말).
+  ⚠ 주소 꼬리(받은 표)를 **db.js 를 부르기 전에** 읽고 지웁니다 — supabase 의 detectSessionInUrl 이 먼저 만지지 않게,
+    그리고 표가 주소·방문 기록에 남지 않게. 표는 화면 어디에도 안 찍습니다.
+  ⚠ 사용자가 구글에서 취소하면(access_denied) 말없이 앱으로 돌아갑니다. 그냥 이 주소로 들어와도 앱으로.
+  ⚠ 실패하면 「다시 시도」와 「예전 방식으로 로그인」(Supabase OAuth — 구글 화면에 supabase.co 가 뜨는 옛 길)을 줍니다.
+    새 길이 막혀도 아무도 못 들어오는 일이 없게.
+  ⚠ 로그인 전이라 오류 기록(client_errors — 본인 것만 넣을 수 있음)에 못 남깁니다. 그래서 까닭 한 줄을 작게 보여 줍니다
+    (사용자가 찍어 보낼 수 있게).
+-->
+<style>
+  :root{ --bg:#F3F0E8; --ink:#1B1B1F; --mute:#6B675F; --line:#DFDAD0; }
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{ margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--ink);
+        font:16px/1.55 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+        padding:calc(env(safe-area-inset-top) + 24px) 20px calc(env(safe-area-inset-bottom) + 24px); }
+  main{ width:100%; max-width:360px; text-align:center; }
+  .spin{ display:inline-block; width:22px; height:22px; border:2.5px solid var(--line); border-top-color:var(--ink);
+         border-radius:50%; animation:sp .8s linear infinite; }
+  @keyframes sp{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion:reduce){ .spin{ animation-duration:2.4s; } }
+  #busy p{ margin:12px 0 0; color:var(--mute); }
+  h1{ font-size:21px; margin:0 0 8px; letter-spacing:-.3px; }
+  #why{ margin:0 0 18px; color:var(--mute); }
+  #detail{ margin:14px 0 0; font-size:12px; color:var(--mute); overflow-wrap:anywhere; }
+  button{ display:block; width:100%; margin:0 0 10px; padding:13px 14px; border:1px solid var(--ink); border-radius:0;
+          background:var(--ink); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  button.sub{ background:transparent; color:var(--ink); }
+  button:focus-visible, a:focus-visible{ outline:2px solid #000; outline-offset:3px; }
+  a{ display:inline-block; margin-top:6px; color:var(--ink); font-weight:600; }
+</style>
+</head>
+<body>
+<main>
+  <div id="busy" role="status"><span class="spin" aria-hidden="true"></span><p>로그인하는 중…</p></div>
+  <div id="fail" hidden>
+    <h1>로그인하지 못했어요</h1>
+    <p id="why"></p>
+    <button type="button" id="again">다시 시도</button>
+    <button type="button" id="old" class="sub">예전 방식으로 로그인</button>
+    <a href="./">앱으로 돌아가기</a>
+    <p id="detail"></p>
+  </div>
+</main>
+<script type="module">
+/* 1) 주소 꼬리를 먼저 — db.js 보다 앞(머리말). */
+const 꼬리 = new URLSearchParams(location.hash.slice(1));
+if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+const 집 = new URL('./', location.href).href;
+const 표가림 = s => String(s ?? '').replace(/eyJ[\w-]+\.[\w-]+\.[\w-]+/g, '[가림]').slice(0, 160);
+
+/* 2) 떠나기 전에 적어 둔 것 — 한 번 쓰고 지웁니다. */
+let 기다림 = null;
+try { 기다림 = JSON.parse(localStorage.getItem('t2:glogin') || 'null'); localStorage.removeItem('t2:glogin'); } catch {}
+
+const 실패 = (왜, 까닭) => {
+  document.getElementById('busy').hidden = true;
+  document.getElementById('fail').hidden = false;
+  document.getElementById('why').textContent = 왜;
+  document.getElementById('detail').textContent = 까닭 ? `까닭: ${표가림(까닭)}` : '';
+};
+
+const g = await import('./glogin.js?v=b816');
+document.getElementById('again').onclick = () => g.googleLogin().catch(e => 실패('다시 시도하지 못했어요.', e?.message));
+document.getElementById('old').onclick = async () => {
+  const { error } = await g.oauthLogin();
+  if (error) 실패('예전 방식으로도 들어가지 못했어요.', error.message);
+};
+
+if (꼬리.get('error') === 'access_denied') location.replace(집);          /* 구글에서 취소 */
+else if (꼬리.has('error')) 실패('구글이 로그인을 돌려보냈어요.', 꼬리.get('error'));
+else if (!꼬리.has('id_token')) location.replace(집);                      /* 그냥 들어온 것 */
+else if (!기다림 || 기다림.state !== 꼬리.get('state'))
+  실패('로그인 확인이 맞지 않아요. 다시 시도해 주세요.', '돌아온 표의 짝(state)이 기기에 적어 둔 것과 다름');
+else {
+  const { sb } = await import('./db.js?v=b816');
+  const { error } = await sb.auth.signInWithIdToken({ provider: 'google', token: 꼬리.get('id_token'), nonce: 기다림.raw })
+    .catch(e => ({ error: e }));
+  /* 가입을 막아 두면(db/066) 새 계정 만들기가 서버에서 거절됩니다 — 구글 쪽 말은 「Database error saving new user」. */
+  if (error) 실패(/saving new user/i.test(error.message || '')
+      ? '지금은 새로 가입할 수 없어요. 이미 쓰시던 분은 그대로 들어오실 수 있어요.'
+      : '로그인하지 못했어요. 잠시 뒤 다시 시도해 주세요.', error.message || String(error));
+  else location.replace(집);
+}
+</script>
+</body>
+</html>

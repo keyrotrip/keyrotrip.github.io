@@ -2,7 +2,9 @@
 
 여러 명이 함께 쓰는 여행 계획 앱. Supabase + 단일 HTML PWA.
 
-- 라이브: https://honeychelsea123.github.io/Travel-app/ (**저장소명이 `Travel-app`** — 대소문자 그대로)
+- 라이브: https://keyrotrip.github.io/ (저장소 `keyrotrip/keyrotrip.github.io` — 2026-10-01 에 옮김)
+  - 예전 주소 https://honeychelsea123.github.io/Travel-app/ 는 새 주소로 넘겨 주는 페이지만 남습니다
+    (그 저장소 `Honeychelsea123/Travel-app` 에는 잠금화면 알림 작업 `push.yml` 과 그 비밀 키도 남아 있습니다).
 - 계획과 결정 사항: [PLAN.md](PLAN.md)
 
 개인용 도쿄 여행앱(`Honeychelsea123/PWA`)과는 **별개 저장소**입니다.

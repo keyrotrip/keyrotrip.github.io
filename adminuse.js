@@ -16,9 +16,9 @@
  * ⚠ 날짜는 서버가 서울 기준으로 자른 'YYYY-MM-DD' 입니다. 여기서 Date 로 다시 자르지 않습니다(UTC 함정 —
  *   home.js 「날짜는 글자로 견줍니다」와 같은 까닭).
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc } from './dom.js?v=b815';
-import { sb } from './db.js?v=b815';
-import { netTimeout } from './net.js?v=b815';
+import { $, esc } from './dom.js?v=b816';
+import { sb } from './db.js?v=b816';
+import { netTimeout } from './net.js?v=b816';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',   단위: '명', 말: '앱을 연 사람' },

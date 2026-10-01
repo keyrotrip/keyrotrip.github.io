@@ -36,7 +36,7 @@
 //   "없는 코드" 와 "만료됨" 을 갈라주면 코드를 긁는 데 쓸 수 있습니다.
 // =====================================================================
 
-const APP  = 'https://honeychelsea123.github.io/Travel-app/';
+const APP  = 'https://keyrotrip.github.io/';
 const ICON = APP + 'icons/keyro-512.png';
 
 const SB   = Deno.env.get('SB_URL')  || '';
