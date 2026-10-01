@@ -11,15 +11,15 @@
  * 화면을 뜯어도 남의 자료는 안 나옵니다. 서버 쪽 함수가 is_admin() 을
  * 확인하므로 여기서 막는 것은 그저 안 보여주는 것뿐입니다.
  */
-import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b820';
-import { sb } from './db.js?v=b820';
-import { fail, netTimeout } from './net.js?v=b820';
+import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b821';
+import { sb } from './db.js?v=b821';
+import { fail, netTimeout } from './net.js?v=b821';
 /* 사람 신고의 「보기」(b789) — 그 사람 화면을 대시보드 위에 엽니다. */
-import { openPerson } from './people.js?v=b820';
+import { openPerson } from './people.js?v=b821';
 /* 기능 스위치를 바꾸면 그 자리에서 화면에 먹입니다(b491) — flags.js 머리말. */
-import { reapplyFeatures } from './flags.js?v=b820';
+import { reapplyFeatures } from './flags.js?v=b821';
 /* 「사용」 칸(b815) — 유튜브 스튜디오처럼. 관리자 화면을 열 때 받습니다(로그인마다 세지 않게). */
-import { loadUsage } from './adminuse.js?v=b820';
+import { loadUsage } from './adminuse.js?v=b821';
 
 /* ── 칸 셋 「사용 | 비용 | 문제」(b815, 사용자가 고름) ─────────────────────────
  * 분석 탭의 「성향 | 별점 | 어워즈」(anal.js)와 같은 모양·같은 규칙 — 고른 칸은 앱이 켜져 있는 동안 기억합니다.
@@ -58,9 +58,8 @@ export async function loadAdmin(){
      결과를 기다릴 이유는 없습니다 — 화면과 상관없는 뒷일입니다. */
   sb.rpc('sweep_retention').then(() => {}, () => {});
   show(true);
-  /* ⚠ **b820: 잠깐 켭니다** — 새로 담은 홈 화면 앱(keyrotrip)에서 탭바가 바닥에서 59 떠 있습니다(사용자 사진,
-     예전 아이콘은 바닥에 붙어 있었음). 그 59 자리를 앱이 칠할 수 있는지 재고 나면 **다시 끕니다.** */
-  window.startRuler?.();
+  /* (b820 에 잠깐 켰다가 b821 에 껐습니다 — 새로 담은 홈 화면 앱에서 탭바가 59 뜨는 것을 쟀습니다.
+     결과와 고친 것은 index.html 의 status-bar-style 머리말.) */
   /* **눈금자는 자동으로 안 켭니다.** 다시 재야 할 때는 여기에 이 한 줄을
      되살리십시오: `window.startRuler?.();`
 
