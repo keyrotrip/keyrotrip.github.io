@@ -26,7 +26,8 @@
 //   3. Settings → Environment Variables 에 둘을 넣습니다
 //        SB_URL   https://qahqqhjleqfrsjiixnas.supabase.co
 //        SB_ANON  sb_publishable_… (db.js 에 있는 그 값. 공개해도 되는 열쇠입니다)
-//   4. 나온 주소(예: keyro-join.deno.dev)를 알려주시면 app.js 를 그리로 맞춥니다.
+//   4. 나온 주소를 알려주시면 member.js 의 JOIN_URL 을 그리로 맞춥니다.
+//      (2026-10-01 부터 https://join.keyro.deno.net/ — Deno 조직 slug keyro · 앱 이름 join)
 //
 //   db/069_peek_invite_photo.sql 이 먼저 돌아 있어야 사진이 나옵니다.
 //

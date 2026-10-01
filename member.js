@@ -15,12 +15,12 @@
  * 하나입니다 — 일행 목록도, 정산 송금 줄도 같은 것을 씁니다.
  *
  * 층: dom.js · db.js · net.js · calc.js · trip.js · ui.js 만 씁니다. */
-import { $, esc, toast, copyText, avatarImg } from './dom.js?v=b816';
-import { sb } from './db.js?v=b816';
-import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b816';
-import { dateRange } from './calc.js?v=b816';
-import { trip, members, setMembers, nameOf } from './trip.js?v=b816';
-import { arm } from './ui.js?v=b816';
+import { $, esc, toast, copyText, avatarImg } from './dom.js?v=b817';
+import { sb } from './db.js?v=b817';
+import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b817';
+import { dateRange } from './calc.js?v=b817';
+import { trip, members, setMembers, nameOf } from './trip.js?v=b817';
+import { arm } from './ui.js?v=b817';
 
 /* app.js 만 아는 것 셋. **`me` 는 값이 아니라 함수로 받습니다** —
    로그인할 때마다 바뀌는데 값으로 받으면 처음 것을 붙들고 있습니다. */
@@ -54,8 +54,12 @@ export function setMemberCtx(o){ ctx = { ...ctx, ...o }; }
  * ⚠ **이 값을 바꾸면 이미 보낸 링크가 끊깁니다.** 옛 주소는 404 가 됩니다
  *   (확인함). 바꿀 때는 Deno 쪽 이름과 여기를 **같이** 고쳐야 합니다.
  *
- * 더 나은 자리: 도메인을 사서 붙이는 것입니다. 그때는 여기만 고치면 됩니다. */
-const JOIN_URL = 'https://keyro-join.honeychelsea123.deno.net/';
+ * 더 나은 자리: 도메인을 사서 붙이는 것입니다. 그때는 여기만 고치면 됩니다.
+ *
+ * ⚠ b817(2026-10-01): `keyro-join.honeychelsea123.deno.net` → **`join.keyro.deno.net`**. 사용자가 Deno 조직 slug 를
+ *   keyro 로(keyrotrip 은 지운 조직이 잡고 있어 실패), 앱 이름을 join 으로 바꿈 — 주소는 「앱.조직.deno.net」.
+ *   slug 를 바꾸는 순간 옛 주소가 끊겨서(404 실측) 그 전에 보낸 초대 링크는 다시 보내야 합니다. */
+const JOIN_URL = 'https://join.keyro.deno.net/';
 
 /* ── 일행 ───────────────────────────────────────────────────────── */
 /* 화면에는 한국어만 씁니다. 여행 목록 배지가 'OWNER' 로 떠 있었습니다. */

@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b816';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b817';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b816';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b817';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b816`;
+    img.src = `./persona/${code}.webp?v=b817`;
   });
 }
 
@@ -562,7 +562,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b816`;
+    img.src = `./persona/m/${code}.jpg?v=b817`;
   });
 }
 

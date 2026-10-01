@@ -35,23 +35,23 @@
  * ⚠ 지구본은 열 때마다 새로 띄우고 닫을 때 `끝()` 으로 치웁니다 — 안 치우면
  *   보이지도 않는 지구가 뒤에서 계속 돕니다.
  */
-import { $, esc, toast, avatarImg, flagOf, flagOk, emptyDo } from './dom.js?v=b816';
-import { sb } from './db.js?v=b816';
-import { netTimeout } from './net.js?v=b816';
-import { cities, countryName } from './cities.js?v=b816';
-import { myRates, visited, 별받음 } from './rate.js?v=b816';
+import { $, esc, toast, avatarImg, flagOf, flagOk, emptyDo } from './dom.js?v=b817';
+import { sb } from './db.js?v=b817';
+import { netTimeout } from './net.js?v=b817';
+import { cities, countryName } from './cities.js?v=b817';
+import { myRates, visited, 별받음 } from './rate.js?v=b817';
 /* 내 별점이 아직 안 왔으면 받는 곳(b797 — 아래 `알맹이그림`). rating.js 는 이 파일을 안 읽으므로 고리가 없습니다. */
-import { loadRateData } from './rating.js?v=b816';
+import { loadRateData } from './rating.js?v=b817';
 import { PERSONA16, personaMatch, personaMateLine, personaAxes, personaRank,
          personaMates, axisSpectrum, AXIS_WORD,
-         personaSaved, personaWhyHtml } from './card.js?v=b816';
+         personaSaved, personaWhyHtml } from './card.js?v=b817';
 /* 내 코드는 서버에 올린 것(흔들림 막기까지 거친 것)을 먼저 씁니다 — 분석 탭과 같은 유형이어야 궁합이 맞습니다. */
-import { knownPersona } from './pshift.js?v=b816';
-import { starsRo } from './stars.js?v=b816';
-import { mountGlobe } from './globe.js?v=b816';
-import { arm } from './ui.js?v=b816';
+import { knownPersona } from './pshift.js?v=b817';
+import { starsRo } from './stars.js?v=b817';
+import { mountGlobe } from './globe.js?v=b817';
+import { arm } from './ui.js?v=b817';
 /* 친구가 매긴 도시를 누르면 여는 화면(b789). city.js 는 이 파일을 안 읽으므로 고리가 없습니다. */
-import { openCity } from './city.js?v=b816';
+import { openCity } from './city.js?v=b817';
 
 let ctx = { me: () => null, openFriends: () => {}, onFollowChange: () => {} };
 export function setPeopleCtx(o){ ctx = { ...ctx, ...o }; }
@@ -387,8 +387,8 @@ function 성향카드(h, 너, 발, b){
       aria-label="${esc(h.self ? '나' : 이름(h))}의 여행 유형 ${esc(t.n)} — 여행 성향 보기">
     <div class="whocardhd"><b>여행 성향</b><span class="whomore">자세히 ›</span></div>
     <div class="phero">
-      <div class="psizer" style="background-image:url('./persona/t/${esc(너)}.jpg?v=b816')"></div>
-      <img src="./persona/m/${esc(너)}.jpg?v=b816" alt=""
+      <div class="psizer" style="background-image:url('./persona/t/${esc(너)}.jpg?v=b817')"></div>
+      <img src="./persona/m/${esc(너)}.jpg?v=b817" alt=""
            onerror="this.closest('.phero').classList.add('noart')">
       <div class="pscrim"></div>
       <div class="ptxt">
@@ -513,7 +513,7 @@ const 판그림 = {
     const { 둘다, 짝, 좋게, 엇갈림, 차이 } = 견주기(b);
     /* 그림은 작은 것(t/, 23KB) — 성향 탭 「여행 궁합」 칸과 같습니다. */
     const 사람 = (누, 코드) => `<div class="whomate">${코드 && PERSONA16[코드]
-        ? `<img src="./persona/t/${esc(코드)}.jpg?v=b816" alt="" loading="lazy" decoding="async">
+        ? `<img src="./persona/t/${esc(코드)}.jpg?v=b817" alt="" loading="lazy" decoding="async">
            <span class="memo">${esc(누)}</span><b>${esc(PERSONA16[코드].n)}</b><span class="memo">${esc(코드)}</span>`
         : `<span class="memo">${esc(누)}</span><b>아직 없어요</b>
            <span class="memo">${누 === '나' ? '해외 도시를 5곳 매기면 나와요' : '별점이 더 쌓이면 나와요'}</span>`}</div>`;
@@ -597,7 +597,7 @@ const 판그림 = {
                                                               : '별점이 더 쌓이면 근거가 나와요'}</div>`;
     const m = personaMates(너);
     const 짝 = (결, 말, 코드, 점) => `<div class="mate ${결}">
-        <img class="mateimg" src="./persona/t/${esc(코드)}.jpg?v=b816" alt="" loading="lazy" decoding="async">
+        <img class="mateimg" src="./persona/t/${esc(코드)}.jpg?v=b817" alt="" loading="lazy" decoding="async">
         <span class="ml">${말} · ${점}%</span>
         <b>${esc(PERSONA16[코드]?.n || 코드)}</b><span class="mc">${esc(코드)}</span></div>`;
     return 판머리('여행 성향') +

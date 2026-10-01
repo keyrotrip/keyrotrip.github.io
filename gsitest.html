@@ -135,7 +135,7 @@ const 속 = t => { try {
   return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(p + '==='.slice((p.length + 3) % 4)), c => c.charCodeAt(0))));
 } catch { return null; } };
 
-const { sb } = await import('./db.js?v=b816');
+const { sb } = await import('./db.js?v=b817');
 
 /* 지금 상태 */
 const 홈앱 = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;

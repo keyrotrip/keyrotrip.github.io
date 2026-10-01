@@ -13,15 +13,15 @@
  *
  * 층: dom.js · db.js · cities.js · card.js · net.js 만 씁니다. */
 import { $, esc, toast, flagOf, flagOk, emptyDo, backLabel, toTop,
-         coverDeck } from './dom.js?v=b816';
-import { openCity } from './city.js?v=b816';
-import { distKm } from './calc.js?v=b816';
-import { sb } from './db.js?v=b816';
-import { cities, countryName, continentOf } from './cities.js?v=b816';
+         coverDeck } from './dom.js?v=b817';
+import { openCity } from './city.js?v=b817';
+import { distKm } from './calc.js?v=b817';
+import { sb } from './db.js?v=b817';
+import { cities, countryName, continentOf } from './cities.js?v=b817';
 /* ⚠ `PERSONA_ICON` 은 b649 에 안 쓰게 됐습니다 — 발자국 카드가 여권 스탬프
    면으로 바뀌면서 선 아이콘 자리가 없어졌습니다(큰 수와 지도가 그 일을
    합니다). 안 쓰는 것을 가져오면 나중에 "여기도 쓰나" 하고 헷갈립니다. */
-import { shareCard } from './card.js?v=b816';
+import { shareCard } from './card.js?v=b817';
 
 /* UN 회원 193 + 옵서버 2. 여행앱들이 쓰는 기준값입니다.
    **app.js 도 씁니다**(발자국 막대) — 두 곳에 적으면 언젠가 한쪽만 고칩니다.
