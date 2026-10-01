@@ -12,13 +12,13 @@
  *
  * 층: dom.js · db.js · net.js · trip.js · ui.js 와 이미 떼어낸
  *     expense.js · prep.js 를 씁니다. 그쪽은 이 파일을 안 부릅니다. */
-import { $, esc, toast } from './dom.js?v=b818';
-import { sb } from './db.js?v=b818';
-import { fail, netTimeout, drawOffbar, isOffline, NOROW } from './net.js?v=b818';
-import { trip, plans, expenses, bookings, tab } from './trip.js?v=b818';
-import { arm, disarm } from './ui.js?v=b818';
-import { loadExpenses } from './expense.js?v=b818';
-import { loadBookings } from './prep.js?v=b818';
+import { $, esc, toast } from './dom.js?v=b819';
+import { sb } from './db.js?v=b819';
+import { fail, netTimeout, drawOffbar, isOffline, NOROW } from './net.js?v=b819';
+import { trip, plans, expenses, bookings, tab } from './trip.js?v=b819';
+import { arm, disarm } from './ui.js?v=b819';
+import { loadExpenses } from './expense.js?v=b819';
+import { loadBookings } from './prep.js?v=b819';
 
 let ctx = { loadPlans: async () => {} };
 export function setTrashCtx(o){ ctx = { ...ctx, ...o }; }
