@@ -20,14 +20,14 @@
  *
  * 층: dom.js · db.js · cities.js · citysearch.js · stars.js · rateui.js ·
  *     rate.js · rating.js · home.js(지문 비우기만). */
-import { $, esc } from './dom.js?v=b821';
-import { sb } from './db.js?v=b821';
-import { cities } from './cities.js?v=b821';
-import { loadCities } from './citysearch.js?v=b821';
-import { paintStars } from './stars.js?v=b821';
-import { rateHero, starValue } from './rateui.js?v=b821';
-import { saveRate } from './rating.js?v=b821';
-import { resetHomeSig } from './home.js?v=b821';
+import { $, esc } from './dom.js?v=b822';
+import { sb } from './db.js?v=b822';
+import { cities } from './cities.js?v=b822';
+import { loadCities } from './citysearch.js?v=b822';
+import { paintStars } from './stars.js?v=b822';
+import { rateHero, starValue } from './rateui.js?v=b822';
+import { saveRate, 방금확정 } from './rating.js?v=b822';
+import { resetHomeSig } from './home.js?v=b822';
 
 /* ⚠ showApp 은 **기본값에도 둡니다.** 없으면 위 돌아가기() 가 조용히
    아무 일도 안 하는데, 그게 b423~b425 동안 그대로 나가 있었습니다. */
@@ -123,6 +123,22 @@ function 세기(){
   if (el) el.textContent = 센것 ? `${센것}곳 매김` : '';
 }
 
+/* ── 5곳째를 매긴 순간(b822) ──────────────────────────────────────────
+ * 「확정」인지는 rating.js 가 압니다(저장은 전부 saveRate 를 지나므로 거기서 저장 전·후를 셉니다).
+ * 여기서는 별 저장이 끝날 때마다 물어보고, 그렇다면 「N곳 매김」 자리에 「성향 확정 · 내 여행 성향 보기 ›」를
+ * 띄웁니다. ⚠ 새 줄을 끼우지 않습니다 — 카드가 밀리면 다음 별을 잘못 누릅니다(index.html 주석).
+ * ⚠ 안 누르고 계속 매겨도 됩니다. 저장만 했다고 다른 탭으로 데려가지 않습니다. */
+function 확정줄(){
+  if (!도는중 || !방금확정()) return;
+  $('spreecount')?.classList.add('hide');
+  $('spreepersona')?.classList.remove('hide');
+}
+/* 눌렀으면 「그만」과 같은 길로 나갑니다(closeSpree — 뒤로가기 기록을 걷어야 합니다). 닫힌 «뒤»에 갈 곳만
+   성향 칸입니다(아래 돌아가기). 여기서 바로 탭을 옮기면 showApp 이 closeSpree(true) 로 닫아서 뒤로가기
+   기록이 하나 남습니다 — 뒤로를 한 번 더 눌러야 나가는 앱이 됩니다. */
+let 성향으로 = false;
+$('spreepersona')?.addEventListener('click', () => { 성향으로 = true; closeSpree(); });
+
 /* 다음으로. 별을 매겼든 넘겼든 여기로 옵니다. */
 function 다음(){
   주머니 = 주머니.filter(c => c.id !== 지금?.id);
@@ -144,10 +160,15 @@ export async function openSpree(){
   window.scrollTo({ top:0 });
   if (history.state?.t2 !== 'spree') history.pushState({ t2:'spree' }, '');
   센것 = 0; 건드림 = false; 세기();
+  /* 머리줄은 늘 「N곳 매김」으로 엽니다. 지난번에 확정만 하고 안 보러 갔으면 아래 확정줄() 이 다시 띄웁니다. */
+  $('spreecount')?.classList.remove('hide');
+  $('spreepersona')?.classList.add('hide');
+  성향으로 = false;
   $('spreebox').innerHTML =
     `<div class="empty"><span class="load">불러오는 중…</span></div>`;
   await 채우기();
   그리기();
+  확정줄();
 }
 
 /* ── 나가면 **들어온 자리**로 돌아갑니다(b423) ────────────────────────
@@ -165,6 +186,9 @@ let 돌아갈곳 = null;
 export function spreeBackTo(tab){ 돌아갈곳 = tab; }
 function 돌아가기(){
   const t = 돌아갈곳; 돌아갈곳 = null;
+  /* 「내 여행 성향 보기 ›」로 나온 것이면 들어온 자리 대신 분석 탭 성향 칸으로(b822). 여는 길은 #openpersona
+     하나입니다(평가 탭 안내 줄의 data-go 와 같은 단추) — 칸 고르기·맨 위로까지 거기서 합니다(app.js 성향보기). */
+  if (성향으로){ 성향으로 = false; $('openpersona')?.click(); return; }
   if (t) ctx.showApp?.(t);
 }
 
@@ -291,7 +315,8 @@ $('spreebox')?.addEventListener('click', async e => {
     /* ⚠ **기다렸다 넘기지 않습니다.** 홈은 1.5초를 두고 되돌릴 틈을 줍니다만,
        여기는 **쭉 매기는 것이 목적**이라 그 1.5초가 다섯 번이면 7초입니다.
        잘못 눌렀으면 기록 탭에서 고칠 수 있습니다. */
-    saveRate(wrap.dataset.city, { stars: v }, true);   /* 안 기다립니다 */
+    /* 안 기다립니다 — 끝나면 5곳째였는지만 봅니다(위 확정줄, b822). */
+    saveRate(wrap.dataset.city, { stars: v }, true).then(확정줄);
     setTimeout(다음, 260);
     return;
   }

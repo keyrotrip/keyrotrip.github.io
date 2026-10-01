@@ -14,35 +14,35 @@
  *
  * 층: dom.js · db.js · cities.js · card.js · map.js 만 씁니다.
  *     app.js 는 import 하지 않습니다 — ctx 로 받습니다(persona.js 머리말). */
-import { $, esc, emptyDo } from './dom.js?v=b821';
-import { sb } from './db.js?v=b821';
-import { cities, cityCountry } from './cities.js?v=b821';
+import { $, esc, emptyDo } from './dom.js?v=b822';
+import { sb } from './db.js?v=b822';
+import { cities, cityCountry } from './cities.js?v=b822';
 /* 별 갈래와 그 이름. ⚠ **보관함 시트와 같은 것을 씁니다**(b727) — 따로 세면
    「★4점대 32곳」이 두 화면에서 달라집니다. 규칙은 stars.js 한 곳입니다. */
-import { 별갈래, BAND_NAME } from './stars.js?v=b821';
+import { 별갈래, BAND_NAME } from './stars.js?v=b822';
 /* 도시 평균과 인원(`{avg_stars, n_rated}`). ⚠ **`n_rated` 에는 내가
    들어 있습니다**(rate.js 의 avgTail 주석) — 남들과 견줄 때는 나를 빼야 합니다. */
-import { cityStat } from './rate.js?v=b821';
+import { cityStat } from './rate.js?v=b822';
 /* `cityStat` 이 비어 있을 때 한 번 싣습니다. ⚠ rate.js·rating.js 는
    anal.js 를 모르므로 고리가 안 생깁니다(확인함). */
-import { loadRateData } from './rating.js?v=b821';
+import { loadRateData } from './rating.js?v=b822';
 /* 리포트는 persona.js 가 그립니다 — 여기는 자리만 내줍니다(b547).
    ⚠ `personaAxes`·`PERSONA16`·`AXIS_NAME`·`AXIS_WORD` 를 여기서 뗐습니다.
      요약 카드가 없어져서 이 파일은 성향을 **한 번도 안 셉니다** — 세는
      것은 persona.js 한 곳입니다. */
-import { renderPersona } from './persona.js?v=b821';
+import { renderPersona } from './persona.js?v=b822';
 /* ⚠ `funRows` 는 **계산만** 합니다 — 그리는 것은 여기 몫입니다. 지도
    화면과 같은 함수를 써야 같은 물음에 같은 답이 나옵니다(map.js 머리말). */
 /* 추천과 궁합은 성향 리포트에서 꺼내온 것입니다(b461) — 계산은 원래
    있던 곳(rec.js · mate.js) 그대로 씁니다. 여기서 다시 세면 두 화면이
    다른 답을 내놓습니다. */
-import { similarPicks } from './rec.js?v=b821';
+import { similarPicks } from './rec.js?v=b822';
 /* 여행 만들기로 바로 잇습니다(b463) — newtrip.js 는 anal.js 를 모르므로
    고리가 안 생깁니다(확인함). */
-import { openNew } from './newtrip.js?v=b821';
-import { pickCity } from './citysearch.js?v=b821';
+import { openNew } from './newtrip.js?v=b822';
+import { pickCity } from './citysearch.js?v=b822';
 /* 카드 셋(b810) — 도시 어워즈 · 거리별 별점 · 여행지 월드컵(옛 「진짜 최애」). mycity.js 는 anal.js 를 모르므로 고리가 없습니다. */
-import { drawMyCities } from './mycity.js?v=b821';
+import { drawMyCities } from './mycity.js?v=b822';
 
 let ctx = { me: () => null, showApp: () => {} };
 export function setAnalCtx(o){ ctx = { ...ctx, ...o }; }
@@ -98,6 +98,10 @@ function 칸보이기(){
     b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on));
   });
 }
+/* 「성향」 칸으로(b822). 성향을 «보러» 오는 길(#openpersona → app.js 의 성향보기 — 평가 탭 안내 줄·빠른 평가의
+   「내 여행 성향 보기 ›」, 성향 변화 알림의 「뭐가 달라졌는지 보기」)은 늘 성향 칸이어야 합니다. 칸을 기억하는 것(지금칸)은
+   하단바로 오갈 때의 일이고, 성향을 보러 온 사람에게 「어워즈」 칸을 주면 안 됩니다(여태 그럴 수 있었습니다). */
+export function 성향칸으로(){ 지금칸 = 'p'; 칸보이기(); }
 $('an_tabs')?.addEventListener('click', e => {
   const b = e.target.closest('[data-an]');
   if (!b || b.dataset.an === 지금칸) return;

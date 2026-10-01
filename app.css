@@ -1999,6 +1999,10 @@ input[type=time]::-webkit-date-and-time-value{ text-align:left; }
  *   이기도 합니다 — 위쪽 구석보다 훨씬 낫습니다.
  * ⚠ `dvh` 를 씁니다 — 폰에서 주소창이 접혔다 펴질 때 `vh` 는 안 따라옵니다. */
 #spreeview{ min-height:100dvh; display:flex; flex-direction:column; }
+/* 머리줄의 「성향 확정 · 내 여행 성향 보기 ›」(b822) — 「N곳 매김」 자리를 대신 차지합니다(index.html 주석).
+   몸은 「← 그만」과 같은 ghost 라 머리줄 높이가 안 바뀝니다. 글자만 진하게 — 회색 「4곳 매김」이 이것으로 바뀌는 것이 신호입니다. */
+#spreepersona{ margin-left:auto; padding-right:0; color:var(--ink); font-size:var(--f-md); white-space:nowrap; }
+#spreepersona b{ font-weight:700; }
 /* ⚠ **가운데 정렬을 걷어냈습니다(b420).** 사진을 정방형으로 키운 뒤
    실기기에서 보니 **위가 통째로 비고 내용이 아래에 몰렸습니다** —
    가운데에 놓으니 남는 세로가 전부 위로 갔기 때문입니다.

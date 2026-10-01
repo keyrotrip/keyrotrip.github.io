@@ -11,9 +11,9 @@
  * 큰 덩어리는 작은 조각부터 떼어내면 남은 것이 저절로 작아집니다.
  *
  * 층: dom.js 만 씁니다. 여행도 로그인한 사람도 모릅니다. */
-import { $, esc, toast } from './dom.js?v=b821';
-import { sb } from './db.js?v=b821';
-import { fail } from './net.js?v=b821';
+import { $, esc, toast } from './dom.js?v=b822';
+import { sb } from './db.js?v=b822';
+import { fail } from './net.js?v=b822';
 
 /* 대화를 저장할 때 로그인한 사람이 필요합니다. app.js 만 아는 값이라 받습니다 —
    로그인할 때마다 바뀌므로 값이 아니라 **함수**로 받습니다. */

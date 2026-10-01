@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b821';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b822';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b821';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b822';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b821`;
+    img.src = `./persona/${code}.webp?v=b822`;
   });
 }
 
@@ -562,7 +562,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b821`;
+    img.src = `./persona/m/${code}.jpg?v=b822`;
   });
 }
 
@@ -1512,8 +1512,10 @@ async function sendCardBlob(blob, spec, name, fontOk = true){
        길)은 그 카드를 없애면서 같이 걷었습니다(b507). 남는 길은 앱 주소
        하나입니다. */
     const url = appUrl();
+    /* 같이 가는 글(b822) — 카드가 «권하는 말»(`shareLine`)을 주면 그것을 씁니다. 성향 카드는 「너의 여행 성향도
+       확인해봐」를 줍니다(persona.js) — 받은 사람이 링크를 누를 까닭이 생깁니다. 안 주는 카드는 예전 그대로. */
     const share = { files:[file], title: spec.title,
-                    text: `${spec.title} · 기로`, url };
+                    text: spec.shareLine || `${spec.title} · 기로`, url };
     /* url·text 를 못 받는 기기가 있습니다. 그때는 그림만이라도 보냅니다 —
        여기서 실패하면 아래 내려받기로 떨어져서 공유 자체를 못 하게 됩니다. */
     const payload = navigator.canShare(share) ? share : { files:[file], title: spec.title };

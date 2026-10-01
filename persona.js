@@ -19,27 +19,29 @@
  *     rec·rate 는 b395 에서 늘었습니다 — 「어울리는 곳 · 도전해볼 곳」을
  *     뽑느라 추천 계산과 다녀온 곳이 필요해졌습니다. city.js 는 b399 에서
  *     다시 뺐습니다 — 추천이 카드 그림 안으로 들어가 누를 줄이 없어졌습니다. */
-import { $, esc, backLabel, toTop, coverDeck } from './dom.js?v=b821';
-import { sb } from './db.js?v=b821';
-import { cities, countryName, continentOf } from './cities.js?v=b821';
+import { $, esc, backLabel, toTop, coverDeck } from './dom.js?v=b822';
+import { sb } from './db.js?v=b822';
+import { cities, countryName, continentOf } from './cities.js?v=b822';
 /* 닮은 도시로 다음 갈 곳을 고릅니다. **AI 를 안 씁니다** — 오프라인에서도
    돌아야 하고 같은 자료에는 늘 같은 답이 나와야 합니다(rec.js 맨 위 참고). */
-import { similarPicks } from './rec.js?v=b821';
+import { similarPicks } from './rec.js?v=b822';
 /* 친구와 궁합. **받는 쪽만 남았습니다(b551)** — 보내는 단추를 걷으면서
    shareMate 를 뗐습니다. mate.js 에는 그대로 있으니 되살리려면 가져다
    쓰면 됩니다(b408 의 「유입이 유입을 만드는 고리」, 그 머리말 참고). */
-import { mateCode, mateHtml } from './mate.js?v=b821';
-import { visited } from './rate.js?v=b821';
-import { open16 } from './p16.js?v=b821';
+import { mateCode, mateHtml } from './mate.js?v=b822';
+import { visited } from './rate.js?v=b822';
+import { open16 } from './p16.js?v=b822';
 import { personaStats, personaAxes, personaRank, personaMates, personaMrz,
          PERSONA16, AXIS_WORD, AXIS_NAME, axisSpectrum, personaWhyHtml, personaShiftWhy,
-         shareCard } from './card.js?v=b821';
+         shareCard } from './card.js?v=b822';
 /* 성향 v2(2026-09-30): 지난번 코드(흔들림 막기)와 올리기는 pshift.js 한 곳 — 홈 알림과 같은 기준이어야
    두 화면이 다른 유형을 붙잡지 않습니다. 다시 간 도시 시트는 visits.js. */
-import { prevPersona, savePersona } from './pshift.js?v=b821';
-import { openVisits } from './visits.js?v=b821';
+import { prevPersona, savePersona } from './pshift.js?v=b822';
+import { openVisits } from './visits.js?v=b822';
 
-let ctx = { me: () => null, loadCities: async () => {}, showApp: () => {} };
+let ctx = { me: () => null, loadCities: async () => {}, showApp: () => {},
+            /* 성향 보러 가기(b822) — 칸 고르기·맨 위로까지 app.js 가 합니다. 기본값은 예전과 같은 «탭만 열기». */
+            성향보기: () => ctx.showApp('anal') };
 export function setPersonaCtx(o){ ctx = { ...ctx, ...o }; }
 
 /* ── 성향 카드 화면 ─────────────────────────────────────────────────
@@ -59,7 +61,10 @@ export function setPersonaCtx(o){ ctx = { ...ctx, ...o }; }
  *   `$('openpersona').click()` 을 쓰던 곳(app.js·anal.js)도 그대로
  *   동작합니다 — 아래 리스너가 그리로 보냅니다. */
 export async function openPersona(){
-  ctx.showApp('anal');
+  /* ⚠ b822: 탭만 열지 않고 **성향 칸 맨 위로** 엽니다(app.js 의 성향보기). 분석 탭은 마지막에 본 칸을 기억해서
+     (anal.js 의 지금칸) 탭만 열면 「어워즈」에 떨어질 수 있었습니다. 여기서 anal.js 를 부르면 고리가 생깁니다
+     (anal.js 가 이 파일을 씁니다) — 그래서 ctx 로 받습니다. */
+  ctx.성향보기();
 }
 
 /* ── 리포트를 그립니다 ── 성향 탭이 부릅니다(b547) ────────────────────
@@ -226,7 +231,7 @@ async function drawPersona(s, ax, rates){
        이상하지 않겠어?」. 지금 성향은 위에 크게 떠 있으므로, 여기서 새로
        말할 것은 「예전엔 이랬다」 하나입니다. */
     return `<div class="pwas">
-      <img class="pwasim" src="./persona/t/${esc(앞)}.jpg?v=b821"
+      <img class="pwasim" src="./persona/t/${esc(앞)}.jpg?v=b822"
            alt="" loading="lazy" decoding="async">
       <span class="pwast"><b>성향이 바뀌었어요</b>
         <i>예전엔 <em>${esc(앞)}</em> ${esc(PERSONA16[앞]?.n || 앞)}</i>
@@ -256,6 +261,9 @@ async function drawPersona(s, ax, rates){
     mrz: personaMrz(code, s.countries, s.cities, rank, new Date().getFullYear()),
     /* 공유창 제목으로도 쓰입니다(card.js 의 saveCardImage). */
     title: `${code} ${type.n}`,
+    /* 그림과 같이 가는 글(b822, 리포트 「사용자 순환 구조」 중 사용자가 고른 3번). 예전엔 「코드 이름 · 기로」뿐이라
+       받은 사람이 링크를 누를 까닭이 없었습니다. 개인 정보는 안 넣습니다 — 코드와 유형 이름뿐, 주소는 앱 주소 하나. */
+    shareLine: `내 여행 성향은 ${code} ${type.n}. 너의 여행 성향도 확인해봐.`,
   };
 
   /* ⚠ **해외가 문턱(3곳)에 못 미쳐도 카드는 냅니다.** 막을까 하다 안 막았습니다 —
@@ -344,12 +352,12 @@ async function drawPersona(s, ax, rates){
              깔아 둡니다 — 원본이 붙기 전까지 그 자리를 채웁니다.
            ⚠ 원본 webp 를 여기 깔면 안 됩니다. 같은 그림을 두 번 받습니다. -->
         <div class="psizer"
-             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b821')"></div>
+             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b822')"></div>
         <!-- ⚠ 원본(webp, 장당 약 490KB)이 아니라 **중간 크기**(m/, 77KB)
              입니다(b744). 이 자리는 폭 356 이라 720px 이면 2배까지 충분합니다.
              원본은 공유 카드 그림(card.js)에서만 씁니다 — 거기는 1080 폭
              캔버스에 그리므로 큰 것이 필요합니다. -->
-        <img src="./persona/m/${esc(code)}.jpg?v=b821" alt=""
+        <img src="./persona/m/${esc(code)}.jpg?v=b822" alt=""
              onerror="this.closest('.phero').classList.add('noart')">
         <div class="pscrim"></div>
         <!-- ⚠⚠ **공유 아이콘은 히어로 «안»에 있어야 합니다(b741).** ⚠⚠
@@ -467,13 +475,13 @@ async function drawPersona(s, ax, rates){
              있었습니다 — 유형은 «그림으로» 기억됩니다.
            ⚠ 작은 것(t/, 23KB)입니다. 칸이 160px 이라 360px 이면 넉넉합니다. -->
         <div class="mate good">
-          <img class="mateimg" src="./persona/t/${esc(mate.best)}.jpg?v=b821"
+          <img class="mateimg" src="./persona/t/${esc(mate.best)}.jpg?v=b822"
                alt="" loading="lazy" decoding="async">
           <span class="ml">환상의 메이트${임시 ? '' : ` · ${mate.bestScore}%`}</span>
           <b>${esc(PERSONA16[mate.best]?.n || mate.best)}</b>
           <span class="mc">${esc(mate.best)}</span></div>
         <div class="mate bad">
-          <img class="mateimg" src="./persona/t/${esc(mate.worst)}.jpg?v=b821"
+          <img class="mateimg" src="./persona/t/${esc(mate.worst)}.jpg?v=b822"
                alt="" loading="lazy" decoding="async">
           <span class="ml">극과 극 메이트${임시 ? '' : ` · ${mate.worstScore}%`}</span>
           <b>${esc(PERSONA16[mate.worst]?.n || mate.worst)}</b>
@@ -576,7 +584,10 @@ async function drawPersona(s, ax, rates){
     /* 카드 그림에 들어간 것은 여기에도 있어야 합니다 — 그림을 못 받는
        기기에서는 이 글만 갑니다(b399 에서 추천을 카드 안으로 옮기면서 추가). */
     (spec.picks.match.length    ? `\n어울리는 곳: ${spec.picks.match.join(' · ')}` : '') +
-    (spec.picks.opposite.length ? `\n반대로: ${spec.picks.opposite.join(' · ')}` : '');
+    /* 「도전해볼 곳」 — 카드 그림(card.js)은 b776 에 이 이름으로 바꿨는데 여기만 옛 「반대로:」가 남아 있었습니다(b822 에 맞춤). */
+    (spec.picks.opposite.length ? `\n도전해볼 곳: ${spec.picks.opposite.join(' · ')}` : '') +
+    /* 권하는 말(b822) — 그림을 못 보내는 기기에서도 같은 말이 갑니다(위 shareLine). */
+    `\n너의 여행 성향도 확인해봐.`;
   /* 확정 전에는 공유 단추 대신 「평가하러 가기」가 서 있습니다(b408).
      둘 중 하나만 있으므로 있는 쪽에만 답니다 — `$()` 가 없는 것을 주면
      여기서 터지고 카드가 통째로 안 그려집니다. */

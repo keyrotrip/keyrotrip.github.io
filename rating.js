@@ -14,18 +14,18 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b821';
-import { sb } from './db.js?v=b821';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b821';
-import { dateRange } from './calc.js?v=b821';
-import { starHtml, paintStars, markRated, starValue } from './stars.js?v=b821';
+import { $, esc, josa, tipOff } from './dom.js?v=b822';
+import { sb } from './db.js?v=b822';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b822';
+import { dateRange } from './calc.js?v=b822';
+import { starHtml, paintStars, markRated, starValue } from './stars.js?v=b822';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b821';
+         countryInfo } from './cities.js?v=b822';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음 } from './rate.js?v=b821';
-import { openCity } from './city.js?v=b821';
-import { loadCities } from './citysearch.js?v=b821';
+         removeRate, 별받음 } from './rate.js?v=b822';
+import { openCity } from './city.js?v=b822';
+import { loadCities } from './citysearch.js?v=b822';
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }
@@ -174,16 +174,49 @@ const 대륙of = c => continentOf[모국(c)] || '기타';
  *   조용할 때는 **숨기지 않습니다** — 누르는 도중에 줄이 사라지면 목록이 한 줄 위로 올라가 다음 별을 잘못 누릅니다.
  *   5곳이 되면 「확정됐어요」로 말만 바꿔 두고, 다음에 목록을 새로 그릴 때(탭 다시 열기·검색) 사라집니다. */
 const 성향문턱 = 5;
+/* v2: 성향은 **해외** 도시로만 셉니다(card.js personaAxes 머리) — 여기 세는 것도 해외만.
+   제자리 안내와 아래 「확정된 순간」이 같이 씁니다. 두 벌로 세면 언젠가 갈립니다. */
+function 해외매긴수(){
+  const 국내 = new Set((cities || []).filter(c => c.country === 'KR').map(c => c.id));
+  return Object.entries(myRates || {}).filter(([id, r]) => r?.stars != null && !국내.has(id)).length;
+}
+
+/* ── 5곳째를 매긴 «순간»(b822, 리포트 「사용자 순환 구조」 중 사용자가 고른 1번) ──────────────
+ * 여태는 확정돼도 「분석 탭에서 볼 수 있어요」라는 글뿐이라 누를 데가 없었고, 빠른 평가·맨 위 카드로 채우면
+ * 그 말도 없이 줄이 사라졌습니다. 이제 그 순간에 「내 여행 성향 보기 ›」 단추를 냅니다.
+ * ⚠ 저장은 전부 saveRate 를 지납니다(아홉 군데) — 그래서 거기서 «저장 전»과 «저장 후»를 세어 4곳 → 5곳이 된
+ *   그 한 번만 「확정」으로 칩니다. 처음부터 5곳이 넘던 사람에게는 안 뜹니다.
+ * ⚠ 별점을 서버에서 받기 전(별받음 false)에는 안 셉니다 — 안 받은 0 으로 세면 이미 매긴 사람도 「방금 확정」이 됩니다.
+ * ⚠ 저장이 실패하면 안 뜹니다(아래 saveRate — 실패는 셈까지 가기 전에 돌아갑니다).
+ * ⚠ 앱이 켜 있는 동안만 기억합니다. 성향을 보러 가면(app.js 의 성향보기) 걷힙니다. 별을 지워 4곳이 되어도 걷힙니다.
+ * 빠른 평가(spree.js)는 자기 머리줄에 같은 단추를 띄웁니다 — 이 값을 읽어서. */
+let 확정순간 = false;
+export const 방금확정 = () => 확정순간;
+export function 확정봤음(){ 확정순간 = false; }
+
 function 제자리안내(조용){
   const el = $('tip_rate');
   if (!el) return;
-  /* v2: 성향은 **해외** 도시로만 셉니다(card.js personaAxes 머리) — 여기 세는 것도 해외만. */
-  const 국내 = new Set((cities || []).filter(c => c.country === 'KR').map(c => c.id));
-  const n = Object.entries(myRates || {}).filter(([id, r]) => r?.stars != null && !국내.has(id)).length;
-  if (조용 && n >= 성향문턱 && 별받음 && !el.classList.contains('hide')){
-    $('tip_rate_t').innerHTML = '<b>여행 성향이 확정됐어요</b> · 분석 탭에서 볼 수 있어요';
+  const n = 해외매긴수();
+  if (n < 성향문턱) 확정순간 = false;
+  const 단추 = $('tip_rate_go');
+  if (확정순간 && 별받음 && !tipOff('ratelist')){
+    /* 조용할 때(목록의 별) 줄이 숨어 있었으면 지금 띄우지 않습니다 — 누르는 도중에 줄이 생기면 목록이 한 줄
+       내려가 다음 별을 잘못 누릅니다(위 ⚠⚠). 목록을 다시 그릴 때 뜹니다. */
+    if (조용 && el.classList.contains('hide')) return;
+    /* 조용할 때는 줄 높이를 지금 그대로 묶어 둡니다 — 글이 바뀌며 줄이 늘거나 줄면 그것도 목록을 밀어 다음 별을
+       잘못 누르게 합니다. 재 보니 단추(닿는 높이 32px)가 들어서면 45 → 51 로 6px 늘었습니다(375px 폭, b822).
+       그래서 «최소»가 아니라 높이 자체를 묶습니다 — 넘치는 몇 px 은 줄의 안쪽 여백(위아래 9px)으로 들어갑니다.
+       다시 그릴 때(아래) 풉니다. */
+    if (조용) el.style.height = el.offsetHeight + 'px';
+    else el.style.height = '';
+    el.classList.remove('hide');
+    $('tip_rate_t').innerHTML = '<b>여행 성향이 확정됐어요</b>';
+    단추?.classList.remove('hide');
     return;
   }
+  if (!조용) el.style.height = '';
+  단추?.classList.add('hide');
   const 끔 = !별받음 || n >= 성향문턱 || tipOff('ratelist');
   if (조용 && 끔) return;            /* 조용할 때는 보이던 줄을 걷지 않습니다(위 ⚠⚠) */
   el.classList.toggle('hide', 끔);
@@ -496,6 +529,8 @@ export async function dropRate(cityId){
     .eq('user_id', ctx.me().id).eq('city_id', cityId).select('city_id');
   if (r.error){ fail(r.error, 'rate'); return false; }
   removeRate(cityId);
+  /* 지워서 문턱 아래로 내려가면 「확정」 단추도 걷습니다(위 「확정된 순간」). */
+  if (해외매긴수() < 성향문턱) 확정순간 = false;
   /* 다녀온 곳은 지난 여행에서도 오므로 서버에 다시 물어야 맞습니다. */
   await refreshVisited();
   const s = await sb.rpc('city_stats', { p_city: cityId });
@@ -521,6 +556,8 @@ export async function saveRate(cityId, patch, quiet){
    * ⚠ **여기 한 곳에서 막습니다.** 별을 누르는 자리가 아홉 군데인데 거기
    *   마다 적으면 언젠가 한 곳이 빠집니다. 저장은 전부 여기를 지납니다. */
   if (patch && patch.stars === 0) return dropRate(cityId);
+  /* 5곳째인지 보려고 «저장 전» 수를 잡아 둡니다(위 「확정된 순간」). 별점을 아직 못 받았으면 안 셉니다. */
+  const 전 = 별받음 ? 해외매긴수() : null;
   const r = await sb.from('city_ratings')
     .upsert({ user_id: ctx.me().id, city_id: cityId, ...patch },
             { onConflict: 'user_id,city_id' })
@@ -531,6 +568,10 @@ export async function saveRate(cityId, patch, quiet){
      여기서 못 정합니다 — 지난 여행 기록이 있으면 그대로 다녀온 곳이라
      서버에 다시 물어야 합니다. 물어야 하는지는 rate.js 가 알려줍니다. */
   if (applyRate(cityId, r.data, patch).recount) await refreshVisited();
+  /* 4곳 → 5곳이 된 이 저장 한 번만 「확정」입니다. 별점을 «지워서» 줄면 걷습니다(제자리안내도 한 번 더 봅니다). */
+  const 후 = 해외매긴수();
+  if (전 != null && 전 < 성향문턱 && 후 >= 성향문턱) 확정순간 = true;
+  if (후 < 성향문턱) 확정순간 = false;
   /* 평균은 남들 것까지 합친 값이라 다시 받아야 맞습니다. */
   const s = await sb.rpc('city_stats', { p_city: cityId });
   putCityStat(cityId, s.data?.[0]);
