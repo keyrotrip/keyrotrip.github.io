@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b822';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b823';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b822';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b823';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b822`;
+    img.src = `./persona/${code}.webp?v=b823`;
   });
 }
 
@@ -550,6 +550,8 @@ const P16N = {
   /* 흐림은 화면 --ink-48 과 같은 값(b805 에 #807C74 → #6B675F, 종이 위 대비 3.65 → 4.94 — app.css 머리 주석). */
   종이:'#F3F0E8', 잉크:'#1B1B1F', 흐림:'#6B675F', 선:'#DFDAD0', 홈:'#E3DDD0',
   주황:'#F25E26', 밝은주황:'#FF9166', 좋음:'#5A7A46', 나쁨:'#B0574E',
+  /* 축 막대(b823, 시안 B) — 화면 --star · --ink-80 과 같은 값. 바탕은 위 홈(화면 .axstrk 바탕과 같음). */
+  별:'#E08A2B', 짙은잉크:'#3A3630',
   /* 발자국 카드(b776) — 0 인 대륙의 값 · 지도 판 · 안 간 땅(판보다 한 단 짙게) */
   아주흐림:'#B5AFA3', 지도판:'#E6E0D3', 지도땅:'#D3CBBC',
 };
@@ -562,7 +564,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b822`;
+    img.src = `./persona/m/${code}.jpg?v=b823`;
   });
 }
 
@@ -760,18 +762,23 @@ async function drawP16(s, W, H, F){
     const [왼, 오] = AXIS_POLES[i] || ['F', 'H'], 오른 = v >= 50;
     const 폭 = Math.max(Math.abs(v - 50), 1.5);
     return { 왼말: AXIS_WORD[왼], 오말: AXIS_WORD[오], 왼진: !모름 && !오른, 오진: !모름 && 오른,
-             시작: 오른 ? 50 : 50 - 폭, 폭 };
+             시작: 오른 ? 50 : 50 - 폭, 폭, 오른 };
   }
-  /* 막대 한 줄 — 바탕 · (모름이 아니면) 칠 · 가운데 눈금. x0~x1 은 막대 양끝, cy 는 막대 가운데. */
+  /* 막대 한 줄 — 바탕 · (모름이 아니면) 칠 · 가운데 눈금. x0~x1 은 막대 양끝, cy 는 막대 가운데.
+     ⚠ b823: 화면과 같은 «둥근 주황 막대»(사용자가 고른 시안 B, app.css .axstrk). 바탕은 알약, 칠은 별색으로
+       «바깥 끝만» 둥글게(가운데 끝은 눈금에 붙음), 눈금은 짙게. 두께 5 → 6.5 로 올리되 눈금 길이(위아래 끝)는
+       예전과 같게 두었습니다 — 정사각(축한줄)에서 눈금 밑과 극 이름 윗선 사이가 b805 에 1px 로 맞춘 자리입니다.
+     ⚠ roundRect 는 이 파일이 이미 씁니다(위 rrect). 반지름이 칠보다 크면 브라우저가 알아서 줄입니다. */
   function 스펙트럼막대(x0, x1, cy, 자리, 모름){
-    const th = bx(5), w = x1 - x0;
-    g.fillStyle = P16N.홈; g.fillRect(x0, cy - th / 2, w, th);
+    const th = bx(6.5), w = x1 - x0, r = th / 2, y = cy - th / 2;
+    g.fillStyle = P16N.홈; rrect(g, x0, y, w, th, r); g.fill();
     if (!모름){
-      g.fillStyle = P16N.잉크;
-      g.fillRect(x0 + w * 자리.시작 / 100, cy - th / 2, w * 자리.폭 / 100, th);
+      g.fillStyle = P16N.별;
+      rrect(g, x0 + w * 자리.시작 / 100, y, w * 자리.폭 / 100, th, 자리.오른 ? [0, r, r, 0] : [r, 0, 0, r]);
+      g.fill();
     }
-    const tw = Math.max(1, bx(.8)), tl = th + bx(5);
-    g.fillStyle = P16N.흐림; g.fillRect(x0 + w / 2 - tw / 2, cy - tl / 2, tw, tl);
+    const tw = Math.max(1, bx(1.4)), tl = th + bx(3.5);
+    g.fillStyle = P16N.짙은잉크; rrect(g, x0 + w / 2 - tw / 2, cy - tl / 2, tw, tl, tw / 2); g.fill();
   }
   function 축그리기(y0){
     const 극폭 = bx(46), 틈 = bx(8);
@@ -2010,7 +2017,9 @@ export function personaShiftWhy(전, 지금){
  * ⚠ 기운 쪽은 코드 글자와 **같은 규칙**(50 이상이면 H·L·D·G)이라 막대와 네 글자가 어긋나지 않습니다.
  * ⚠ 해외가 모자라 50 으로 둔 축(`추정`)은 칠하지도 굵게 하지도 않고 「아직 모름」만 답니다.
  * ⚠ 공유 카드 그림(drawP16 의 축그리기 · 축한줄)도 같은 스펙트럼입니다(b805, 사용자: 「응 다 바꾸자」) —
- *   극 표(AXIS_POLES)와 기운 쪽 규칙을 같이 씁니다. 한쪽만 바꾸지 마십시오. */
+ *   극 표(AXIS_POLES)와 기운 쪽 규칙을 같이 씁니다. 한쪽만 바꾸지 마십시오.
+ * ⚠ b823: 둥근 주황 막대(사용자가 고른 시안 B). 칠한 조각에 기운 쪽(`r`·`l`)을 달아 «바깥 끝만» 둥글게 합니다
+ *   — 가운데 끝은 눈금에 붙어 있어야 「어느 쪽으로 얼마나」가 읽힙니다(app.css .axstrk). 그림 쪽은 스펙트럼막대. */
 const AXIS_POLES = [['F', 'H'], ['M', 'L'], ['N', 'D'], ['P', 'G']];
 export function axisSpectrum(ax){
   const 모름 = new Set(ax.추정 || []);
@@ -2022,7 +2031,7 @@ export function axisSpectrum(ax){
     return `<div class="axsrow" role="img" aria-label="${esc(이름)} — ${esc(말)}">
       <div class="axsname">${esc(이름)}${몰라 ? '<span> · 아직 모름</span>' : ''}</div>
       <div class="axsline"><span class="axsp${!몰라 && !오른 ? ' on' : ''}">${esc(AXIS_WORD[왼])}</span>
-        <span class="axstrk">${몰라 ? '' : `<i style="left:${오른 ? 50 : 50 - 폭}%; width:${폭}%"></i>`}</span>
+        <span class="axstrk">${몰라 ? '' : `<i class="${오른 ? 'r' : 'l'}" style="left:${오른 ? 50 : 50 - 폭}%; width:${폭}%"></i>`}</span>
         <span class="axsp r${!몰라 && 오른 ? ' on' : ''}">${esc(AXIS_WORD[오])}</span></div></div>`;
   }).join('')}</div>`;
 }

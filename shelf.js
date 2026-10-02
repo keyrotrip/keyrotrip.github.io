@@ -15,27 +15,27 @@
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
 import { $, esc, toast, emptyDo, josa, toTop, coverDeck, backLabel,
-         flagOf, flagOk, flagSprite } from './dom.js?v=b822';
-import { openCity } from './city.js?v=b822';
-import { sb } from './db.js?v=b822';
-import { cities, countryName, cityCountry } from './cities.js?v=b822';
-import { myRates, cityStat, visited, avgTail } from './rate.js?v=b822';
-import { starHtml, paintStars, markRated, starValue, 별갈래, BAND_NAME } from './stars.js?v=b822';
-import { fail } from './net.js?v=b822';
-import { arm } from './ui.js?v=b822';
+         flagOf, flagOk, flagSprite } from './dom.js?v=b823';
+import { openCity } from './city.js?v=b823';
+import { sb } from './db.js?v=b823';
+import { cities, countryName, cityCountry } from './cities.js?v=b823';
+import { myRates, cityStat, visited, avgTail } from './rate.js?v=b823';
+import { starHtml, paintStars, starValue, 별갈래, BAND_NAME } from './stars.js?v=b823';
+import { fail } from './net.js?v=b823';
+import { arm } from './ui.js?v=b823';
 /* 깃발 벽의 공유는 지도·나라 목록과 **같은 카드**입니다(b649) — 셋 다
    「몇 개국 다녀왔다」를 말합니다. map.js 가 만들고 여기서 부르기만
    합니다. ⚠ map.js 는 shelf.js 를 안 가져오므로 고리가 안 생깁니다. */
-import { 발자국스펙 } from './map.js?v=b822';
-import { shareCard } from './card.js?v=b822';
-import { todayYmd } from './calc.js?v=b822';
+import { 발자국스펙 } from './map.js?v=b823';
+import { shareCard } from './card.js?v=b823';
+import { todayYmd } from './calc.js?v=b823';
 /* ⚠ `flagOf`·`flagOk` 는 **dom.js 것**입니다(위 줄) — un.js 에 또 만들었다가
      걷었습니다. `UN_CONT`·`UN_TOTAL` 도 un.js 가 «세어서» 줍니다. map.js 를
      끌어오지 않는 이유가 이것입니다 — 195 라는 수를 두 곳에서 적으면
      언젠가 갈라집니다. 두 곳이 같은지는 un.js 의 `검산()` 이 봅니다. */
-import { UN_CODES, UN_TOTAL } from './un.js?v=b822';
-import { loadCities } from './citysearch.js?v=b822';
-import { loadRateData, saveRate } from './rating.js?v=b822';
+import { UN_CODES, UN_TOTAL } from './un.js?v=b823';
+import { loadCities } from './citysearch.js?v=b823';
+import { loadRateData, saveRate } from './rating.js?v=b823';
 
 let ctx = {
   me: () => null,
@@ -733,7 +733,7 @@ $('shelflist').addEventListener('click', async e => {
     const v = starValue(st, e.clientX);   /* 반칸 규칙은 stars.js 한 곳(b491) */
     const next = Number(myRates[cityId]?.stars) === v ? null : v;
     paintStars(wrap, next, true);
-    markRated(row, next);
+    /* 「★ 4 기록」 딱지는 안 붙입니다(b823) — 붙으면 줄이 늘어 아래 줄이 밀렸습니다(stars.js 주석). */
     await saveRate(cityId, { stars: next }, true);
 
     /* 지웠으면 목록에서도 빼야 합니다. 저장은 되는데 줄이 그대로 남아 있어서

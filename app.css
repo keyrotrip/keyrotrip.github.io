@@ -1754,12 +1754,10 @@ input[type=time]::-webkit-date-and-time-value{ text-align:left; }
   100% { transform:scale(1);    filter:none; }
 }
 .st.pop{ animation:starpop var(--t-slow) var(--ease-out) both; }
-@keyframes tagin{ from{ opacity:0; transform:translateY(-3px) scale(.9) }
-                  to  { opacity:1; transform:none } }
-.rtag{ animation:tagin var(--t) var(--ease-out) both; }
+/* (「★ 4 기록」 딱지 .rtag 와 그 등장 움직임 tagin 은 b823 에 걷었습니다 — stars.js 주석.) */
 /* 움직임을 꺼둔 기기에서는 튀지 않게 합니다. */
 @media (prefers-reduced-motion: reduce){
-  .st.pop{ animation:none } .rtag{ animation:none }
+  .st.pop{ animation:none }
   .rrow, .st i{ transition:none }
 }
 
@@ -3945,7 +3943,11 @@ svg.fg{ display:block; width:100%; aspect-ratio:1 / 1; height:auto; }
    칸 너비가 다시 그 여백을 참조해 **순환**합니다 — 실측: 1.8:1 이 1.5:1 로
    부풀었습니다. */
 .phero{ position:relative; display:grid; grid-template-columns:minmax(0,1fr);
-        overflow:hidden; background:var(--pearl); }
+        overflow:hidden; background:var(--pearl);
+        /* 모서리 살짝 둥글게(b823, 사용자: 「이미지 모서리 살짝 둥글게 처리해주고」). 종이 마무리(b627)에서
+           모서리를 토큰째 0 으로 했지만, 사진은 목록 썸네일(.thumb)이 이미 12px 라 그것과 맞춥니다.
+           overflow:hidden 이 그림·그늘(.pscrim)까지 같이 깎습니다. 분석 탭 · 사람 화면 · 도감(p16)이 같이 씁니다. */
+        border-radius:12px; }
 .phero > *{ grid-area:1 / 1; }
 /* ⚠⚠ **원본 비(3:2)를 지킵니다(b739, 사용자 지시: 「이미지 원본 비율
    유지해줘야지 위아래 왜이렇게 많이 잘랐어」).** ⚠⚠
@@ -4333,18 +4335,26 @@ svg.fg{ display:block; width:100%; aspect-ratio:1 / 1; height:auto; }
  * ⚠ **축 이름은 크게·굵게, 양끝 말은 작게(2026-09-30, 사용자: 「개척력…이 사이즈가 밑 항목이랑 같아서 구별이
  *   전혀 안되네」).** 둘 다 12px·600 이라 제목과 눈금이 한 줄처럼 읽혔습니다. 공유 카드(축그리기)는 처음부터
  *   이름 10 · 극 8.5 로 갈라 두었습니다 — 화면도 같은 위계로. */
+/* ⚠⚠ **둥근 주황 막대로 바꿨습니다(b823, 사용자가 고른 시안 B — 「아래 막대가 텍스트랑 디자인이 안이쁜데」).** ⚠⚠
+ *   먹색 각진 막대(b627 「인쇄된 막대는 각집니다」)를 걷고: 바탕은 둥근 알약(10px), 칠은 별색 주황(--star)으로
+ *   «바깥 끝만» 둥글게(가운데 끝은 눈금에 붙음 — card.js 가 r·l 을 답니다), 가운데 눈금은 2px 짙게.
+ *   양끝 말은 11 → 12px, 기운 쪽은 700. 시안 셋(A 점 슬라이더 · B · C 눈금 점)을 실제 화면에 끼워 찍어 골랐습니다.
+ *   ⚠ 공유 카드 그림(card.js 스펙트럼막대)도 같은 모양·같은 색입니다 — 한쪽만 바꾸지 마십시오.
+ *   ⚠ 바탕색 #E3DDD0 은 공유 카드 P16N.홈 과 같은 값입니다. `.axbar`(사람 화면 대륙별 막대)는 그대로 각집니다. */
 .axspec{ margin:12px 0 4px; display:flex; flex-direction:column; gap:14px; }
-.axsname{ font-size:var(--f-lg); font-weight:700; color:var(--ink); }
+.axsname{ font-size:var(--f-lg); font-weight:700; color:var(--ink); letter-spacing:-.01em; }
 .axsname span{ font-weight:400; color:var(--ink-48); }
-.axsline{ display:flex; align-items:center; gap:8px; margin-top:6px; }
-.axsp{ flex:none; width:4.6em; font-size:var(--f-xs); color:var(--ink-48); white-space:nowrap; }
+.axsline{ display:flex; align-items:center; gap:10px; margin-top:8px; }
+.axsp{ flex:none; width:5.1em; font-size:var(--f-sm); color:var(--ink-48); white-space:nowrap; }
 .axsp.r{ text-align:right; }
-.axsp.on{ color:var(--ink); font-weight:600; }
-.axstrk{ position:relative; flex:1; height:8px; background:var(--line); }
-.axstrk > i{ position:absolute; top:0; bottom:0; background:var(--primary); }
+.axsp.on{ color:var(--ink); font-weight:700; }
+.axstrk{ position:relative; flex:1; height:10px; border-radius:999px; background:#E3DDD0; }
+.axstrk > i{ position:absolute; top:0; bottom:0; background:var(--star); }
+.axstrk > i.r{ border-radius:0 999px 999px 0; }
+.axstrk > i.l{ border-radius:999px 0 0 999px; }
 /* 가운데 눈금 — 막대보다 위아래로 3px 길게. 이게 없으면 「어느 쪽」이 아니라 「얼마」로 읽힙니다. */
-.axstrk::after{ content:''; position:absolute; left:50%; top:-3px; bottom:-3px; width:1px;
-                margin-left:-.5px; background:var(--ink-48); }
+.axstrk::after{ content:''; position:absolute; left:50%; top:-3px; bottom:-3px; width:2px;
+                margin-left:-1px; border-radius:1px; background:var(--ink-80); }
 
 /* ── 카드 안 소단락(b464) ─────────────────────────────────────────────
  * 사용자 결정: **성향은 성향끼리, 발자국은 발자국끼리, 나머지 한 섹션.**

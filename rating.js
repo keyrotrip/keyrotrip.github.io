@@ -14,18 +14,18 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b822';
-import { sb } from './db.js?v=b822';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b822';
-import { dateRange } from './calc.js?v=b822';
-import { starHtml, paintStars, markRated, starValue } from './stars.js?v=b822';
+import { $, esc, josa, tipOff } from './dom.js?v=b823';
+import { sb } from './db.js?v=b823';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b823';
+import { dateRange } from './calc.js?v=b823';
+import { starHtml, paintStars, starValue } from './stars.js?v=b823';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b822';
+         countryInfo } from './cities.js?v=b823';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음 } from './rate.js?v=b822';
-import { openCity } from './city.js?v=b822';
-import { loadCities } from './citysearch.js?v=b822';
+         removeRate, 별받음 } from './rate.js?v=b823';
+import { openCity } from './city.js?v=b823';
+import { loadCities } from './citysearch.js?v=b823';
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }
@@ -476,15 +476,14 @@ $('ratelist').addEventListener('click', async e => {
     /* ⚠ **0 도 「지우기」입니다(b501).** 별을 끌어 맨 왼쪽까지 가면 0 이
        옵니다. 자료는 `saveRate` 가 알아서 `dropRate` 로 보내는데(b494),
        **화면은 그걸 몰라서** 「★ 0 기록」 딱지가 붙었습니다 — 지웠는데
-       0점을 준 것처럼 보였습니다. 아래 `paintStars`·`markRated` 가 이
-       값을 그대로 쓰므로 여기서 null 로 만들어야 합니다. */
+       0점을 준 것처럼 보였습니다. 아래 `paintStars` 가 이 값을 그대로
+       쓰므로 여기서 null 로 만들어야 합니다. (딱지는 b823 에 걷었습니다 — stars.js.) */
     const next = (v === 0 || Number(cur) === v) ? null : v;
-    /* 저장을 기다리지 않고 먼저 칠합니다. 여기서는 줄을 옮기지도 지우지도 않습니다. */
+    /* 저장을 기다리지 않고 먼저 칠합니다. 여기서는 줄을 옮기지도 지우지도 않습니다.
+       ⚠ 「★ 4 기록」 딱지는 안 붙입니다(b823) — 붙으면 줄이 늘어 아래 줄이 밀렸습니다(stars.js 주석). */
     paintStars(wrap, next, true);
-    markRated(st.closest('.rrow'), next);
-    /* 줄을 직접 손댔습니다(별 칠하기 · ★기록 딱지). 만든 글자에는 그 딱지가
-       없으므로, 여기서 무효로 해두지 않으면 다음 그리기가 "같다"고 건너뛰어
-       화면과 어긋난 채로 남습니다. */
+    /* 줄을 직접 손댔습니다(별 칠하기). 만든 글자는 칠하기 전 모습이므로, 여기서
+       무효로 해두지 않으면 다음 그리기가 "같다"고 건너뛰어 화면과 어긋난 채로 남습니다. */
     lastRateHtml = '';
     await saveRate(cityId, { stars: next }, true);
     return;

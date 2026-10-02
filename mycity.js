@@ -11,11 +11,11 @@
  *   것만 씁니다. ★4.5 가 ★5 를 이기는 식으로 별점과 어긋나는 순위도 안 만듭니다 — 같은 별점끼리만 겨룹니다.
  * ⚠ **국내도 셉니다**(사용자). 성향(card.js)은 국내를 빼지만, 여기는 «내가 매긴 도시» 이야기입니다.
  * 층: dom · db · cities · calc · city(도시 화면). anal.js 가 부릅니다(drawMyCities). persona.js 는 모릅니다. */
-import { $, esc, toast, josa } from './dom.js?v=b822';
-import { sb } from './db.js?v=b822';
-import { cities } from './cities.js?v=b822';
-import { distKm, SEOUL } from './calc.js?v=b822';
-import { openCity } from './city.js?v=b822';
+import { $, esc, toast, josa } from './dom.js?v=b823';
+import { sb } from './db.js?v=b823';
+import { cities } from './cities.js?v=b823';
+import { distKm, SEOUL } from './calc.js?v=b823';
+import { openCity } from './city.js?v=b823';
 
 const 국내 = 'KR';
 const 셋말 = n => ['', '한', '두', '세', '네', '다섯'][n] || String(n);

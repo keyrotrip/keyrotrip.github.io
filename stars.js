@@ -72,17 +72,11 @@ export function paintStars(wrap, v, animate){
   });
 }
 
-/* 목록 줄에 "★ 4 기록" 딱지를 답니다. 별점을 지우면(v == null) 떼어냅니다 —
-   스위치로 두었다가 별점을 지워도 딱지가 남는 버그가 있었습니다. */
-export function markRated(row, v){
-  if (!row) return;
-  const box = row.querySelector('.t') || row;
-  let t = box.querySelector('.rtag');
-  if (v == null){ t?.remove(); return; }
-  if (!t){ t = document.createElement('span'); t.className = 'ktag rtag';
-           t.style.cssText = '--kc:#f5a623; margin-left:6px'; box.querySelector('b')?.after(t); }
-  t.textContent = `★ ${v} 기록`;
-}
+/* ⚠ **「★ 4 기록」 딱지(markRated)를 걷었습니다(b823, 사용자: 「이게 안뜨게 하면 되잖아」).** 별을 누르면 목록
+   줄의 이름 옆에 붙던 것인데, 375px 폭에서 이름 밑으로 넘어가 줄이 24px 늘고 **아래 줄이 통째로 밀렸습니다**
+   — 연달아 매기다 다음 별을 잘못 누르게 됩니다(b822 에 재서 찾음). 점수는 바로 옆 칠해진 별이 이미 말합니다.
+   평가 탭 목록(rating.js)과 보관함(shelf.js) 두 곳이 쓰던 것이라 둘 다 걷었습니다. 되살리려거든 줄 높이를
+   바꾸지 않는 자리에 두십시오. */
 
 /* ── 눌린 자리에서 별점을 읽습니다 ────────────────────────────────────
  * **반 칸(0.5점)은 왼쪽 절반**입니다.
