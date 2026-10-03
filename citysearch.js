@@ -19,11 +19,11 @@
  * 사전이 아는 것입니다. 사전 세우기도 거기입니다(`useCities`).
  *
  * 층: dom.js · db.js · net.js · cities.js 만 씁니다. */
-import { $, esc, emptyDo, flagOf, flagOk } from './dom.js?v=b823';
-import { sb } from './db.js?v=b823';
+import { $, esc, emptyDo, flagOf, flagOk } from './dom.js?v=b824';
+import { sb } from './db.js?v=b824';
 import { fail, netTimeout, netIsDown, isOffline, drawOffbar,
-         cacheGet, cacheSet } from './net.js?v=b823';
-import { cities, countryName, countryInfo, search, useCities, cityCountry } from './cities.js?v=b823';
+         cacheGet, cacheSet } from './net.js?v=b824';
+import { cities, countryName, countryInfo, search, useCities, cityCountry } from './cities.js?v=b824';
 
 /* ── 도시 검색 ──────────────────────────────────────────────────── */
 /* 도시 고르개가 지금 무엇을 보여주고 있나. **app.js 의 let 뭉치 안에 있던
@@ -119,7 +119,13 @@ async function refreshCities(){
      tags 없이 받아옵니다. 그러면 추천만 조용히 비고 앱은 그대로 돕니다. */
   /* `image_lg` 는 큰 칸(넘기며 매기기·도시 화면 맨 위…)에 쓰는 세로 1080 사진입니다(db/109, 사진 개편).
      없는 도시는 비어 있고, 그때는 어디서나 image_url 로 갑니다. 아래 후퇴 단계에서는 뺍니다. */
-  let cs = await 도시받기(BASE + ',image_url,image_lg,summary,summary_url,fame,pop_rank,tags');
+  /* `kinds` 는 화면에 보이는 도시 «종류»입니다(db/113, b824 — 분석 탭 「여행지 종류별 별점」 · 어워즈 「○○ 최애」).
+     ⚠⚠ **`tags` 와 다른 칸입니다.** tags 는 추천 계산용이라 그대로 두고(바꿔서 재 보니 추천이 나빠졌습니다 — 113 머리말),
+     kinds 는 「그 도시에 가는 대표 이유」만 1~3개로 새로 붙였습니다. **맨 윗단에만 넣습니다** — 113 을 아직 안 돌린
+     DB 에서는 이 줄만 실패하고 바로 아랫단(지금까지의 맨 윗단)으로 받습니다. 그러면 종류 카드만 안 뜨고 앱은 그대로 돕니다. */
+  let cs = await 도시받기(BASE + ',image_url,image_lg,summary,summary_url,fame,pop_rank,tags,kinds');
+  if (cs.error && !isOffline(cs.error))
+    cs = await 도시받기(BASE + ',image_url,image_lg,summary,summary_url,fame,pop_rank,tags');
   if (cs.error && !isOffline(cs.error))
     cs = await 도시받기(BASE + ',image_url,summary,summary_url,fame,pop_rank,tags');
   if (cs.error && !isOffline(cs.error))

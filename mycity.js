@@ -11,18 +11,28 @@
  *   것만 씁니다. ★4.5 가 ★5 를 이기는 식으로 별점과 어긋나는 순위도 안 만듭니다 — 같은 별점끼리만 겨룹니다.
  * ⚠ **국내도 셉니다**(사용자). 성향(card.js)은 국내를 빼지만, 여기는 «내가 매긴 도시» 이야기입니다.
  * 층: dom · db · cities · calc · city(도시 화면). anal.js 가 부릅니다(drawMyCities). persona.js 는 모릅니다. */
-import { $, esc, toast, josa } from './dom.js?v=b823';
-import { sb } from './db.js?v=b823';
-import { cities } from './cities.js?v=b823';
-import { distKm, SEOUL } from './calc.js?v=b823';
-import { openCity } from './city.js?v=b823';
+import { $, esc, toast, josa, flagOf, flagOk } from './dom.js?v=b824';
+import { sb } from './db.js?v=b824';
+import { cities, countryName, countryInfo } from './cities.js?v=b824';
+import { distKm, SEOUL } from './calc.js?v=b824';
+import { openCity } from './city.js?v=b824';
 
 const 국내 = 'KR';
 const 셋말 = n => ['', '한', '두', '세', '네', '다섯'][n] || String(n);
 const 별글 = s => (Number.isInteger(s) ? String(s) : s.toFixed(1));
 const 이름순 = (a, b) => a.name.localeCompare(b.name, 'ko');
+/* visits 는 1~5 이고 5 는 「5번 이상」입니다(visits.js · db/109). */
+const 번말 = n => n >= 5 ? '다섯 번 이상' : `${셋말(n)} 번`;
+/* 도시 종류(cities.kinds, db/113) 열 가지의 화면 이름(b824). ⚠ tags(068, 추천 계산용)와 다른 칸입니다 — 아래 줄들 주석.
+   「도시」는 「도시 최애」처럼 쓰면 모든 곳이 도시라 헷갈려 「도심」, 「설상」은 낯선 말이라 「눈·스키」. 나머지는 그대로. */
+const 종류이름 = { 유적: '유적', 도시: '도심', 자연: '자연', 미식: '미식', 해변: '해변',
+                  축제: '축제', 미술: '미술', 쇼핑: '쇼핑', 설상: '눈·스키', 온천: '온천' };
 
-/* 매긴 도시 하나 = { id, name, stars, fame, kr, km, img }. 도시 목록에 없는 곳은 뺍니다. */
+/* 매긴 도시 하나 = { id, name, stars, fame, kr, km, img, kinds, 나라, visits, 일기, 사진 }. 도시 목록에 없는 곳은 뺍니다.
+   b824: 종류(kinds — 화면용 종류, db/113. ⚠ tags 가 아닙니다: tags 는 추천 계산용으로 그대로 두었습니다 —
+   바꿔서 재 보니 추천이 나빠졌습니다, 113 머리말) · 나라(모국 코드 — 괌은 미국, 홍콩은 중국: rating.js 의 모국 · cities.js cityCountry 와 같은 규칙) ·
+   다시 간 횟수(visits) · 일기 글자 수 · 일기 사진을 더했습니다 — 종류별·나라별 별점과 새 상 셋의 재료입니다.
+   anal.js 가 그 칸들(visits · journal · journal_photo)을 같이 받아 옵니다. */
 function 줄들(rows){
   const 표 = new Map((cities || []).map(c => [c.id, c]));
   return (rows || []).filter(r => r.stars != null).map(r => {
@@ -31,7 +41,9 @@ function 줄들(rows){
     const km = (c.center_lat != null && c.center_lng != null)
       ? distKm(SEOUL[0], SEOUL[1], c.center_lat, c.center_lng) : null;
     return { id: c.id, name: c.name || c.id, stars: Number(r.stars), fame: c.fame == null ? null : Number(c.fame),
-             kr: c.country === 국내, km, img: c.image_url || '' };
+             kr: c.country === 국내, km, img: c.image_url || '',
+             kinds: c.kinds || [], 나라: c.cc || countryInfo[c.country]?.parent_code || c.country || '',
+             visits: Number(r.visits) || 0, 일기: (r.journal || '').trim().length, 사진: !!r.journal_photo };
   }).filter(Boolean);
 }
 
@@ -128,6 +140,31 @@ function 어워즈(목록){
   받기('멀리 가서 좋았던 곳', 멀리, 멀리[0] ? `서울에서 ${Math.round(멀리[0].km).toLocaleString()}km` : '');
   받기('가까운 최애', 가장(목록.filter(x => !x.kr && x.km != null && x.km < 1500), true, 4),
     '1,500km 안 해외에서 가장 좋았어요');
+
+  /* ── 별점 말고 다른 자료로 주는 상 셋(b824, 사용자: 「어워즈 칸 1번 가보자」) ──────────────────────
+   * 다시 간 횟수(visits) · 일기 · 좋아하는 종류. 별점만 보던 상 여섯과 다른 이야기라 위에 안 섞고 뒤에 둡니다.
+   * ⚠⚠ **「가장」이 참이어야 합니다.** 위 상들처럼 «남은 도시 중 가장»으로 고르면, 진짜 1등이 이미 다른 상을 받았을 때
+   *   2등에게 「가장 여러 번 갔어요」를 주게 됩니다. 그래서 **전체에서 1등을 찾고** 그중 아직 상을 안 받은 곳만 줍니다 —
+   *   1등이 다 이미 받았으면 이 상은 건너뜁니다. 한 도시 상 하나 규칙은 그대로입니다.
+   * ⚠ 문턱: 단골은 두 번 이상, 일기는 80자 이상(한 줄 메모는 「많이 쓴」이 아님), 종류 최애는 ★4 이상. */
+  const 진짜1등 = (후보, 값) => {
+    if (!후보.length) return [];
+    const 최고 = Math.max(...후보.map(값));
+    return 후보.filter(x => 값(x) === 최고 && !쓴.has(x.id)).sort(이름순);
+  };
+  const 단골 = 진짜1등(목록.filter(x => (x.visits || 0) >= 2), x => x.visits);
+  받기('단골 도시', 단골, 단골[0] ? `${번말(단골[0].visits)} 간 곳 · 가장 여러 번 갔어요` : '');
+  const 일기 = 진짜1등(목록.filter(x => (x.일기 || 0) >= 80), x => x.일기);
+  받기('일기를 가장 많이 쓴 곳', 일기,
+    일기[0] ? `일기 ${일기[0].일기.toLocaleString()}자${일기[0].사진 ? ' · 사진도 남겼어요' : ''}` : '');
+  /* 좋아하는 종류는 아래 「여행지 종류별 별점」과 같은 셈(종류표 · 좋아한종류)입니다 — 두 벌로 세면 갈립니다. */
+  const 종류 = 좋아한종류(종류표(목록));
+  if (종류){
+    const 이름 = 종류이름[종류.이름] || 종류.이름;
+    const 최고 = Math.max(...종류.xs.map(x => x.stars));
+    받기(`${이름} 최애`, 최고 >= 4 ? 진짜1등(종류.xs, x => x.stars) : [],
+      `${josa(이름, '을', '를')} 가장 좋아해요 · 그중 별이 가장 높아요`);
+  }
   if (상.length < 2) return null;
 
   /* 카드 통째로 접힙니다(b815 — 위 「접기」). 상 이름은 그냥 제목이고, 사진에는 딱지를 안 붙입니다(b813). */
@@ -172,13 +209,92 @@ function 거리별(목록){
   /* 한 줄에 [띠 · 막대 · 별(곳 수)] — b811 에 분석 탭을 두 칸으로 나누며 줄였습니다(사용자가 고른 시안 A). 전에는
      띠마다 이름 줄 · 막대 줄 · 예시 도시 줄의 세 줄이라 카드가 491px 였습니다. 곳 수는 남겨 둡니다 — 여섯 곳과
      스물여덟 곳의 평균은 무게가 다릅니다. */
-  el.insertAdjacentHTML('beforeend', 띠.map(b => {
-    const 위 = 벌어짐 >= 0.2 && b === 높;
-    return `<div class="dbr${위 ? ' top' : ''}">
-      <b>${esc(b.이름)}</b>
-      <div class="dbt"><i style="width:${Math.round((b.평균 - 1) / 4 * 100)}%"></i></div>
-      <span><em>★${b.평균.toFixed(1)}</em><small>${b.xs.length}곳</small></span></div>`;
-  }).join('') + (말 ? `<div class="memo" style="margin-top:10px">${esc(말)}</div>` : ''));
+  el.insertAdjacentHTML('beforeend', 띠.map(b => 별줄(esc(b.이름), b, 벌어짐 >= 0.2 && b === 높)).join('') +
+    (말 ? `<div class="memo" style="margin-top:10px">${esc(말)}</div>` : ''));
+  return el;
+}
+
+/* 별점 줄 하나 [이름 · 막대 · ★평균(곳 수)] — 거리별 · 종류별 · 나라별이 같이 씁니다(b824 에 거리별에서 뽑음).
+   이름은 **이미 esc 한 HTML** 로 받습니다(나라별이 국기를 붙입니다). 막대는 ★1~★5 전체 폭(차이를 부풀리지 않음).
+   `위` 는 견줘서 가장 높은 줄(--brand), `흐림` 은 세 곳이 안 돼 견주지 않은 줄(.thin). */
+function 별줄(이름, b, 위, 흐림){
+  const 폭 = Math.max(0, Math.round((b.평균 - 1) / 4 * 100));
+  return `<div class="dbr${위 ? ' top' : ''}${흐림 ? ' thin' : ''}">
+    <b>${이름}</b>
+    <div class="dbt"><i style="width:${폭}%"></i></div>
+    <span><em>★${b.평균.toFixed(1)}</em><small>${b.xs.length}곳</small></span></div>`;
+}
+const 평균 = xs => xs.reduce((a, x) => a + x.stars, 0) / xs.length;
+/* 줄 세우기 — **세 곳 넘는 것끼리 평균 높은 순**, 그 밑에 두 곳 이하(흐리게). 평균만으로 세우면 두 곳 ★5 가
+   스무 곳 ★4.6 위에 서서 「1등」처럼 읽힙니다(거리별의 「세 곳 미만은 견주지 않는다」와 같은 까닭). */
+function 세우기(xs){
+  const 순 = (a, b) => b.평균 - a.평균 || b.xs.length - a.xs.length || a.이름.localeCompare(b.이름, 'ko');
+  return [...xs.filter(t => t.xs.length >= 3).sort(순), ...xs.filter(t => t.xs.length < 3).sort(순)];
+}
+/* 견주는 말 — 세 곳 넘는 것이 둘 이상일 때만. 0.2 보다 덜 벌어지면 「크게 다르지 않아요」(거리별과 같은 문턱).
+   ⚠ **화면에 보이는 값(소수 한 자리)으로 견줍니다(b824 에 재서 고침).** 일본 4.33 · 한국 4.25 가 둘 다 「★4.3」으로
+     보이는데 일본만 주황 1등에 「일본이 가장 높고」라고 했습니다 — 보는 사람에게는 근거 없는 말입니다. 같은 값으로
+     보이는 것은 같이 말하고(「일본·한국이 가장 높고」) 같이 칠합니다. 돌려주는 `높들` 은 칠할 줄의 모음입니다. */
+function 견주기(줄, 무엇){
+  const 셀 = 줄.filter(t => t.xs.length >= 3);
+  if (셀.length < 2) return { 말: '', 높들: new Set() };
+  const 글 = t => t.평균.toFixed(1);
+  const 위 = 셀.filter(t => 글(t) === 글(셀[0])), 아래 = 셀.filter(t => 글(t) === 글(셀[셀.length - 1]));
+  /* ⚠ 문턱(0.2)은 **반올림 전 값**으로 잽니다 — 반올림한 값으로 재면 4.15 · 4.04 가 「4.2 · 4.0」이 되어 0.11 차이를
+     취향이라 부르게 됩니다(b824 에 재서 잡음: 실제 0.19 인데 「쇼핑·자연·해변이 가장 높고」라고 했음).
+     같이 1등으로 묶는 것만 화면 값으로 합니다(위 ⚠). */
+  if (셀[0].평균 - 셀[셀.length - 1].평균 < 0.2)
+    return { 말: `${무엇}에 따라 별점이 크게 다르지 않아요`, 높들: new Set() };
+  const 묶 = xs => josa(xs.map(t => t.보일 || t.이름).join('·'), '이', '가');
+  return { 말: `${묶(위)} 가장 높고 ${묶(아래)} 가장 낮아요`, 높들: new Set(위) };
+}
+
+/* ══ ④ 여행지 종류별 별점(b824, 사용자: 「별점 칸 1번」) ═════════════════════════════════════
+ * 도시 종류(cities.kinds) 열 가지마다 평균 별점 — 「해변을 좋아하나, 유적을 좋아하나」. 거리별과 같은 줄 모양.
+ * ⚠ 한 도시에 종류가 여럿이면(평균 2.1개) 그 종류마다 셉니다. 종류가 없는 도시(721곳 중 253곳, 10-02 실측)는 뺍니다 —
+ *   그래서 곳 수 합이 매긴 수와 안 맞습니다. 카드 끝에 「종류가 정해진 N곳으로 셌어요」를 답니다.
+ * ⚠ 국내도 셉니다(이 칸 규칙 — 머리말). 성향(card.js)은 국내를 빼지만 여기는 «내가 매긴 도시» 이야기입니다. */
+function 종류표(목록){
+  const 표 = new Map();
+  for (const x of 목록) for (const t of x.kinds || []){ if (!표.has(t)) 표.set(t, []); 표.get(t).push(x); }
+  return 세우기([...표].map(([이름, xs]) => ({ 이름, 보일: 종류이름[이름] || 이름, xs, 평균: 평균(xs) })));
+}
+/* 가장 좋아한 종류 — 세 곳 넘는 종류의 1등이 **둘째보다** 0.2 넘게 높을 때만(「○○ 최애」 상이 씁니다).
+   카드의 견주는 말(1등과 꼴찌)보다 엄격합니다 — 「좋아한다」는 1등이 뚜렷해야 할 수 있는 말입니다. */
+function 좋아한종류(표){
+  const 셀 = 표.filter(t => t.xs.length >= 3);
+  if (셀.length < 2) return null;
+  return 셀[0].평균 - 셀[1].평균 >= 0.2 ? 셀[0] : null;
+}
+function 종류별(목록){
+  if (목록.length < 5) return null;
+  const 줄 = 종류표(목록);
+  if (줄.length < 2) return null;
+  const { 말, 높들 } = 견주기(줄, '종류');
+  const 센곳 = 목록.filter(x => (x.kinds || []).length).length;
+  const el = 카드('여행지 종류별 별점');
+  el.insertAdjacentHTML('beforeend', 줄.map(t => 별줄(esc(t.보일), t, 높들.has(t), t.xs.length < 3)).join('') +
+    `<div class="memo" style="margin-top:10px">${말 ? esc(말) + ' · ' : ''}종류가 정해진 ${센곳}곳으로 셌어요</div>`);
+  return el;
+}
+
+/* ══ ⑤ 나라별 별점(b824, 사용자: 「별점 칸 2번」) ═════════════════════════════════════════
+ * 두 곳 이상 매긴 나라만 — 한 곳이면 그 도시 별점이지 나라 평균이 아닙니다. 나라는 모국(줄들의 `나라`).
+ * 발자국(기록 탭)은 «몇 나라를 갔나», 여기는 «어디가 좋았나» — 안 겹칩니다. 국기는 그릴 수 있는 기기에서만(map.js 와 같은 수법). */
+function 나라별(목록){
+  if (목록.length < 5) return null;
+  const 표 = new Map();
+  for (const x of 목록) if (x.나라){ if (!표.has(x.나라)) 표.set(x.나라, []); 표.get(x.나라).push(x); }
+  const 다 = [...표].map(([code, xs]) => ({ code, 이름: countryName[code] || code, xs, 평균: 평균(xs) }));
+  const 줄 = 세우기(다.filter(n => n.xs.length >= 2));
+  if (줄.length < 2) return null;
+  const { 말, 높들 } = 견주기(줄, '나라');
+  const 한곳 = 다.length - 줄.length;
+  const 깃 = code => (flagOk() ? `<i class="dbflag">${flagOf(code)}</i>` : '');
+  const 밑 = [말, 한곳 ? `한 곳만 매긴 나라 ${한곳}곳은 뺐어요` : ''].filter(Boolean).map(esc).join(' · ');
+  const el = 카드('나라별 별점');
+  el.insertAdjacentHTML('beforeend', 줄.map(n => 별줄(깃(n.code) + esc(n.이름), n, 높들.has(n), n.xs.length < 3)).join('') +
+    (밑 ? `<div class="memo" style="margin-top:10px">${밑}</div>` : ''));
   return el;
 }
 
@@ -321,6 +437,9 @@ export async function drawMyCities(rows, 칸 = {}, uid){
   };
   붙이기(칸.어워즈, () => 어워즈(목록));
   붙이기(칸.별점, () => 거리별(목록));
+  /* b824: 별점 칸에 둘 더 — 종류별 · 나라별(거리별과 같은 줄 모양). 차례는 사용자가 고른 번호 순(1 종류 · 2 나라). */
+  붙이기(칸.별점, () => 종류별(목록));
+  붙이기(칸.별점, () => 나라별(목록));
   try { const el = await 최애(목록, uid); if (칸.어워즈 && el) 칸.어워즈.appendChild(el); }
   catch (e){ console.error('@mycity', e); self.reportError?.(e); }
 }
@@ -384,6 +503,45 @@ if (typeof window !== 'undefined') window.__myCityCheck = async () => {
                         도('d', 3, 2, false, 9000), 도('e', 3.1, 2, false, 9000), 도('f', 3, 2, false, 9000)])?.textContent || '';
     if (!/크게 다르지 않아요/.test(같음)) msgs.push('0.1 차이를 취향이라 부름');
     bad('거리별 별점 — 세 곳 문턱 · 작은 차이', msgs);
+  }
+  /* 4. 종류별 · 나라별(b824) — 세 곳 넘는 것끼리만 견주고 위에 세움 · 두 곳 이하는 흐리게 밑에 · 한 곳 나라는 뺌. */
+  {
+    const msgs = [];
+    const 종 = (id, stars, kinds, 나라) => ({ ...도(id, stars, 2, 나라 === 'KR', 1000), kinds, 나라 });
+    const 목록 = [종('a', 5, ['해변'], 'TH'), 종('b', 5, ['해변'], 'TH'), 종('c', 4.5, ['해변', '미식'], 'TH'),
+                  종('d', 3, ['유적'], 'IT'), 종('e', 3, ['유적'], 'IT'), 종('f', 3.5, ['유적', '미식'], 'IT'),
+                  종('g', 5, ['온천'], 'JP'), 종('h', 4, ['미식'], 'FR')];
+    const 글 = 종류별(목록)?.textContent || '';
+    if (!/해변이 가장 높고 유적이 가장 낮아요/.test(글)) msgs.push('세 곳 넘는 해변·유적을 못 견줌: ' + 글.slice(-60));
+    const 첫줄 = 종류별(목록)?.querySelector('.dbr b')?.textContent;
+    if (첫줄 !== '해변') msgs.push(`맨 위가 해변이 아님(${첫줄}) — 한 곳 ★5 온천이 올라섬`);
+    const 나 = 나라별(목록);
+    const 나라줄 = [...(나?.querySelectorAll('.dbr') || [])];
+    if (나라줄.some(r => /일본|프랑스/.test(r.textContent))) msgs.push('한 곳만 매긴 나라가 줄에 나옴');
+    if (!/한 곳만 매긴 나라 2곳은 뺐어요/.test(나?.textContent || '')) msgs.push('뺀 나라 수를 안 적음');
+    /* 화면 값이 같으면 같이 1등 — 태국 4.33 · 한국 4.25 는 둘 다 「★4.3」. */
+    const 같 = 나라별([종('t1', 4.5, [], 'TH'), 종('t2', 4.5, [], 'TH'), 종('t3', 4, [], 'TH'),
+                       종('k1', 4, [], 'KR'), 종('k2', 4.5, [], 'KR'), 종('k3', 3.5, [], 'KR'), 종('k4', 5, [], 'KR'),
+                       종('v1', 3, [], 'VN'), 종('v2', 3, [], 'VN'), 종('v3', 3.5, [], 'VN')]);
+    if ((같?.querySelectorAll('.dbr.top') || []).length !== 2) msgs.push('★4.3 둘 중 하나만 1등으로 칠함');
+    if (!/·.*가장 높고/.test(같?.textContent || '')) msgs.push('같은 ★4.3 을 같이 말하지 않음');
+    /* 문턱은 반올림 전 값으로 — 4.17(「4.2」) 대 4.0 은 실제로 0.17 차이라 견주지 않아야 합니다. */
+    const 잔 = 종류별([종('a1', 4.5, ['해변'], 'TH'), 종('a2', 4, ['해변'], 'TH'), 종('a3', 4, ['해변'], 'TH'),
+                       종('b1', 4, ['유적'], 'IT'), 종('b2', 4, ['유적'], 'IT'), 종('b3', 4, ['유적'], 'IT')]);
+    if (!/크게 다르지 않아요/.test(잔?.textContent || '')) msgs.push('반올림한 값(4.2 대 4.0)으로 0.17 차이를 견줌');
+    bad('종류별 · 나라별 — 세 곳 문턱 · 흐린 줄 · 한 곳 나라 · 화면 값 동점', msgs);
+  }
+  /* 5. 새 상 셋(b824) — 「가장」은 전체 1등에게만. 1등이 이미 상을 받았으면 2등에게 넘기지 않고 건너뜀. */
+  {
+    const msgs = [];
+    const 상 = (id, stars, visits, 일기) => ({ ...도(id, stars, 2, false, 3000), visits, 일기, kinds: [] });
+    /* 「최애 도시」(★5)가 가장 여러 번 간 곳이기도 하다 → 단골은 건너뛰어야(★4 세 번 간 곳에 「가장」을 주면 거짓). */
+    const el = 어워즈([상('top', 5, 5, 0), 상('two', 4, 3, 0), 상('x', 3, 1, 0), 상('y', 3, 1, 0), 상('w', 1, 1, 0),
+                       상('j', 3.5, 1, 300)]);
+    const 글 = el?.textContent || '';
+    if (/단골 도시/.test(글)) msgs.push('1등(최애)이 이미 상을 받았는데 2등에게 「단골」을 줌');
+    if (!/일기를 가장 많이 쓴 곳/.test(글)) msgs.push('일기 300자 도시에 상이 없음');
+    bad('새 상 — 진짜 1등만 · 아니면 건너뜀', msgs);
   }
   console.table(out);
   return out;

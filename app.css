@@ -4573,6 +4573,13 @@ svg.fg{ display:block; width:100%; aspect-ratio:1 / 1; height:auto; }
 /* 가장 높은 띠만 앱 주황 — 0.2 넘게 벌어졌을 때만 붙습니다(mycity.js). */
 .dbr.top em{ color:var(--brand); }
 .dbr.top .dbt i{ background:var(--brand); }
+/* b824: 종류별 · 나라별 별점(mycity.js)이 같은 줄을 씁니다.
+   · 세 곳이 안 돼 견주지 않은 줄은 흐리게, 견준 줄들 «밑»에 섭니다(.thin) — 두 곳 ★5 가 1등처럼 읽히지 않게.
+   · 나라 이름이 길면(「아랍에미리트」+국기) 이름 칸(7.4em)을 넘으므로 말줄임. 거리별 이름은 짧아 그대로입니다.
+   · 국기는 글자 앞에 한 칸 띄워서(.dbflag). 못 그리는 기기에서는 mycity.js 가 아예 안 붙입니다. */
+.dbr > b{ overflow:hidden; text-overflow:ellipsis; }
+.dbr.thin{ opacity:.55; }
+.dbflag{ font-style:normal; margin-right:5px; }
 /* 여행지 월드컵 고르는 중(b813 — 「고르기 시작」 없이 바로 펼침) — 두 도시를 위아래로 크게. 둘을 한눈에 봐야 고르므로
    여기만은 옆으로 넘기지 않습니다. */
 .fvvs{ display:flex; flex-direction:column; gap:6px; margin:12px 0 6px; }
