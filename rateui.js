@@ -18,9 +18,9 @@
  *   이 이름을 바꾸면 세 화면이 같이 멈춥니다.
  *
  * 층: dom.js · cities.js · stars.js 만 씁니다(전부 잎). */
-import { esc } from './dom.js?v=b824';
-import { countryName, cityCountry } from './cities.js?v=b824';
-import { starHtml } from './stars.js?v=b824';
+import { esc } from './dom.js?v=b825';
+import { countryName, cityCountry } from './cities.js?v=b825';
+import { starHtml } from './stars.js?v=b825';
 /**
  * @param city  도시 한 줄(image_url · name · country · id). **사진이 있어야 합니다** —
  *              히어로는 사진이 주인공이라 없으면 빈 색 덩어리만 남습니다.
@@ -116,4 +116,4 @@ export function rateHero(city, { ask = '', id = 'ratehero', bar = true,
      있었습니다 — 그 셋은 rateui 를 import 하지 않기 때문입니다. 별을 쓰는
      여섯 화면이 다 닿는 아래층은 stars.js 입니다.
      이름은 여기서도 그대로 나갑니다(home·spree·try 가 여기서 가져갑니다). */
-export { starValue } from './stars.js?v=b824';
+export { starValue } from './stars.js?v=b825';

@@ -6402,3 +6402,44 @@ body:has(#whoview:not(.hide)) .tabbar{ display:none; }
 .autot b{ font-size:var(--f-xl); font-weight:800; font-variant-numeric:tabular-nums; }
 .autot b small{ margin-left:1px; font-size:var(--f-xs); font-weight:600; color:var(--ink-48); }
 .autot span{ font-size:var(--f-xs); line-height:1.35; color:var(--ink-48); word-break:keep-all; }
+
+/* ── 「사용」 고도화(b825) — 유튜브 스튜디오 「분석」처럼: 칸 넷 · 기간 다섯 · 평소 범위 · 열지도 · 모든 숫자 표 ──────
+   칸 줄은 위 「사용 | 비용 | 문제」(.frtabs) 아래 둘째 층 — 꽉 찬 밑줄 탭을 또 두면 어느 줄이 위인지 안 보여서,
+   왼쪽에 모은 가는 밑줄로 둡니다. 색은 그대로: 먹(선·칸) · 주황(평소 범위) · 초록/빨강(늘고 줆). */
+.ausub{ display:flex; gap:22px; margin:0 0 12px; border-bottom:1px solid var(--divider-soft); }
+.ausub button{ border:0; background:none; padding:8px 0 7px; margin-bottom:-1px;
+               border-bottom:2px solid transparent; font-size:var(--f-md); color:var(--ink-48); }
+.ausub button:active{ transform:none; }
+.ausub button.on{ color:var(--ink); font-weight:700; border-bottom-color:var(--ink); }
+.aubar .auper button{ padding:7px 10px; }
+/* 지표 카드 여섯 — 3×2. 이름은 띄어쓰기에서만 꺾습니다(「다시 온 사람」). */
+.aukpi6{ grid-template-columns:repeat(3, minmax(0,1fr)); }
+.aukpi6 button{ padding:8px 9px 10px; }
+.aukpi6 .l{ word-break:keep-all; line-height:1.3; }
+.aukpi6 b{ font-size:var(--f-2xl); }
+.aukpi button:disabled{ opacity:.45; }
+/* 평소 범위 띠 · 견줌 줄 */
+.auchart .band{ fill:var(--star); fill-opacity:.16; }
+.aulg i.band{ background:var(--star); opacity:.35; }
+.aucmp{ margin:12px 0 0; font-size:var(--f-md); line-height:1.5; }
+.aucmp b.up{ color:var(--ok); }
+.aucmp b.down{ color:var(--bad); }
+/* 한 사람 평균 — 셋씩 */
+.autot3{ grid-template-columns:repeat(3, minmax(0,1fr)); }
+/* 제목줄 오른쪽 — 어디까지 가나의 「전체 | 이 기간 가입」 · 꾸준함 · CSV 받기 */
+.aufunt button{ padding:4px 9px; font-size:var(--f-sm); }
+.austk{ font-size:var(--f-sm); font-weight:400; color:var(--ink-48); white-space:nowrap; }
+.austk b{ margin-right:3px; font-size:var(--f-lg); font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
+.aucsv{ font-size:var(--f-sm); }
+/* 언제 쓰나 — 7×24 열지도. 칸 진하기 = 그 칸 수 ÷ 가장 많은 칸(fill-opacity 를 칸마다 줌) */
+.auheat{ display:block; width:100%; height:auto; margin-top:10px; }
+.auheat .c{ fill:var(--ink); }
+.auheat .z{ fill:var(--divider-soft); }
+.auheat .yl, .auheat .hl{ font-size:9px; fill:var(--ink-48); font-family:inherit; }
+/* 모든 숫자 — 옆으로 굴려도 날짜 칸은 붙어 있게(바탕을 칠해야 뒤 칸이 비치지 않습니다) */
+.autbl{ font-size:var(--f-sm); }
+.autbl th, .autbl td{ padding:7px 6px; }
+.autbl th:first-child{ position:sticky; left:0; z-index:1; padding-left:0; background:var(--canvas); }
+.autbl tr.sum th, .autbl tr.sum td{ font-weight:800; background:var(--pearl); }
+.autbl tr.sum th:first-child{ padding-left:6px; }
+.aucmp b.na{ font-weight:400; color:var(--ink-48); }
