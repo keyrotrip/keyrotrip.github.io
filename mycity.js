@@ -579,7 +579,10 @@ if (typeof window !== 'undefined') window.__myCityCheck = async () => {
     /* 화면 값이 같으면 같이 — 뚜렷한 태국 ★5.0(여덟 곳) 옆의 한국 ★5.0(네 곳)도 같이 칠하고 같이 말함(b824 규칙). */
     const 같 = 나라별([...여럿('t', 8, 5, [], 'TH'), ...여럿('k', 4, 5, [], 'KR'), ...여럿('v', 8, 3, [], 'VN')]);
     if ((같?.querySelectorAll('.dbr.top') || []).length !== 2) msgs.push('★5.0 둘 중 하나만 칠함');
-    if (!/태국·한국/.test(같?.textContent || '')) msgs.push('같은 ★5.0 을 같이 말하지 않음: ' + (같?.textContent || '').slice(-50));
+    /* ⚠ 나라 이름은 목록을 받아야 생깁니다 — CI(tools/check-app.mjs)는 서버에 못 닿아 「TH·KR」로 나옵니다(b827 에 CI 가
+         「태국·한국」을 찾다 실패). 화면이 쓰는 것과 같은 이름(없으면 코드)으로 찾습니다. */
+    const 이 = c => countryName[c] || c;
+    if (!(같?.textContent || '').includes(`${이('TH')}·${이('KR')}`)) msgs.push('같은 ★5.0 을 같이 말하지 않음: ' + (같?.textContent || '').slice(-50));
     /* 작은 차이 — 4.17 대 4.0(0.17)은 말하지 않음. */
     const 잔 = 종류별([종('a1', 4.5, ['해변'], 'TH'), 종('a2', 4, ['해변'], 'TH'), 종('a3', 4, ['해변'], 'TH'),
                        종('b1', 4, ['유적'], 'IT'), 종('b2', 4, ['유적'], 'IT'), 종('b3', 4, ['유적'], 'IT')]);
