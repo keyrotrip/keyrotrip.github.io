@@ -19,9 +19,9 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b826';
-import { sb } from './db.js?v=b826';
-import { netTimeout } from './net.js?v=b826';
+import { $, esc, toast } from './dom.js?v=b827';
+import { sb } from './db.js?v=b827';
+import { netTimeout } from './net.js?v=b827';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },

@@ -16,13 +16,13 @@
  * **작은 것을 아래로 내리면 위쪽 여럿이 가벼워집니다**(b351 의 putHtml 과 같은 꼴).
  *
  * 층: db.js · net.js · dom.js 만 씁니다. */
-import { sb } from './db.js?v=b826';
-import { netTimeout, setReadOnly } from './net.js?v=b826';
+import { sb } from './db.js?v=b827';
+import { netTimeout, setReadOnly } from './net.js?v=b827';
 /* `$` 를 안 가져온 채로 b360 에 나갔습니다. drawNotice 와 applyFeatures 가
    async 안에서 도는 터라 조용한 unhandledrejection 으로만 남았고, 화면에는
    아무 표시도 안 났습니다 — 공지줄·기능 스위치·읽기전용이 통째로 안 걸린
    채였습니다. check-refs 가 `$` 를 못 보고 있었습니다(b362 에서 고침). */
-import { $ } from './dom.js?v=b826';
+import { $ } from './dom.js?v=b827';
 
 /* ── 만든 사람이 켜고 끄는 것들 ─────────────────────────────────────
  * 일이 터졌을 때 **배포를 기다리지 않아도 되게** 하는 값들입니다(db/066).
