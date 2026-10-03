@@ -19,9 +19,9 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b827';
-import { sb } from './db.js?v=b827';
-import { netTimeout } from './net.js?v=b827';
+import { $, esc, toast } from './dom.js?v=b828';
+import { sb } from './db.js?v=b828';
+import { netTimeout } from './net.js?v=b828';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },
@@ -311,7 +311,7 @@ function 깊이(D){
     <h2>얼마나 깊이</h2>
     <p class="aunote" style="margin-top:0">가입한 ${수(합)}명이 별점을 몇 개씩 매겼나(지금까지 · 국내 포함)</p>
     <div class="aufun">${구간.map(([l, v]) => 막대줄(l, v, 최대, `${수(v)}명<small>${합 ? Math.round(v / 합 * 100) : 0}%</small>`)).join('')}</div>
-    <p class="aunote">성향은 해외 도시 다섯 곳부터 확정돼요 — 0개·1~4개에 많으면 첫 별점이나 문턱이 막힌 거예요</p>
+    <p class="aunote">성향은 해외 도시 열 곳부터 확정돼요(이 칸은 국내도 센 개수) — 0개·1~4개에 많으면 첫 별점이 막힌 거예요</p>
   </div>`;
 }
 

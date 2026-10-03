@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b827';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b828';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b827';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b828';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b827`;
+    img.src = `./persona/${code}.webp?v=b828`;
   });
 }
 
@@ -564,7 +564,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b827`;
+    img.src = `./persona/m/${code}.jpg?v=b828`;
   });
 }
 
@@ -1805,7 +1805,22 @@ const 별낮은끝 = 2.8, 별높은끝 = 4.4;
 const 백분 = x => Math.max(0, Math.min(100, x * 100));
 const 비율 = (v, lo, hi) => 백분((v - lo) / (hi - lo));
 const 극 = ['FH', 'ML', 'ND', 'PG'];
-export const PERSONA_VER = 2;
+/* ── 단골력의 「일본 효과」를 뗍니다(v3, 2026-10-03 사용자: 「단골력에서 일본 효과 떼어내자」) ──────────────
+ * 나라 몰림을 셀 때 **가까운 나라(서울에서 1,500km 안 — 일본·중국 동부·대만·블라디보스토크)의 도시는 세 곳을
+ * 한 곳으로** 셉니다. 한국 여행자는 다들 일본에 제일 많이 가서, 「제일 많이 간 나라 ÷ 전체」가 일본 몫이 되고
+ * 가까이(N) 다닐수록 높았습니다 — 단골력과 모험력이 같은 것(일본에 얼마나 갔나)을 재고 있었습니다.
+ * 잰 값(가짜 여행자 — 진짜 계산 그대로 흉내, 10-03):
+ *   · 평범한 여행자(일본·동남아 위주, 같은 습관)의 단골↔모험 상관 −0.71 → −0.26 · 그중 L 30% → 2%
+ *   · 습관이 다른 여행자 3,000명(한 나라 파기 반, 멀리 반)에서 「한 나라 파는 사람」 맞힘 86~91% → 93~97%
+ *     (안 파는데 L: 26%·15% → 9%·1% · 일본처럼 가까운 나라를 파는 사람의 L 97% → 93%)
+ *   견준 무게: 1(전) · 0.5(상관 −0.53) · ⅓ · 0.25(가까운 나라 파는 사람을 89% 로 놓침) — ⅓ 이 맞춤.
+ * ⚠ **가까운 나라만 다닌 사람은 그대로입니다** — 모든 도시에 같은 무게라 몫이 안 바뀝니다(일본만 스무 곳 → 여전히 L).
+ *   섞여 있을 때만 일본 몫이 줄어듭니다: 「일본 반 + 동남아·유럽 반」은 이제 「새로운 곳(M)」.
+ * ⚠ 다시 간 비율(visits)은 손대지 않습니다 — 도쿄를 다섯 번 간 사람은 여전히 뚜렷한 단골입니다. */
+const 가까운거리 = 1500, 가까운몫 = 1 / 3;
+/* v3(10-03): 위 단골력 무게. 판이 오르면 홈 알림·성향 화면의 「바뀌었어요」에 계산 방법이 바뀐 탓이라고 같이 적습니다
+   (pshift.js · persona.js — 행동이 바뀐 것처럼 말하지 않게). */
+export const PERSONA_VER = 3;
 
 export function personaAxes(rows, world = {}){
   const 표 = new Map((world.cities || []).map(c => [c.id, c]));
@@ -1814,14 +1829,16 @@ export function personaAxes(rows, world = {}){
      b394 는 나라 몰림·모험력에서만 뺐고 유명도·별점은 국내도 셌습니다. 그러면 화면의 「도시 77곳」과 축마다
      센 곳이 달라 앞뒤가 안 맞았습니다(사용자: 「도시77곳으로 내기엔 한국도시 다 빼야하는거아냐?」).
      재 보니 사용자 기록에서 개척 41→45 · 만족 44→47 로만 움직이고 코드는 그대로였습니다.
-     목록에 없는 도시도 나라를 모르니 뺍니다. 그래서 성향 확정 문턱도 **해외 5곳**입니다(persona·pshift·people·rating). */
+     목록에 없는 도시도 나라를 모르니 뺍니다. 그래서 성향 확정 문턱도 **해외** 곳 수입니다(persona·pshift·people·rating).
+     ⚠ 그 문턱은 **10곳**입니다(2026-10-03 사용자 「문턱 10곳으로 하자」 — 5곳이면 한 곳 더 매길 때 유형이 바뀌는 사람이
+       61%, 8곳 37%, 12곳 30% 였음. 처음 보는 사람 기준, 같은 날 잼). */
   const 해외줄 = rated.filter(r => { const c = 표.get(r.city_id); return c && c.country !== 국내; });
   /* 다시 간 도시를 **한 번이라도 알려줬는가.** 시트(visits.js)에서 저장하면 해외 줄마다 숫자(1 이상)가
      적힙니다. 하나도 없으면 「안 알려줌」 — 없는 것을 「한 번도 안 갔다」로 읽지 않습니다. */
   const 알려줌 = 해외줄.some(r => r.visits != null);
 
-  let 유명합 = 0, 유명무게 = 0, 유명수 = 0, 이름난 = 0, 숨은 = 0, 방문합 = 0, 다시간곳 = 0;
-  const stars = [], 해외 = [], byCountry = {};
+  let 유명합 = 0, 유명무게 = 0, 유명수 = 0, 이름난 = 0, 숨은 = 0, 방문합 = 0, 다시간곳 = 0, 몰림합 = 0, 가까운곳 = 0;
+  const stars = [], 해외 = [], byCountry = {}, 몰림무게 = {};
   for (const r of 해외줄){
     const c = 표.get(r.city_id);
     /* ↓ 만족력 — 도시마다 한 번(여러 번 갔다고 별을 여러 번 세지 않습니다). */
@@ -1838,7 +1855,13 @@ export function personaAxes(rows, world = {}){
     const km = (c.center_lat != null && c.center_lng != null)
       ? distKm(SEOUL[0], SEOUL[1], c.center_lat, c.center_lng) : null;
     해외.push({ km, w, name: c.name });
-    if (c.country) byCountry[c.country] = (byCountry[c.country] || 0) + 1;
+    if (c.country){
+      byCountry[c.country] = (byCountry[c.country] || 0) + 1;
+      /* 나라 몰림은 가까운 나라를 ⅓ 로(위 `가까운몫` — 일본 효과). 좌표를 모르면 한 곳으로 셉니다. */
+      const 무게 = km != null && km < 가까운거리 ? 가까운몫 : 1;
+      if (무게 < 1) 가까운곳++;
+      몰림무게[c.country] = (몰림무게[c.country] || 0) + 무게; 몰림합 += 무게;
+    }
   }
   const n = stars.length, U = 해외.length, countryN = Object.keys(byCountry).length;
 
@@ -1846,11 +1869,17 @@ export function personaAxes(rows, world = {}){
   const 유명평균 = 유명무게 ? 유명합 / 유명무게 : null;
   const 개척원 = 유명평균 == null ? 50 : 백분(fameN(유명평균));
 
-  /* 단골력 — 나라 몰림(제일 많이 간 해외 나라의 몫)과 다시 간 비율(전체 방문 중 두 번째부터의 몫).
+  /* 단골력 — 나라 몰림(가장 몰린 해외 나라의 몫)과 다시 간 비율(전체 방문 중 두 번째부터의 몫).
      다시 간 비율도 해외만입니다(위 ⚠⚠ — 국내는 네 축 어디에도 안 셉니다).
-     ⚠ 30% 에서 꽉 찹니다: 열 번 중 세 번이 다시 간 곳이면 뚜렷한 단골입니다. */
+     ⚠ 30% 에서 꽉 찹니다: 열 번 중 세 번이 다시 간 곳이면 뚜렷한 단골입니다.
+     ⚠ v3: 몫은 가까운 나라를 ⅓ 로 센 무게로 잽니다(위 `가까운몫`). 그래서 «가장 몰린 나라»(몰린나라)와
+       «제일 많이 간 나라»(최다나라 — 곳 수)가 다를 수 있습니다: 일본 6 + 프랑스 4 → 몰린 나라는 프랑스.
+       근거 문장은 L 이면 몰린 나라를, M 이면 제일 많이 간 나라를 말합니다(personaWhyHtml). */
   const [최다나라, 최다수] = Object.entries(byCountry).sort((a, b) => b[1] - a[1])[0] || [null, 0];
-  const 나라몰림 = U >= 해외문턱 ? 비율(최다수 / U, 0.10, 0.70) : null;
+  const [몰린나라, 몰린무게] = Object.entries(몰림무게).sort((a, b) => b[1] - a[1] || byCountry[b[0]] - byCountry[a[0]])[0] || [null, 0];
+  const 나라몰림 = U >= 해외문턱 && 몰림합 ? 비율(몰린무게 / 몰림합, 0.10, 0.70) : null;
+  /* 가까운 나라와 그 밖이 섞여 있어야 무게가 몫을 바꿉니다 — 그때만 근거 문장에 「세 곳을 한 곳으로」를 붙입니다. */
+  const 가까운섞임 = 가까운곳 > 0 && 가까운곳 < U;
   const 다시점수 = 알려줌 && n ? 비율((방문합 - n) / 방문합, 0, 0.30) : null;
   let 단골원 = 50, 단골믿음 = 0, 단골근거 = null;
   if ((다시점수 ?? -1) > (나라몰림 ?? -1)){ 단골원 = 다시점수; 단골믿음 = 믿음(n); 단골근거 = '다시'; }
@@ -1914,6 +1943,8 @@ export function personaAxes(rows, world = {}){
            avgFame: 유명평균, avgStar: 별평균,
            사실: { n, 유명수, 이름난, 숨은, 알려줌, 다시간곳, 다시간번: 방문합 - n,
                    최다나라, 최다수, 단골근거,
+                   몰린나라, 몰린수: 몰린나라 ? byCountry[몰린나라] : 0, 가까운섞임,   /* v3 — 위 「단골력」 ⚠ */
+                   최다가까움: !!최다나라 && 몰림무게[최다나라] < byCountry[최다나라],
                    /* 해외가 모자라면 거리를 안 내놓습니다 — 막대는 「아직 모름」인데 옆에 km 가 적혀
                       있으면 그게 더 헷갈립니다. */
                    가운뎃값km: U >= 해외문턱 ? (가운데?.km ?? null) : null,
@@ -1975,8 +2006,14 @@ export function personaWhyHtml(ax, code, { 보임 = ax, 나라이름 = {}, 남 =
   else if (!남 && s.단골근거 === '다시' && code[1] === 'L') 단골말 = `다시 간 도시 ${s.다시간곳}곳 · 모두 ${s.다시간번}번 더 다녀왔어요`;
   /* 남의 L 이 다시 간 횟수에서 왔으면 보이는 별점으로는 설명이 안 됩니다 — 숫자 없이 말만. */
   else if (남 && code[1] === 'L' && !((ax.원?.[1] ?? 0) > 50)) 단골말 = '익숙한 곳을 다시 찾는 편이에요';
-  else if (code[1] === 'L') 단골말 = `해외 ${ax.해외}곳 중 ${s.최다수}곳이 ${josa(나라, '이에요', '예요')}`;
+  /* v3: L 이면 «가장 몰린 나라»(가까운 나라를 ⅓ 로 센 몫)를, M 이면 «제일 많이 간 나라»(곳 수)를 말합니다 — 일본 6 ·
+     프랑스 4 인 L 에게 「일본」을 대면 왜 L 인지 안 보입니다. 무게가 몫을 바꿨으면(가까운 나라와 그 밖이 섞임) 그렇다고 적습니다. */
+  else if (code[1] === 'L'){
+    const 몰린 = 나라이름[s.몰린나라] || s.몰린나라 || 나라;
+    단골말 = `해외 ${ax.해외}곳 중 ${s.몰린수 ?? s.최다수}곳이 ${josa(몰린, '이에요', '예요')}` + (s.가까운섞임 ? ' · 가까운 나라는 세 곳을 한 곳으로 셌어요' : '');
+  }
   else 단골말 = `해외 ${ax.해외}곳을 ${ax.countries}개 나라에서 — 제일 많이 간 ${나라}도 ${s.최다수}곳이에요` +
+    (s.가까운섞임 && s.최다가까움 ? ' · 가까운 나라는 세 곳을 한 곳으로 셌어요' : '') +
     (!남 && s.알려줌 && s.다시간곳 ? ` · 다시 간 도시 ${s.다시간곳}곳` : '');
   const 모험말 = 모름.has('모험력')
     ? (ax.해외 ? `해외 도시 ${문턱까지}곳을 더 매기면 정해져요` : '아직 해외 도시가 없어요')
@@ -2002,10 +2039,13 @@ export function personaWhyHtml(ax, code, { 보임 = ax, 나라이름 = {}, 남 =
 
 /* 유형이 바뀐 이유 한 줄(명세 11장) — 홈 알림(pshift.js)과 분석 탭 배지(persona.js)가 같이 씁니다.
    바뀐 글자 자리마다 「○○력이 「…」 쪽으로 넘어갔어요」. 네 축 이름이 다 「력」(받침)이라 「이」 로 둡니다. */
-export function personaShiftWhy(전, 지금){
+export function personaShiftWhy(전, 지금, 규칙바뀜 = false){
   if (!/^[FH][ML][ND][GP]$/.test(전 || '') || !/^[FH][ML][ND][GP]$/.test(지금 || '')) return '';
   const 바뀜 = [0, 1, 2, 3].filter(i => 전[i] !== 지금[i]);
-  return 바뀜.map(i => `${AXIS_NAME[i]}이 「${AXIS_WORD[지금[i]]}」 쪽으로 넘어갔어요`).join(' · ');
+  /* v3(10-03): 계산 방법이 바뀐 뒤 처음 보는 것이고 단골력 글자가 바뀌었으면, 그 탓일 수 있다고 같이 적습니다 —
+     행동이 바뀐 것처럼만 말하면 거짓이 됩니다(부르는 쪽 pshift.js · persona.js 가 판을 기억해 넘김). */
+  const 탓 = 규칙바뀜 && 바뀜.includes(1) ? ' · 이제 가까운 나라(일본 등)는 세 곳을 한 곳으로 세서 단골력을 정해요' : '';
+  return 바뀜.map(i => `${AXIS_NAME[i]}이 「${AXIS_WORD[지금[i]]}」 쪽으로 넘어갔어요`).join(' · ') + 탓;
 }
 
 /* ── 네 축 스펙트럼(b805) ── 분석 탭(persona.js)과 사람 화면(people.js)이 **같이 씁니다.**
@@ -2451,10 +2491,21 @@ if (typeof window !== 'undefined') window.__cardCheck = () => {
     /* 별점은 도시마다 한 번 — 다섯 번 갔다고 별 하나를 다섯 번 세지 않습니다. */
     const 한번 = personaAxes(줄([1, 1, 1, 1]), { cities: W });
     if (여러번.avgStar !== 한번.avgStar) msgs.push(`별 평균이 방문 횟수로 바뀜 ${여러번.avgStar} vs ${한번.avgStar}`);
-    /* 안 알려줬다고 M 으로 몰지 않습니다 — 나라 몰림만 봅니다(여기서는 일본 둘/넷 → L). */
-    const 모름 = personaAxes(줄([null, null, null, null]), { cities: W });
+    /* 안 알려줬다고 M 으로 몰지 않습니다 — 나라 몰림만 봅니다. v3: 몰림은 프랑스 둘/넷으로 봅니다(먼 나라라 그대로 L).
+       ⚠ 예전에는 일본 둘/넷이었는데, 그건 이제 «일본 효과»라 M 이 맞습니다(아래 「일본 효과」). */
+    const W몰림 = [...W, { id: 'nice', country: 'FR', fame: 2, center_lat: 43.70, center_lng: 7.27 }];
+    const 모름 = personaAxes(['tokyo', 'paris', 'nice', 'singapore'].map(id => ({ city_id: id, stars: 4, visits: null })), { cities: W몰림 });
     if (모름.사실.알려줌) msgs.push('비어 있는데 「알려줌」');
-    if (모름.code[1] !== 'L') msgs.push(`횟수 없이 → ${모름.code[1]} (나라 몰림 L 기대)`);
+    if (모름.code[1] !== 'L') msgs.push(`횟수 없이 → ${모름.code[1]} (프랑스 둘/넷 — 나라 몰림 L 기대)`);
+    /* v3 일본 효과 — 일본 여섯(가까움) + 베트남 둘·태국·프랑스: 예전엔 일본 60% 로 L, 이제 세 곳을 한 곳으로 세서 M. */
+    const 섞음 = [...Array.from({ length: 6 }, (_, i) => ({ id: 'jp' + i, country: 'JP', fame: 2, center_lat: 35 + i / 10, center_lng: 136 })),
+                  { id: 'vn1', country: 'VN', fame: 2, center_lat: 16.05, center_lng: 108.2 },
+                  { id: 'vn2', country: 'VN', fame: 2, center_lat: 21.03, center_lng: 105.85 },
+                  { id: 'th1', country: 'TH', fame: 2, center_lat: 13.75, center_lng: 100.5 },
+                  { id: 'fr1', country: 'FR', fame: 2, center_lat: 48.86, center_lng: 2.35 }];
+    const 일본섞음 = personaAxes(섞음.map(c => ({ city_id: c.id, stars: 4 })), { cities: 섞음 });
+    if (일본섞음.code[1] !== 'M') msgs.push(`일본 6 + 동남아·유럽 4 → ${일본섞음.code[1]} (일본 효과를 떼면 M)`);
+    if (!일본섞음.사실.가까운섞임 || !일본섞음.사실.최다가까움) msgs.push('가까운 나라와 그 밖이 섞였는데 근거 문장에 쓸 표시가 없음');
     /* 알려줬는데 다시 간 곳이 없어도 나라 몰림은 남습니다(둘 중 큰 쪽 — 사용자가 고른 뜻). */
     const JP20 = Array.from({ length: 20 }, (_, i) => ({ id: 'j' + i, country: 'JP', fame: 2, center_lat: 35 + i / 10, center_lng: 135 }));
     const 일본만 = personaAxes(JP20.map(c => ({ city_id: c.id, stars: 4, visits: 1 })), { cities: JP20 });
@@ -2465,7 +2516,7 @@ if (typeof window !== 'undefined') window.__cardCheck = () => {
     /* 해외 0곳이면 「가까이」(v1 은 50 → D 였음). */
     const 국내만 = personaAxes([{ city_id: 'x', stars: 4 }], { cities: [{ id: 'x', country: 'KR', fame: 2, center_lat: 36, center_lng: 128 }] });
     if (국내만.code[2] !== 'N') msgs.push(`해외 0곳 → ${국내만.code[2]} (N 기대)`);
-    bad('다시 간 도시 · 별 한 번만 · 안 알려줌은 M 이 아님 · 해외 0곳은 N', msgs);
+    bad('다시 간 도시 · 별 한 번만 · 안 알려줌은 M 이 아님 · 해외 0곳은 N · 일본 효과(v3)', msgs);
   }
 
   /* 5-e. **흔들림 막기 · 막대와 글자가 안 어긋나기(v2).** 지난 코드가 있으면 가운데 근처에서는 글자를

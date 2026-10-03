@@ -20,14 +20,14 @@
  *
  * 층: dom.js · db.js · cities.js · citysearch.js · stars.js · rateui.js ·
  *     rate.js · rating.js · home.js(지문 비우기만). */
-import { $, esc } from './dom.js?v=b827';
-import { sb } from './db.js?v=b827';
-import { cities } from './cities.js?v=b827';
-import { loadCities } from './citysearch.js?v=b827';
-import { paintStars } from './stars.js?v=b827';
-import { rateHero, starValue } from './rateui.js?v=b827';
-import { saveRate, 방금확정 } from './rating.js?v=b827';
-import { resetHomeSig } from './home.js?v=b827';
+import { $, esc } from './dom.js?v=b828';
+import { sb } from './db.js?v=b828';
+import { cities } from './cities.js?v=b828';
+import { loadCities } from './citysearch.js?v=b828';
+import { paintStars } from './stars.js?v=b828';
+import { rateHero, starValue } from './rateui.js?v=b828';
+import { saveRate, 방금확정 } from './rating.js?v=b828';
+import { resetHomeSig } from './home.js?v=b828';
 
 /* ⚠ showApp 은 **기본값에도 둡니다.** 없으면 위 돌아가기() 가 조용히
    아무 일도 안 하는데, 그게 b423~b425 동안 그대로 나가 있었습니다. */
@@ -123,7 +123,7 @@ function 세기(){
   if (el) el.textContent = 센것 ? `${센것}곳 매김` : '';
 }
 
-/* ── 5곳째를 매긴 순간(b822) ──────────────────────────────────────────
+/* ── 문턱째(해외 10곳째 — v3, 전엔 5곳째)를 매긴 순간(b822) ──────────────────────────────────────────
  * 「확정」인지는 rating.js 가 압니다(저장은 전부 saveRate 를 지나므로 거기서 저장 전·후를 셉니다).
  * 여기서는 별 저장이 끝날 때마다 물어보고, 그렇다면 「N곳 매김」 자리에 「성향 확정 · 내 여행 성향 보기 ›」를
  * 띄웁니다. ⚠ 새 줄을 끼우지 않습니다 — 카드가 밀리면 다음 별을 잘못 누릅니다(index.html 주석).
@@ -315,7 +315,7 @@ $('spreebox')?.addEventListener('click', async e => {
     /* ⚠ **기다렸다 넘기지 않습니다.** 홈은 1.5초를 두고 되돌릴 틈을 줍니다만,
        여기는 **쭉 매기는 것이 목적**이라 그 1.5초가 다섯 번이면 7초입니다.
        잘못 눌렀으면 기록 탭에서 고칠 수 있습니다. */
-    /* 안 기다립니다 — 끝나면 5곳째였는지만 봅니다(위 확정줄, b822). */
+    /* 안 기다립니다 — 끝나면 문턱째(해외 10곳째)였는지만 봅니다(위 확정줄, b822). */
     saveRate(wrap.dataset.city, { stars: v }, true).then(확정줄);
     setTimeout(다음, 260);
     return;

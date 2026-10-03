@@ -24,11 +24,11 @@
  *   누르는 것이 곧 봤다는 증거입니다. 그전까지는 홈을 그릴 때마다 다시
  *   붙습니다 — 그게 「다시 열 이유」의 뜻이기도 합니다.
  */
-import { $, esc } from './dom.js?v=b827';
-import { sb } from './db.js?v=b827';
-import { netTimeout } from './net.js?v=b827';
-import { cities } from './cities.js?v=b827';
-import { personaAxes, personaShiftWhy, PERSONA16 } from './card.js?v=b827';
+import { $, esc } from './dom.js?v=b828';
+import { sb } from './db.js?v=b828';
+import { netTimeout } from './net.js?v=b828';
+import { cities } from './cities.js?v=b828';
+import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b828';
 
 let ctx = { me: () => null, 열기: () => {} };
 export function setShiftCtx(o){ ctx = { ...ctx, ...o }; }
@@ -40,12 +40,18 @@ export function setShiftCtx(o){ ctx = { ...ctx, ...o }; }
    계정 id 를 열쇠에 넣으면 지울 일이 아예 없습니다. 같은 기기에서 계정을
    바꿔도 서로 안 섞입니다. */
 const KEY = uid => 't2:pcode:' + uid;
-/* 성향이 서는 문턱. persona.js · try.js · anal.js 와 **같은 값**이어야
-   합니다 — 여기만 낮으면 아직 유형이 없는 사람에게 「바뀌었다」고 합니다. */
-const 문턱 = 5;
+/* 성향이 서는 문턱 — **해외 10곳**(2026-10-03 사용자). persona.js · people.js · rating.js 와 **같은 값**이어야
+   합니다 — 여기만 낮으면 아직 유형이 없는 사람에게 「바뀌었다」고 합니다.
+   ⚠ 올린 날(b828) 해외 5~9곳이던 사람은 여기서 서버 코드가 지워집니다(아래 「문턱 아래로 내려가면 지웁니다」). */
+const 문턱 = 10;
 
 const 읽기 = uid => { try { return localStorage.getItem(KEY(uid)) || ''; } catch { return ''; } };
 const 쓰기 = (uid, v) => { try { localStorage.setItem(KEY(uid), v); } catch {} };
+/* v3: 마지막으로 «본» 계산 방법(card.js PERSONA_VER). 계산 방법이 바뀐 뒤 처음 보는 바뀜이면 알림의 이유 한 줄이
+   그 탓도 말합니다(personaShiftWhy 셋째 값). 적어 둔 것이 없으면(전부터 쓰던 기기) 2판으로 봅니다. */
+const 판KEY = uid => 't2:pver:' + uid;
+const 판읽기 = uid => { try { return Number(localStorage.getItem(판KEY(uid)) || 2); } catch { return PERSONA_VER; } };
+const 판쓰기 = uid => { try { localStorage.setItem(판KEY(uid), String(PERSONA_VER)); } catch {} };
 
 /* 아직 안 치운 알림. 홈을 다시 그려도 이것이 남아 있으면 다시 붙습니다. */
 let 대기 = null;
@@ -61,7 +67,7 @@ export function clearPcode(){ 대기 = null; }
  * ⚠ **바뀐 때만** 보냅니다 — 홈은 자주 다시 그려집니다. 마지막으로 올린
  *   값을 기기에 적어 두고 같으면 안 보냅니다. 못 올리면 안 적으므로 다음에
  *   다시 해 봅니다(101_follow.sql 을 돌리기 전에도 조용히 넘어갑니다).
- * ⚠ 문턱(5곳) 아래로 내려가면 지웁니다 — 남겨 두면 옛 성향이 계속 보입니다. */
+ * ⚠ 문턱(해외 10곳) 아래로 내려가면 지웁니다 — 남겨 두면 옛 성향이 계속 보입니다. */
 const 올린열쇠 = uid => 't2:psrv:' + uid;
 /* ⚠ v2(110): 코드와 함께 **네 축 숫자**(profiles.persona_ax)도 올립니다 — 사람 화면이 막대를 그 사람 것과
    똑같이 그리려면 필요합니다(다시 간 횟수는 남에게 안 가서 거기서 새로 세면 어긋납니다).
@@ -126,22 +132,22 @@ export async function checkPersonaShift(){
   /* ⚠ 도시 목록이 아직 없으면 해외를 못 가립니다 — 그때 세면 해외 0곳으로 보고 서버 코드를 지워 버립니다. */
   if (!(cities || []).length) return;
   const ax = personaAxes(r.data, { cities, prev: 전코드 });
-  /* v2: 문턱은 **해외** 5곳(국내는 성향에 안 들어감 — card.js personaAxes 머리). */
+  /* v2: 문턱은 **해외** 곳 수(국내는 성향에 안 들어감 — card.js personaAxes 머리). v3: 10곳. */
   if (ax.해외 < 문턱){ savePersona(me.id, null); return; }
   const 지금 = ax?.code;
   if (!지금 || 지금.length !== 4) return;
   savePersona(me.id, 지금, ax);
 
   const 전 = 읽기(me.id);
-  if (!전){ 쓰기(me.id, 지금); return; }   /* 처음 본 코드는 견줄 기준일 뿐입니다 */
-  if (전 === 지금) return;
-  대기 = { 전, 지금, uid: me.id };
+  if (!전){ 쓰기(me.id, 지금); 판쓰기(me.id); return; }   /* 처음 본 코드는 견줄 기준일 뿐입니다 */
+  if (전 === 지금){ 판쓰기(me.id); return; }   /* 안 바뀌었으면 새 계산 방법도 «본» 것으로 */
+  대기 = { 전, 지금, uid: me.id, 규칙: 판읽기(me.id) < PERSONA_VER };
   그리기();
 }
 
 /* 치웠다 = 봤다. 그때 적습니다(위 머리말의 b528). */
 function 치움(){
-  if (대기) 쓰기(대기.uid, 대기.지금);
+  if (대기){ 쓰기(대기.uid, 대기.지금); 판쓰기(대기.uid); }
   대기 = null;
 }
 
@@ -160,7 +166,7 @@ function 그리기(){
       <i class="psh-ar">→</i>
       <span class="psh-new"><b>${esc(지금)}</b><span>${esc(뒤)}</span></span>
     </div>
-    <div class="memo">${esc(personaShiftWhy(전, 지금) || '최근에 매긴 곳들이 그렇게 말해요.')}</div>
+    <div class="memo">${esc(personaShiftWhy(전, 지금, 대기.규칙) || '최근에 매긴 곳들이 그렇게 말해요.')}</div>
     <div class="psh-btns">
       <button class="primary psh-go">뭐가 달라졌는지 보기</button>
       <button class="small psh-x">닫기</button>
