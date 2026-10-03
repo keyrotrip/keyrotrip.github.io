@@ -8,6 +8,130 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>기로</title>
 
+<!-- ── 메신저 안 브라우저면 바깥 브라우저로(b826) ─────────────────────────────────────────
+     사용자: 「카톡 말고 바깥 브라우저로 가는 장치 만들어줘」. 초대·프로필·궁합 링크는 대개 카카오톡에서 눌립니다.
+     카톡(과 인스타·페북·라인·네이버 앱…) 안 브라우저는 «웹뷰»라서 **구글이 로그인을 막고**(403 disallowed_useragent)
+     홈 화면에 앱으로 담을 수도 없습니다. 로그인 길이 구글 하나뿐이라(glogin.js) 거기서는 앱을 못 씁니다.
+       · 카카오톡 — 카톡이 만든 길(`kakaotalk://web/openExternal?url=`)로 바로 엽니다. 한 창에서 한 번만 저절로.
+       · 라인 — 주소에 `openExternalBrowser=1` 을 붙이면 라인이 바깥에서 엽니다. 이것도 저절로.
+       · 나머지 — 저절로 넘기는 확실한 길이 없어 안내판만(안드로이드는 「크롬으로 열기」 · 주소 복사 · 메뉴 안내).
+     ⚠ **앱 코드(app.js)보다 먼저 돌아야 합니다.** app.js 는 ?join= · ?p= · ?mate= 를 읽자마자 주소에서 지우고
+       sessionStorage 에 담는데, 그건 바깥 브라우저로 안 따라갑니다. 그 뒤에 넘기면 초대 코드가 사라지므로 여기서
+       첫 주소를 붙잡아 통째로 넘깁니다.
+     ⚠ 스타일도 여기 둡니다 — 스플래시와 같은 까닭(app.css 를 못 받는 날에도 이 판은 제 모습이어야 함). 스플래시(9999) 위.
+     ⚠ **앱 이름이 UA 에 박힌 것만** 고릅니다. 아이폰 홈 화면 앱은 UA 에 「Safari」가 없어서, 「Safari 없으면 웹뷰」 같은
+       넓은 짐작을 쓰면 설치한 앱이 통째로 막힙니다. 안드로이드 웹뷰 표시 `; wv)` 는 홈 화면 앱·크롬·삼성 인터넷에는 없습니다.
+     ⚠ 나중에 스토어 앱으로 웹뷰에 감싸면 `; wv)` 에 걸립니다 — 그때 그 앱의 UA 를 빼 줄 것.
+     ⚠ 잘못 걸렸을 때 갇히지 않게 「그래도 여기서 볼게요」를 둡니다(이 창에서만 기억). -->
+<style>
+#inappgo{ position:fixed; inset:0; z-index:10000; display:flex; flex-direction:column; justify-content:center;
+  gap:14px; padding:28px 24px calc(28px + env(safe-area-inset-bottom)); overflow-y:auto; overscroll-behavior:contain;
+  background:#F3F0E8; color:#1B1B1F; word-break:keep-all; letter-spacing:-.2px;
+  font:400 15px/1.55 'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif; }
+#inappgo svg{ display:block; flex:none; }
+#inappgo h1{ margin:4px 0 0; font-size:22px; line-height:1.35; font-weight:800; letter-spacing:-.5px; }
+#inappgo p{ margin:0; color:#3A3630; }
+#inappgo p.s{ font-size:13px; color:#6B675F; }
+#inappgo .btns{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+#inappgo button{ font:inherit; width:100%; padding:14px 16px; border-radius:0; border:1px solid #DFDAD0;
+  background:#F3F0E8; color:#1B1B1F; font-weight:600; cursor:pointer; }
+#inappgo button.go{ background:#1B1B1F; border-color:#1B1B1F; color:#F3F0E8; }
+#inappgo button.stay{ width:auto; align-self:flex-start; padding:6px 0; border:0; background:none;
+  font-weight:400; font-size:13px; color:#6B675F; text-decoration:underline; text-underline-offset:3px; }
+#inappgo button:focus-visible{ outline:2px solid #E08A2B; outline-offset:2px; }
+</style>
+<script id="inappjs">
+(function(){
+  var ua = navigator.userAgent || '';
+  var 앱 = /KAKAOTALK/i.test(ua) ? '카카오톡'
+    : / Line\//.test(ua) ? '라인'
+    : /Instagram/.test(ua) ? '인스타그램'
+    : /FBAN|FBAV|FB_IAB|FB4A/.test(ua) ? '페이스북'
+    : /NAVER\(inapp/.test(ua) ? '네이버 앱'
+    : /DaumApps/.test(ua) ? '다음 앱'
+    : /BAND\//.test(ua) ? '밴드'
+    : /everytimeApp/i.test(ua) ? '에브리타임'
+    : /Android/.test(ua) && /; wv\)/.test(ua) ? '이 앱' : '';
+
+  /* 바깥 브라우저 — 라인이 붙여 보낸 표시는 지웁니다(나머지 꼬리 ?join= 등은 그대로 두어 app.js 가 읽게). */
+  if (!앱){
+    if (location.search.indexOf('openExternalBrowser') < 0 || !window.URLSearchParams) return;
+    var q = new URLSearchParams(location.search);
+    q.delete('openExternalBrowser');
+    var 남은 = q.toString();
+    history.replaceState(history.state, '', location.pathname + (남은 ? '?' + 남은 : '') + location.hash);
+    return;
+  }
+
+  var 첫주소 = location.href;
+  var 머물기 = false, 이미 = false;
+  try {
+    머물기 = sessionStorage.getItem('t2:inapp-stay') === '1';
+    이미 = sessionStorage.getItem('t2:inapp-tried') === '1';
+    sessionStorage.setItem('t2:inapp-tried', '1');
+  } catch (e){}
+  if (머물기) return;
+
+  var 아이폰 = /iPhone|iPad|iPod/.test(ua), 바깥 = '';
+  if (앱 === '카카오톡') 바깥 = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(첫주소);
+  else if (앱 === '라인') 바깥 = 첫주소 + (첫주소.indexOf('?') < 0 ? '?' : '&') + 'openExternalBrowser=1';
+  else if (!아이폰 && /Android/.test(ua)){
+    /* 크롬을 콕 집어 엽니다. 크롬이 없으면 아무 일도 없거나 오류 화면 — 그래서 저절로는 안 하고 단추로만. */
+    var 꼬리 = 첫주소.replace(/^https?:\/\//, '').replace(/#.*$/, '');
+    바깥 = 'intent://' + 꼬리 + '#Intent;scheme=https;package=com.android.chrome;end';
+  }
+  var 저절로 = !이미 && (앱 === '카카오톡' || (앱 === '라인' && 첫주소.indexOf('openExternalBrowser=1') < 0));
+  if (저절로) location.href = 바깥;
+
+  function 판(){
+    if (document.getElementById('inappgo')) return;
+    var 이름 = 앱 === '이 앱' ? '' : 앱;
+    var d = document.createElement('div');
+    d.id = 'inappgo';
+    d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-labelledby', 'inappgo_h');
+    d.innerHTML =
+      '<svg width="52" height="52" viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="22.4" fill="#F25E26"/>' +
+      '<g transform="translate(9.6,9.6) scale(0.8)" fill="#fff"><path d="M18 22 H62 L76 33 L62 44 H18 Q13 44 13 33 Q13 22 18 22 Z"/>' +
+      '<path d="M78 52 H34 L20 63 L34 74 H78 Q83 74 83 63 Q83 52 78 52 Z"/></g></svg>' +
+      '<h1 id="inappgo_h">' + (이름 ? 이름 + ' 안에서는<br>로그인이 안 돼요' : '바깥 브라우저에서<br>열어 주세요') + '</h1>' +
+      '<p>구글이 ' + (이름 ? 이름 + ' 같은 앱 안' : '앱 안') + ' 브라우저에서는 로그인을 막아 두었어요. ' +
+      '사파리나 크롬에서 열면 받은 링크 그대로 이어서 쓸 수 있어요.</p>' +
+      '<p class="s" id="inappgo_st" aria-live="polite">' +
+      (저절로 ? '바깥 브라우저로 여는 중이에요. 안 열리면 아래 단추를 눌러 주세요.' : '') + '</p>' +
+      '<div class="btns">' +
+      (바깥 ? '<button type="button" class="go" id="inappgo_go">' + (아이폰 ? '사파리로 열기'
+        : 바깥.indexOf('intent:') === 0 ? '크롬으로 열기' : '바깥 브라우저로 열기') + '</button>' : '') +
+      '<button type="button" id="inappgo_copy">주소 복사</button></div>' +
+      (바깥 ? '' : '<p class="s">화면 구석 메뉴(⋯)에서 「Safari로 열기」나 「외부 브라우저로 열기」를 눌러도 돼요.</p>') +
+      '<button type="button" class="stay" id="inappgo_stay">그래도 여기서 볼게요</button>';
+    document.body.appendChild(d);
+    var 상태 = document.getElementById('inappgo_st');
+    var 가기 = document.getElementById('inappgo_go');
+    if (가기) 가기.onclick = function(){ location.href = 바깥; };
+    document.getElementById('inappgo_copy').onclick = function(){
+      function 됨(){ 상태.textContent = '주소를 복사했어요. 사파리나 크롬 주소창에 붙여 넣어 주세요.'; }
+      function 옛길(){
+        var t = document.createElement('textarea');
+        t.value = 첫주소; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+        document.body.appendChild(t); t.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e){}
+        document.body.removeChild(t);
+        if (ok) 됨(); else 상태.textContent = 첫주소;      /* 그래도 안 되면 주소를 보여서 길게 눌러 복사하게 */
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(첫주소).then(됨, 옛길);
+      else 옛길();
+    };
+    document.getElementById('inappgo_stay').onclick = function(){
+      try { sessionStorage.setItem('t2:inapp-stay', '1'); } catch (e){}
+      d.parentNode.removeChild(d);
+    };
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', 판);
+  else 판();
+})();
+</script>
+
 <!-- 홈 화면에 추가했을 때 쓰이는 것들.
      안드로이드는 manifest 를 보고, 아이폰은 아래 apple- 태그들을 따로 봅니다.
      둘 다 없으면 페이지 스크린샷과 <title> 이 그대로 아이콘과 이름이 됩니다. -->
@@ -92,27 +216,27 @@
        그냥 흰 화면을 냅니다 — 비슷한 것으로 늘려주지 않습니다.
        새 아이폰이 나오면 여기 한 줄과 그림 한 장이 더 필요합니다.
        기기당 한 장(15~33KB)만 받습니다. -->
-<link rel="apple-touch-startup-image" href="splash/440x956@3x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/440x956@3x.png?v=b826"
       media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 16 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/430x932@3x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/430x932@3x.png?v=b826"
       media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 15/14 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/428x926@3x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/428x926@3x.png?v=b826"
       media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 12~14 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/402x874@3x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/402x874@3x.png?v=b826"
       media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 16 Pro -->
-<link rel="apple-touch-startup-image" href="splash/393x852@3x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/393x852@3x.png?v=b826"
       media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 15/14 Pro -->
-<link rel="apple-touch-startup-image" href="splash/390x844@3x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/390x844@3x.png?v=b826"
       media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 12~14 · 16e -->
-<link rel="apple-touch-startup-image" href="splash/375x812@3x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/375x812@3x.png?v=b826"
       media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- X/XS/11 Pro · 13 mini -->
-<link rel="apple-touch-startup-image" href="splash/414x896@3x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/414x896@3x.png?v=b826"
       media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- XS Max/11 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/414x896@2x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/414x896@2x.png?v=b826"
       media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">  <!-- XR/11 -->
-<link rel="apple-touch-startup-image" href="splash/375x667@2x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/375x667@2x.png?v=b826"
       media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">  <!-- SE 2·3 · 8 -->
-<link rel="apple-touch-startup-image" href="splash/414x736@3x.png?v=b825"
+<link rel="apple-touch-startup-image" href="splash/414x736@3x.png?v=b826"
       media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 8 Plus -->
 
 <!-- ── 링크를 보냈을 때 상대가 보는 것 ──────────────────────────────
@@ -181,85 +305,85 @@ document.fonts?.load('700 1em Dongle').then(() => {
      스크립트와 모듈은 문서 순서대로 실행되므로 unpkg 가 매달리면 뒤에 있는
      app.js 가 **아예 실행되지 않았습니다** — 앱이 통째로 안 켜지고 부팅 실패
      상자만 남았습니다. 지도 하나 때문에 그럴 이유가 없습니다. -->
-<link rel="stylesheet" href="app.css?v=b825">
+<link rel="stylesheet" href="app.css?v=b826">
 <!-- app.js 가 아래 모듈들을 정적 import 합니다(?v= 로 버전 고정). 여기서도 참조를
      남겨야 checkBuild(app.js)·서비스워커(sw.js)의 "새 파일 다 받아진 뒤에만
      새로고침" 스캔이 index.html 글자만 훑어도 이것들을 놓치지 않습니다.
      **모듈을 새로 만들 때마다 여기 한 줄을 같이 더하세요.** -->
-<link rel="modulepreload" href="supabase.js?v=b825">
-<link rel="modulepreload" href="dom.js?v=b825">
-<link rel="modulepreload" href="db.js?v=b825">
-<link rel="modulepreload" href="calc.js?v=b825">
-<link rel="modulepreload" href="rec.js?v=b825">
-<link rel="modulepreload" href="persona.js?v=b825">
-<link rel="modulepreload" href="map.js?v=b825">
-<link rel="modulepreload" href="shelf.js?v=b825">
-<link rel="modulepreload" href="city.js?v=b825">
-<link rel="modulepreload" href="aiui.js?v=b825">
-<link rel="modulepreload" href="report.js?v=b825">
-<link rel="modulepreload" href="cards.js?v=b825">
-<link rel="modulepreload" href="expense.js?v=b825">
-<link rel="modulepreload" href="prep.js?v=b825">
-<link rel="modulepreload" href="member.js?v=b825">
-<link rel="modulepreload" href="planmap.js?v=b825">
-<link rel="modulepreload" href="citysearch.js?v=b825">
-<link rel="modulepreload" href="profile.js?v=b825">
-<link rel="modulepreload" href="review.js?v=b825">
-<link rel="modulepreload" href="rating.js?v=b825">
-<link rel="modulepreload" href="notify.js?v=b825">
-<link rel="modulepreload" href="newtrip.js?v=b825">
-<link rel="modulepreload" href="home.js?v=b825">
-<link rel="modulepreload" href="cands.js?v=b825">
-<link rel="modulepreload" href="selfcheck.js?v=b825">
-<link rel="modulepreload" href="bring.js?v=b825">
-<link rel="modulepreload" href="sheetimp.js?v=b825">
-<link rel="modulepreload" href="trash.js?v=b825">
-<link rel="modulepreload" href="plancheck.js?v=b825">
-<link rel="modulepreload" href="aiscreen.js?v=b825">
-<link rel="modulepreload" href="account.js?v=b825">
-<link rel="modulepreload" href="draft.js?v=b825">
-<link rel="modulepreload" href="triplist.js?v=b825">
-<link rel="modulepreload" href="tabs.js?v=b825">
-<link rel="modulepreload" href="planline.js?v=b825">
-<link rel="modulepreload" href="planview.js?v=b825">
-<link rel="modulepreload" href="geocode.js?v=b825">
-<link rel="modulepreload" href="legs.js?v=b825">
-<link rel="modulepreload" href="tripview.js?v=b825">
-<link rel="modulepreload" href="today.js?v=b825">
-<link rel="modulepreload" href="opentrip.js?v=b825">
-<link rel="modulepreload" href="flags.js?v=b825">
-<link rel="modulepreload" href="swreg.js?v=b825">
-<link rel="modulepreload" href="stars.js?v=b825">
-<link rel="modulepreload" href="net.js?v=b825">
-<link rel="modulepreload" href="admin.js?v=b825">
-<link rel="modulepreload" href="adminuse.js?v=b825">
-<link rel="modulepreload" href="dayseen.js?v=b825">
-<link rel="modulepreload" href="glogin.js?v=b825">
-<link rel="modulepreload" href="ui.js?v=b825">
-<link rel="modulepreload" href="card.js?v=b825">
-<link rel="modulepreload" href="trip.js?v=b825">
-<link rel="modulepreload" href="citymap.js?v=b825">
-<link rel="modulepreload" href="rate.js?v=b825">
-<link rel="modulepreload" href="cities.js?v=b825">
-<link rel="modulepreload" href="ai.js?v=b825">
-<link rel="modulepreload" href="un.js?v=b825">
-<link rel="modulepreload" href="world.js?v=b825">
-<link rel="modulepreload" href="rateui.js?v=b825">
-<link rel="modulepreload" href="globe.js?v=b825">
-<link rel="modulepreload" href="anal.js?v=b825">
-<link rel="modulepreload" href="diary.js?v=b825">
-<link rel="modulepreload" href="mate.js?v=b825">
-<link rel="modulepreload" href="photoview.js?v=b825">
-<link rel="modulepreload" href="p16.js?v=b825">
-<link rel="modulepreload" href="pshift.js?v=b825">
-<link rel="modulepreload" href="visits.js?v=b825">
-<link rel="modulepreload" href="mycity.js?v=b825">
-<link rel="modulepreload" href="spree.js?v=b825">
-<link rel="modulepreload" href="try.js?v=b825">
-<link rel="modulepreload" href="people.js?v=b825">
-<link rel="modulepreload" href="friends.js?v=b825">
-<link rel="modulepreload" href="setnav.js?v=b825">
-<link rel="modulepreload" href="app.js?v=b825">
+<link rel="modulepreload" href="supabase.js?v=b826">
+<link rel="modulepreload" href="dom.js?v=b826">
+<link rel="modulepreload" href="db.js?v=b826">
+<link rel="modulepreload" href="calc.js?v=b826">
+<link rel="modulepreload" href="rec.js?v=b826">
+<link rel="modulepreload" href="persona.js?v=b826">
+<link rel="modulepreload" href="map.js?v=b826">
+<link rel="modulepreload" href="shelf.js?v=b826">
+<link rel="modulepreload" href="city.js?v=b826">
+<link rel="modulepreload" href="aiui.js?v=b826">
+<link rel="modulepreload" href="report.js?v=b826">
+<link rel="modulepreload" href="cards.js?v=b826">
+<link rel="modulepreload" href="expense.js?v=b826">
+<link rel="modulepreload" href="prep.js?v=b826">
+<link rel="modulepreload" href="member.js?v=b826">
+<link rel="modulepreload" href="planmap.js?v=b826">
+<link rel="modulepreload" href="citysearch.js?v=b826">
+<link rel="modulepreload" href="profile.js?v=b826">
+<link rel="modulepreload" href="review.js?v=b826">
+<link rel="modulepreload" href="rating.js?v=b826">
+<link rel="modulepreload" href="notify.js?v=b826">
+<link rel="modulepreload" href="newtrip.js?v=b826">
+<link rel="modulepreload" href="home.js?v=b826">
+<link rel="modulepreload" href="cands.js?v=b826">
+<link rel="modulepreload" href="selfcheck.js?v=b826">
+<link rel="modulepreload" href="bring.js?v=b826">
+<link rel="modulepreload" href="sheetimp.js?v=b826">
+<link rel="modulepreload" href="trash.js?v=b826">
+<link rel="modulepreload" href="plancheck.js?v=b826">
+<link rel="modulepreload" href="aiscreen.js?v=b826">
+<link rel="modulepreload" href="account.js?v=b826">
+<link rel="modulepreload" href="draft.js?v=b826">
+<link rel="modulepreload" href="triplist.js?v=b826">
+<link rel="modulepreload" href="tabs.js?v=b826">
+<link rel="modulepreload" href="planline.js?v=b826">
+<link rel="modulepreload" href="planview.js?v=b826">
+<link rel="modulepreload" href="geocode.js?v=b826">
+<link rel="modulepreload" href="legs.js?v=b826">
+<link rel="modulepreload" href="tripview.js?v=b826">
+<link rel="modulepreload" href="today.js?v=b826">
+<link rel="modulepreload" href="opentrip.js?v=b826">
+<link rel="modulepreload" href="flags.js?v=b826">
+<link rel="modulepreload" href="swreg.js?v=b826">
+<link rel="modulepreload" href="stars.js?v=b826">
+<link rel="modulepreload" href="net.js?v=b826">
+<link rel="modulepreload" href="admin.js?v=b826">
+<link rel="modulepreload" href="adminuse.js?v=b826">
+<link rel="modulepreload" href="dayseen.js?v=b826">
+<link rel="modulepreload" href="glogin.js?v=b826">
+<link rel="modulepreload" href="ui.js?v=b826">
+<link rel="modulepreload" href="card.js?v=b826">
+<link rel="modulepreload" href="trip.js?v=b826">
+<link rel="modulepreload" href="citymap.js?v=b826">
+<link rel="modulepreload" href="rate.js?v=b826">
+<link rel="modulepreload" href="cities.js?v=b826">
+<link rel="modulepreload" href="ai.js?v=b826">
+<link rel="modulepreload" href="un.js?v=b826">
+<link rel="modulepreload" href="world.js?v=b826">
+<link rel="modulepreload" href="rateui.js?v=b826">
+<link rel="modulepreload" href="globe.js?v=b826">
+<link rel="modulepreload" href="anal.js?v=b826">
+<link rel="modulepreload" href="diary.js?v=b826">
+<link rel="modulepreload" href="mate.js?v=b826">
+<link rel="modulepreload" href="photoview.js?v=b826">
+<link rel="modulepreload" href="p16.js?v=b826">
+<link rel="modulepreload" href="pshift.js?v=b826">
+<link rel="modulepreload" href="visits.js?v=b826">
+<link rel="modulepreload" href="mycity.js?v=b826">
+<link rel="modulepreload" href="spree.js?v=b826">
+<link rel="modulepreload" href="try.js?v=b826">
+<link rel="modulepreload" href="people.js?v=b826">
+<link rel="modulepreload" href="friends.js?v=b826">
+<link rel="modulepreload" href="setnav.js?v=b826">
+<link rel="modulepreload" href="app.js?v=b826">
 </head>
 <body>
 <!-- ── 스플래시(런치 스크린) ────────────────────────────────────────
@@ -2400,7 +2524,7 @@ document.fonts?.load('700 1em Dongle').then(() => {
            **여기 프로필 맨 아래에만 둡니다.** 전에는 </main> 바로 앞에 있어서,
            보고 있는 탭이 무엇이든 그 아래에 곧장 붙어 목록 한가운데 떠 있는
            것처럼 보였습니다. 관리자가 일부러 찾아봐야 하는 자리로 옮깁니다. -->
-      <p class="foot hide" id="foot">화면 <code id="build">b825</code> · <span id="ms">—</span></p>
+      <p class="foot hide" id="foot">화면 <code id="build">b826</code> · <span id="ms">—</span></p>
     </div><!-- /setview -->
 
     <!-- ── 친구(b789, friends.js) · 남의 프로필(b789, people.js) ──────────────
@@ -3223,7 +3347,7 @@ document.fonts?.load('700 1em Dongle').then(() => {
   </div>
 </div>
 
-<script type="module" src="app.js?v=b825"></script>
+<script type="module" src="app.js?v=b826"></script>
 </body>
 </html>
 
