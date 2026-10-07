@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b828';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b829';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b828';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b829';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b828`;
+    img.src = `./persona/${code}.webp?v=b829`;
   });
 }
 
@@ -564,7 +564,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b828`;
+    img.src = `./persona/m/${code}.jpg?v=b829`;
   });
 }
 
@@ -654,52 +654,75 @@ async function drawP16(s, W, H, F){
   } else {
     g.fillStyle = P16_PANEL[kind]; g.fillRect(hx, hy, hw, hh);
   }
+  /* ══ 히어로 글(b829, 2026-10-07 사용자가 고른 시안 B — 「시안은 첨부한게 제일 좋은데」) ══════════════════
+     ⚠⚠ **유형 «이름»이 주인공입니다.** 전에는 코드(FMDP)가 31 로 제일 컸는데, 남들은 FMDP 가 뭔지 모르고
+       기억·자랑하는 것은 「명소 검열관」입니다(10-07 디자인 평 ②). 코드는 주황 알약의 작은 표식으로.
+     차례(아래 → 위): 「상위 3% · 29개국 · 77도시」 → 네 축 낱말 알약 넷 → 설명 → 이름(27, 흰) → [FMDP] 나의 여행 유형.
+     ⚠ 글자는 **왼쪽 아래**에만 둡니다 — 오른쪽에 주인공(그림)이 있습니다.
+     ⚠ 그림을 못 받으면(흰=false) 흰 글자를 쓰면 안 됩니다 — 옅은 패널에 먹색으로. */
   {
     const 흰 = !!art;
     const tx = hx + px(16);
-    /* ⚠ 글자는 **왼쪽 아래**에만 둡니다 — 오른쪽에 주인공이 있습니다. */
-    const 글폭 = hw * .58;
+    const 글폭 = hw * .58, 이름폭 = hw * .66;
+    const 그늘 = () => { if (흰){ g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = px(3); } };
+    const 맑게 = () => { g.shadowColor = 'transparent'; g.shadowBlur = 0; };
     g.textAlign = 'left'; g.textBaseline = 'alphabetic';
-    if (흰){ g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = px(3); }
-
-    /* 아래에서 위로 쌓습니다 — 맨 아래 줄 자리가 고정이고 위는 줄 수에
-       따라 올라갑니다. */
-    let ty = hy + hh - px(13);
-
+    그늘();
+    /* 아래에서 위로 쌓습니다 — 맨 아래 줄 자리가 고정이고 위는 줄 수에 따라 올라갑니다. */
+    let ty = hy + hh - px(14);
     /* 「상위 3% · 29개국 · 77도시」 — 화면의 `.pstat` 와 같은 한 줄 */
-    const 곳 = (s.countries != null && s.cities != null)
-      ? ` · ${s.countries}개국 · ${s.cities}도시` : '';
+    const 곳 = (s.countries != null && s.cities != null) ? ` · ${s.countries}개국 · ${s.cities}도시` : '';
     이어쓰기([
       { t: s.rank || '', f: F(800, px(9.5)), c: 흰 ? P16N.밝은주황 : P16N.주황 },
       { t: 곳,           f: F(600, px(9.5)), c: 흰 ? 'rgba(255,255,255,.90)' : P16N.흐림 },
     ], tx, ty);
-    ty -= px(15);
-
-    g.font = F(500, px(9)); g.fillStyle = 흰 ? 'rgba(255,255,255,.80)' : P16N.흐림;
-    const al = wrapText(g, s.axisWords || '', 글폭);
-    for (let i = al.length - 1; i >= 0; i--){ g.fillText(al[i], tx, ty); ty -= px(12); }
-    ty -= px(3);
-
-    g.font = F(500, px(10)); g.fillStyle = 흰 ? 'rgba(255,255,255,.94)' : P16N.흐림;
+    ty -= px(17);
+    /* 네 축 낱말 — 알약 넷. 그림 위라 반투명 바탕 + 가는 테(그늘은 끔 — 테가 번집니다). */
+    {
+      const 말들 = (s.axisWords || '').split(' · ').filter(Boolean);
+      const ph = px(14), pad = px(6), 틈 = px(3.5), py = ty - px(10.5);
+      let cx = tx;
+      g.font = F(600, px(8));
+      맑게();
+      for (const w of 말들){
+        const pw = g.measureText(w).width + pad * 2;
+        g.fillStyle = 흰 ? 'rgba(255,255,255,.14)' : P16N.홈; rrect(g, cx, py, pw, ph, ph / 2); g.fill();
+        g.strokeStyle = 흰 ? 'rgba(255,255,255,.42)' : P16N.선; g.lineWidth = Math.max(1, px(.6));
+        rrect(g, cx, py, pw, ph, ph / 2); g.stroke();
+        g.fillStyle = 흰 ? '#FFFFFF' : P16N.잉크; g.fillText(w, cx + pad, py + ph / 2 + px(3));
+        cx += pw + 틈;
+      }
+      그늘();
+      ty = py - px(9);
+    }
+    /* 설명 */
+    g.font = F(500, px(10.5)); g.fillStyle = 흰 ? 'rgba(255,255,255,.95)' : P16N.흐림;
     const dl = wrapText(g, s.desc || '', 글폭);
-    for (let i = dl.length - 1; i >= 0; i--){ g.fillText(dl[i], tx, ty); ty -= px(14); }
+    for (let i = dl.length - 1; i >= 0; i--){ g.fillText(dl[i], tx, ty); ty -= px(15); }
+    ty -= px(6);
+    /* 이름 — 주인공. 길면 19 까지 줄이고(「먼 길 마다않는 외골수」), 그래도 넘치면 두 줄. */
+    let 크기 = 27;
+    g.font = F(800, px(크기));
+    while (g.measureText(s.name || '').width > 이름폭 && 크기 > 19){ 크기 -= 1; g.font = F(800, px(크기)); }
+    const nl = wrapText(g, s.name || '', 이름폭).slice(0, 2);
+    g.fillStyle = 흰 ? '#FFFFFF' : P16N.잉크;
+    for (let i = nl.length - 1; i >= 0; i--){ g.fillText(nl[i], tx, ty); ty -= px(크기 * 1.13); }
+    /* ⚠ 한 칸 올리는 값은 «방금 그린 글자» 크기에 맞춥니다(위 1.13) — b741 에 「나의 여행 유형은」이 코드 «안»으로
+       겹쳐 찍힌 적이 있습니다. */
     ty -= px(4);
-
-    /* 브랜드 주황은 어두운 그림 위에서 묻힙니다 — 배너에서만 밝게(화면 `.pname` 과 같은 값). */
-    g.font = F(800, px(16)); g.fillStyle = 흰 ? P16N.밝은주황 : P16N.주황;
-    g.fillText(s.name || '', tx, ty);
-    /* ⚠ 한 칸 올리는 값은 «방금 그린 글자»의 대문자 높이에 맞춥니다 —
-       b741 에 「나의 여행 유형은」이 코드 «안»으로 겹쳐 찍혔습니다. */
-    ty -= px(20);
-
-    g.font = F(800, px(31)); g.fillStyle = 흰 ? '#FFFFFF' : P16N.잉크;
-    { let cx = tx; for (const ch of [...s.code]){ g.fillText(ch, cx, ty); cx += g.measureText(ch).width + px(.6); } }
-    ty -= px(29);                      /* 코드 대문자 높이(31 × .72) + 여유 */
-
+    /* 코드 — 주황 알약(자간 1.2) + 「나의 여행 유형」 */
+    g.font = F(800, px(8.5));
+    const 자간 = px(1.2), 글자 = [...s.code];
+    const tw = 글자.reduce((a, ch) => a + g.measureText(ch).width, 0) + 자간 * (글자.length - 1);
+    const cpad = px(5), ch_ = px(13.5), cy = ty - px(10), cw = tw + cpad * 2;
+    맑게();
+    g.fillStyle = 흰 ? P16N.밝은주황 : P16N.주황; rrect(g, tx, cy, cw, ch_, px(3)); g.fill();
+    g.fillStyle = '#FFFFFF';
+    { let cx = tx + cpad; for (const ch of 글자){ g.fillText(ch, cx, ty - px(.8)); cx += g.measureText(ch).width + 자간; } }
+    그늘();
     g.font = F(600, px(9)); g.fillStyle = 흰 ? 'rgba(255,255,255,.88)' : P16N.흐림;
-    g.fillText('나의 여행 유형은', tx, ty);
-
-    g.shadowColor = 'transparent'; g.shadowBlur = 0;
+    g.fillText('나의 여행 유형', tx + cw + px(6), ty);
+    맑게();
   }
 
   /* ══ 무엇을 넣을지 — 높이 비율로 ══════════════════════════════════ */
@@ -726,6 +749,7 @@ async function drawP16(s, W, H, F){
      1 배 그대로 들어갑니다. */
   /* 한 줄은 35(b805 스펙트럼 — 막대 밑에 두 극 이름이 한 줄 더 붙어 28 → 32, 「아직 모름」을 눈금에서
      띄우느라 → 35). 정사각에 남는 58 안입니다. */
+  /* ⚠ 축은 네 줄 그대로입니다(10-07 — 한 줄 넷 칸 시안을 보고 사용자가 「그래프는 첨부한게 제일 좋아」로 네 줄을 고름). */
   if (비 < 1.15) 조각.push({ h: 35, 그리기: 축한줄 });
   else 조각.push({ h: 4 * 22 + 3 * 7, 그리기: 축그리기 });
   if (궁합꼴 === '크게'){
@@ -2079,13 +2103,13 @@ export function axisSpectrum(ax){
 /* 2×2×2×2 = 16. **빈 칸도 겹침도 없습니다.** */
 export const PERSONA16 = {
   FLNG:{ n:'동네 단골',            d:'가던 데 또 가는 게 제일 편한 타입' },
-  FLNP:{ n:'눈 높은 재방문러',      d:'같은 데 가면서도 매번 트집 잡는 타입' },
+  FLNP:{ n:'눈 높은 재방문러',      d:'단골집도 갈 때마다 다시 채점하는 타입' },   /* 10-07 사용자 — 전엔 「매번 트집 잡는」 */
   FLDG:{ n:'한 나라 순정파',        d:'멀리 날아가서도 그 나라만 찾는 타입' },
   FLDP:{ n:'먼 길 마다않는 외골수',  d:'비행기 열 시간 타고 가서 또 그 동네 가는 타입' },
   FMNG:{ n:'근거리 도장깨기',       d:'가까운 유명지는 다 밟아야 직성이 풀리는 타입' },
   FMNP:{ n:'가성비 심사위원',       d:'가까운 데 다니면서 값어치를 따지는 타입' },
   FMDG:{ n:'세계 명소 완주자',      d:'지구 반대편 유명지까지 다 보러 가는 타입' },
-  FMDP:{ n:'명소 검열관',          d:'유명하다는 곳마다 가서 실망하고 오는 타입' },
+  FMDP:{ n:'명소 검열관',          d:'단골집도 갈 때마다 다시 채점하는 타입' },   /* 10-07 사용자 「설명도 위로 바꾸라고」 — 전엔 「실망하고 오는」 */
   HLNG:{ n:'골목 탐험가',          d:'가까운 동네 뒷골목이 제일 재밌는 타입' },
   HLNP:{ n:'숨은 맛집 사냥꾼',      d:'아는 사람만 아는 곳을 찾아내야 직성이 풀리는 타입' },
   HLDG:{ n:'깊이 파는 사람',        d:'한 나라를 구석구석 다 훑는 타입' },

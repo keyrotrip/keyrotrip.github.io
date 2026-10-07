@@ -72,7 +72,7 @@ const 실패 = (왜, 까닭) => {
   document.getElementById('detail').textContent = 까닭 ? `까닭: ${표가림(까닭)}` : '';
 };
 
-const g = await import('./glogin.js?v=b828');
+const g = await import('./glogin.js?v=b829');
 document.getElementById('again').onclick = () => g.googleLogin().catch(e => 실패('다시 시도하지 못했어요.', e?.message));
 document.getElementById('old').onclick = async () => {
   const { error } = await g.oauthLogin();
@@ -85,7 +85,7 @@ else if (!꼬리.has('id_token')) location.replace(집);                      /*
 else if (!기다림 || 기다림.state !== 꼬리.get('state'))
   실패('로그인 확인이 맞지 않아요. 다시 시도해 주세요.', '돌아온 표의 짝(state)이 기기에 적어 둔 것과 다름');
 else {
-  const { sb } = await import('./db.js?v=b828');
+  const { sb } = await import('./db.js?v=b829');
   const { error } = await sb.auth.signInWithIdToken({ provider: 'google', token: 꼬리.get('id_token'), nonce: 기다림.raw })
     .catch(e => ({ error: e }));
   /* 가입을 막아 두면(db/066) 새 계정 만들기가 서버에서 거절됩니다 — 구글 쪽 말은 「Database error saving new user」. */

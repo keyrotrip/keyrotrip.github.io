@@ -219,7 +219,7 @@ let 깃발판 = null;                 /* null 아직 · false 실패 · true 됨
 export async function flagSprite(){
   if (깃발판 != null) return 깃발판;
   try {
-    const r = await fetch('./flags.svg?v=b828');
+    const r = await fetch('./flags.svg?v=b829');
     if (!r.ok) return (깃발판 = false);
     const 통 = document.createElement('div');
     통.id = 'flagsprite';

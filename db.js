@@ -13,7 +13,7 @@
    멈추면 app.js 가 아예 실행되지 않습니다 — b227 에서 leaflet 을 뺀 것과 같은
    문제이고 이쪽은 앱 전체가 매달립니다. 판도 `@2` 라 조용히 바뀌었습니다.
    자세한 것은 supabase.js 머리말에. */
-import { createClient } from './supabase.js?v=b828';
+import { createClient } from './supabase.js?v=b829';
 
 const SUPABASE_URL = 'https://qahqqhjleqfrsjiixnas.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_ymbrt_00OqzQjT3SrweZgQ_Lu0cw64V';
