@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b831';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b832';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b831';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b832';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b831`;
+    img.src = `./persona/${code}.webp?v=b832`;
   });
 }
 
@@ -564,7 +564,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b831`;
+    img.src = `./persona/m/${code}.jpg?v=b832`;
   });
 }
 
@@ -949,26 +949,30 @@ async function drawP16(s, W, H, F){
   return new Promise(r => cv.toBlob(r, 'image/jpeg', .92));
 }
 
-/* ── 발자국 카드 (여권 스탬프 면) ─────────────────────────────────────
+/* ── 발자국 카드 = 여행 탑승권 (b832, 2026-10-07 사용자가 고른 시안 6-2) ─────────────────
  * 「몇 개국 다녀왔다」를 내보이는 카드입니다. 이 앱에서 **제일 자랑거리**라
  * 공유가 유입으로 이어질 자리도 여기입니다.
  *
- * ⚠⚠ **성향 카드(drawP16)와 같은 틀입니다(b776, 사용자: 「같은 모양으로
- *   시안먼저」 → 시안 ㄴ).** 각진 종이 · 위 3:2 히어로 · 먹색 막대 · 가는
- *   선 · 기로 바닥(`기로바닥` 하나를 같이 씁니다). 성향 카드의 자리마다
- *   이 카드의 것이 앉습니다:
- *     사진 → 세계지도 · 축 넷 → 대륙 여섯 · 궁합 → 가장 많이 간 나라 셋 ·
- *     추천 → 모은 깃발.
- *   ⚠ 지도 판은 **밝게** 둡니다(ㄴ). 어두운 판(ㄱ)도 나란히 그려 보였는데
- *     사용자가 ㄴ 을 골랐습니다 — 앱의 지구본 색과 같은 쪽입니다.
- * ⚠ 걷은 것(b649 의 여권 면): 둥근 카드와 테두리 · ARRIVED 도장 · PASSPORT
- *   머리말 · % 알약(→ 히어로 안 주황 한 줄) · 195 막대(→ 대륙 막대) · 점선
- *   바닥과 뜯는 홈 · NEXT TRIP 알약 · 여권 코드 줄(`s.mrz`).
+ * 고른 길(사용자): 「남들이 혹하게」 → 시안 열한 장(디자인 캔버스) 중 「6 탑승권」 →
+ *   「이거(대륙 막대)까지 살릴 수 있나」(6-2) → 「여백없이 탑승권만」 → 「모서리 라운드」 →
+ *   「그냥 투명으로」 → 「인스타 스토리용만 있음돼 정사각형 필요없어」.
+ * ⚠⚠ **그림 전체가 탑승권입니다.** 바깥 여백이 없고, **네 귀퉁이(둥근 모서리)와 절취선
+ *   양끝 홈은 투명**입니다(PNG 알파). 그래서 이 카드는 JPEG 가 아니라 **PNG** 입니다 —
+ *   JPEG 로 바꾸면 귀퉁이가 검게 칠해집니다.
+ *   b775 에 걷은 「투명판」은 카드 «바탕 전체»를 비우는 선택지였고, 이것은 귀퉁이만입니다.
+ * ⚠ **스토리(1080×1920) 한 가지입니다.** 다른 크기로 불러도 폭에 맞춰 스토리 비로 그립니다.
+ *   공유 시트는 원래 'story' 만 부릅니다(b393).
+ * ⚠ 성향 카드(drawP16)와 «같은 틀»이던 것(b776)은 여기서 끝납니다 — 사용자가 탑승권을
+ *   골랐습니다. 색(P16N)·글꼴·「기로」 아이콘은 같이 씁니다.
+ * 차례(위 → 아래): 주황 띠(기로 · 여행 탑승권) → 출발 KOR / 도착 N개국 → 도시 · 대륙 · 등급 →
+ *   지도 → 대륙별 막대 여섯(0 은 흐리게, 사용자가 6-3 「다녀온 대륙만」보다 이쪽을 고름) →
+ *   절취선 → 가장 많이 간 나라(해외 셋 — 한국은 map.js 가 뺌) → 모은 깃발 → 작은 글씨.
+ * ⚠ 치수는 시안(폭 360)의 px 입니다(`u`). 캔버스 시안: https://claude.ai/artifact/8PBzbVvq6sSNXyifcZXTpz
  *
  * ⚠ **글자 이모지 깃발을 쓰지 않습니다.** 기기가 못 그리면 캔버스에
  *   **네모가 저장**됩니다. `flags.svg` 의 그림을 꺼내 그립니다 — 어느
  *   기기에서나 같습니다. 못 받으면 그 칸만 홈 색으로 둡니다.
- * ⚠ **여기서 무엇을 셀지 정하지 않습니다.** 숫자도 지도도 대륙 수도 부르는
+ * ⚠ **여기서 무엇을 셀지 정하지 않습니다.** 숫자도 지도도 대륙 수도 등급도 부르는
  *   쪽(map.js 의 `발자국스펙`)이 넘겨줍니다. 여기서 또 세면 화면과 카드가
  *   갈립니다 — 이 파일의 오래된 규칙입니다.
  */
@@ -1009,188 +1013,208 @@ function 깃발칸(n, 폭, 높이, px){
   }
 }
 
+/* 「기로」 아이콘 — 바탕 네모와 화살 둘(아이콘 SVG 96칸을 그대로 옮깁니다). `기로바닥` 과 같은 모양입니다. */
+function 기로표(g, x, y, 크기, 바탕, 화살){
+  g.fillStyle = 바탕; rrect(g, x, y, 크기, 크기, 크기 * .233); g.fill();
+  g.fillStyle = 화살;
+  const q = 크기 / 96;
+  g.save(); g.translate(x + 9.6 * q, y + 9.6 * q); g.scale(.8 * q, .8 * q);
+  g.beginPath();
+  g.moveTo(18, 22); g.lineTo(62, 22); g.lineTo(76, 33); g.lineTo(62, 44); g.lineTo(18, 44);
+  g.quadraticCurveTo(13, 44, 13, 33); g.quadraticCurveTo(13, 22, 18, 22); g.closePath();
+  g.moveTo(78, 52); g.lineTo(34, 52); g.lineTo(20, 63); g.lineTo(34, 74); g.lineTo(78, 74);
+  g.quadraticCurveTo(83, 74, 83, 63); g.quadraticCurveTo(83, 52, 78, 52); g.closePath();
+  g.fill(); g.restore();
+}
+/* 자간을 벌려 씁니다(「여행 탑승권」). ⚠ `ctx.letterSpacing` 은 옛 사파리에 없어 한 글자씩 씁니다. */
+function 자간쓰기(g, text, x, y, 간, 오른쪽){
+  const 글자 = [...String(text)];
+  const 너비 = 글자.reduce((a, ch) => a + g.measureText(ch).width, 0) + 간 * (글자.length - 1);
+  const 옛 = g.textAlign; g.textAlign = 'left';
+  let cx = 오른쪽 ? x - 너비 : x;
+  for (const ch of 글자){ g.fillText(ch, cx, y); cx += g.measureText(ch).width + 간; }
+  g.textAlign = 옛;
+}
+
 async function drawStamps(s, W, H, F){
+  /* 스토리 비(9:16) 하나 — 다른 크기를 불러도 폭에 맞춰 스토리로 그립니다(머리말). */
+  H = Math.round(W * 640 / 360);
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const g = cv.getContext('2d');
   /* 자는 성향 카드와 같습니다 — 시안(폭 360)의 1px 을 `u` 로 씁니다. */
-  const PX = 0, PY = 0, PW = W, PH = H;
-  const u = PW / 360;
+  const u = W / 360;
   const px = v => v * u;
-  g.fillStyle = P16N.종이; g.fillRect(PX, PY, PW, PH);
-
-  const 비 = PH / PW;
-  const 꼴 = 비 >= 1.6 ? '스토리' : 비 >= 1.15 ? '세로' : '정사각';
-  const 좌 = PX + px(16), 우 = PX + PW - px(16), 폭 = 우 - 좌;
+  const 좌 = px(22), 우 = W - px(22), 폭 = 우 - 좌;
+  const 흰 = '#FFFFFF', 연선 = '#EEEAE2', 흐린글 = '#9A9387';
   const 코드 = s.codes || [];
   const n = 코드.length;
-  const 대륙 = s.byCont || [];
+  const 대륙 = (s.byCont || []).slice(0, 6);
   const 셋 = (s.top || []).slice(0, 3);
+  const 절취 = px(448), 홈 = px(10);
+  const 칸폭 = (폭 - px(12)) / 3;                  /* 도시·대륙·등급, 많이 간 나라 셋 */
 
-  /* ══ 히어로 — 성향 카드의 사진 자리(3:2)에 세계지도 ════════════════
-     ⚠ 나라 사이 선은 **판 색**으로 긋습니다. 안 그으면 붙어 있는 나라
-       (프랑스·스위스·이탈리아)가 한 덩어리 주황으로 읽힙니다.
-     ⚠ 지도는 폭에 맞춰 위에 붙이고 글자는 지도 **밑** 빈 판에 씁니다 —
-       지도 위에 얹으면 남아메리카가 글자에 가립니다(시안에서 잼). */
-  const hw = PW, hh = PW / 1.5, hx = PX, hy = PY;
-  g.fillStyle = P16N.지도판; g.fillRect(hx, hy, hw, hh);
-  const mh = hw / 2.584;               /* viewBox 1000×387 */
+  /* 지도 — 흰 표 위라 땅은 옅은 모래색, 나라 사이 선은 흰색입니다. 선을 안 그으면 붙어 있는
+     나라(프랑스·스위스·이탈리아)가 한 덩어리 주황으로 읽힙니다. */
   const 땅 = s.land ? await svgImage(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 19 1000 387"
-          width="${Math.round(hw)}" height="${Math.round(mh)}"><style>
-       path{fill:${P16N.지도땅};stroke:${P16N.지도판};stroke-width:.9;stroke-linejoin:round}
+          width="${Math.round(px(284))}" height="${Math.round(px(110))}"><style>
+       path{fill:#E7E2D8;stroke:#FFFFFF;stroke-width:.9;stroke-linejoin:round}
        path.been{fill:${P16N.주황}}</style>${s.land}</svg>`) : null;
-  if (땅) g.drawImage(땅, hx, hy, hw, mh);
-  {
-    const tx = hx + px(16);
-    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
-    /* 아래에서 위로 쌓습니다(성향 카드와 같은 셈). */
-    let ty = hy + hh - px(12.5);
-    g.font = F(500, px(9)); g.fillStyle = P16N.흐림;
-    g.fillText(`${s.cities}도시 · ${s.conts}대륙`, tx, ty);
-    ty -= px(15);
-    g.font = F(800, px(12.5)); g.fillStyle = P16N.주황;
-    g.fillText(`세계 ${s.total}개국 중 ${Number(s.pct || 0).toFixed(1)}%`, tx, ty);
-    ty -= px(19.5);
-    const 수 = String(s.countries);
-    g.font = F(800, px(36)); g.fillStyle = P16N.잉크;
-    g.fillText(수, tx, ty);
-    const nw = g.measureText(수).width;
-    g.font = F(700, px(16));
-    g.fillText('개국', tx + nw + px(3), ty);
-    ty -= px(33);                      /* 큰 수의 대문자 높이(36 × .72) + 여유 */
-    g.font = F(500, px(9)); g.fillStyle = P16N.흐림;
-    g.fillText('지금까지 다녀온 나라', tx, ty);
-  }
 
-  /* ══ 무엇을 넣을지 — 높이 비율로(성향 카드와 같은 셈) ═══════════════
-     스토리 — 대륙 여섯(한 줄씩) · 가장 많이 간 나라 셋 · 모은 깃발(제목)
-     세로   — 대륙 여섯(두 칸씩 석 줄) · 깃발(가는 선만)
-     정사각 — 깃발만. 히어로가 3분의 2 를 먹어 남는 것이 58(시안 px)뿐입니다. */
-  const 조각 = [];
-  if (꼴 === '스토리'){
-    if (대륙.length) 조각.push({ h: 대륙.length * 22 + (대륙.length - 1) * 5, 그리기: 대륙한줄씩 });
-    if (셋.length) 조각.push({ h: 1 + 8 + 13 + 6 + 22, 그리기: 셋그리기 });
-  } else if (꼴 === '세로' && 대륙.length){
-    const 줄 = Math.ceil(대륙.length / 2);
-    조각.push({ h: 줄 * 22 + (줄 - 1) * 6, 그리기: 대륙두칸씩 });
-  }
-  /* 깃발 위에 얹는 것 — 스토리는 선 + 제목, 세로는 선만, 정사각은 없음 */
-  const 깃발머리 = !n ? 0 : 꼴 === '스토리' ? 1 + 8 + 13 + 6 : 꼴 === '세로' ? 1 + 10 : 0;
-
-  const 바닥높이 = px(42);
-  const 위 = hy + hh + px(12);
-  const 아래 = PY + PH - 바닥높이 - px(8);
-  /* 넘치면 조각만 줄입니다(히어로는 원본 비라 못 줄입니다). 깃발 한 줄
-     (가장 작은 칸, 10)은 남깁니다. 지금 세 크기는 모두 1 입니다. */
-  const 필요 = 조각.reduce((a, b) => a + b.h + 9, 0) + 깃발머리;
-  const k = 필요 ? Math.min(1, (아래 - 위 - px(n ? 10 : 0)) / px(필요)) : 1;
-  const bx = v => px(v) * k;
-
-  /* 자리부터 잡습니다 — 깃발 칸 크기를 알아야 그 크기로 그림을 굽고,
-     캔버스 그리기는 동기라 그리는 중에는 기다릴 수 없습니다. */
-  const 자리 = [];
-  let y = 위;
-  for (const c of 조각){ 자리.push(y); y += bx(c.h + 9); }
-  const 깃발y = y, gy = 깃발y + bx(깃발머리);
-  const 칸 = n ? 깃발칸(n, 폭, 아래 - gy, px) : null;
+  /* 깃발 칸부터 잡습니다 — 칸 크기를 알아야 그 크기로 그림을 굽고, 캔버스 그리기는
+     동기라 그리는 중에는 기다릴 수 없습니다. 많이 간 나라가 없으면(한국만 간 사람) 깃발이 올라갑니다. */
+  const 깃발제목y = 셋.length ? px(520) : px(478);
+  const 깃발위 = 깃발제목y + px(9);
+  const 칸 = n ? 깃발칸(n, 폭, px(606) - 깃발위, px) : null;
   const 보일 = !칸 ? 0 : 칸.넘침 ? 칸.칸 * 칸.줄 - 2 : n;
-
   await flagSprite();
-  const 굽는폭 = Math.ceil(Math.max(칸 ? 칸.w : 0, 꼴 === '스토리' ? bx(30) : 0));
-  const 받을것 = [...new Set([...코드.slice(0, 보일),
-                           ...(꼴 === '스토리' ? 셋.map(t => t[2]) : [])])].filter(Boolean);
+  const 굽는폭 = Math.ceil(Math.max(칸 ? 칸.w : 0, px(24)));
+  const 받을것 = [...new Set([...코드.slice(0, 보일), ...셋.map(t => t[2])])].filter(Boolean);
   const 깃발 = new Map(await Promise.all(
     받을것.map(async c => [c, await 깃발그림(c, 굽는폭)])));
 
-  조각.forEach((c, i) => c.그리기(자리[i]));
-  if (칸) 깃발벽();
+  /* ══ 표 ══ 둥근 모서리로 잘라 그 안에만 칠합니다 — 귀퉁이는 안 칠해서 투명으로 남습니다. */
+  g.save();
+  rrect(g, 0, 0, W, H, px(16)); g.clip();
+  g.fillStyle = 흰; g.fillRect(0, 0, W, H);
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left';
 
-  기로바닥(g, PX, PY, PW, PH, 바닥높이, px, F, '나의 여행 지도 만들기');
+  /* 주황 띠 — 기로 · 여행 탑승권 */
+  g.fillStyle = P16N.주황; g.fillRect(0, 0, W, px(56));
+  기로표(g, 좌, px(21), px(22), 흰, P16N.주황);
+  g.font = F(800, px(13)); g.fillStyle = 흰;
+  g.fillText('기로', 좌 + px(30), px(37));
+  g.font = F(700, px(10));
+  자간쓰기(g, '여행 탑승권', 우, px(37), px(1), true);
 
-  /* 조각 위의 가는 선 — 성향 카드와 같습니다. */
-  function 윗선(y0){
-    g.fillStyle = P16N.선; g.fillRect(좌, y0, 폭, Math.max(1, bx(.8)));
+  /* 출발 KOR → 도착 N개국 */
+  const 수 = `${s.countries ?? n}개국`;
+  g.font = F(600, px(8)); g.fillStyle = P16N.흐림;
+  g.fillText('출발', 좌, px(80));
+  g.textAlign = 'right'; g.fillText('도착', 우, px(80)); g.textAlign = 'left';
+  g.font = F(900, px(30)); g.fillStyle = P16N.잉크;
+  g.fillText('KOR', 좌, px(108));
+  const 출발폭 = g.measureText('KOR').width;
+  g.textAlign = 'right'; g.fillStyle = P16N.주황;
+  g.fillText(수, 우, px(108));
+  const 도착폭 = g.measureText(수).width;
+  g.textAlign = 'left';
+  g.font = F(600, px(9.5)); g.fillStyle = P16N.흐림;
+  g.fillText('한국', 좌, px(122));
+  g.textAlign = 'right';
+  g.fillText(`세계 ${s.total}개국 중 ${Number(s.pct || 0).toFixed(1)}%`, 우, px(122));
+  g.textAlign = 'left';
+  /* 가운데 점선과 화살 — 큰 글자 높이의 가운데(97)에 긋습니다. */
+  const 화살 = 우 - 도착폭 - px(12) - px(18), 선왼 = 좌 + 출발폭 + px(12);
+  g.save();
+  if (화살 - px(4) > 선왼){
+    g.strokeStyle = '#C9C1B2'; g.lineWidth = Math.max(1, px(1.5)); g.setLineDash([px(3), px(2.5)]);
+    g.beginPath(); g.moveTo(선왼, px(97)); g.lineTo(화살 - px(4), px(97)); g.stroke();
+    g.setLineDash([]);
   }
+  g.strokeStyle = P16N.주황; g.lineWidth = px(1.6); g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath();
+  g.moveTo(화살 + px(2), px(97)); g.lineTo(화살 + px(15.5), px(97));
+  g.moveTo(화살 + px(10.5), px(92)); g.lineTo(화살 + px(15.5), px(97)); g.lineTo(화살 + px(10.5), px(102));
+  g.stroke();
+  g.restore();
 
-  /* ── 대륙 한 줄 ── 성향 카드의 축 줄과 **같은 치수**입니다(이름 · 작은
-     뜻 · 먹색 막대 · 값). 작은 뜻 자리에 분모를 씁니다. */
-  function 대륙하나([이름, 총, 수], x0, x1, ry, 이름폭, 틈){
+  /* 도시 · 대륙 · 등급 — 등급은 성향 카드와 같은 표(personaRank)로 부르는 쪽이 셉니다. */
+  g.fillStyle = 연선; g.fillRect(좌, px(142), 폭, Math.max(1, px(.8)));
+  [['도시', String(s.cities ?? 0), P16N.잉크],
+   ['대륙', `${s.conts ?? 0} / ${대륙.length || 6}`, P16N.잉크],
+   ['등급', s.rank || '—', P16N.주황]].forEach(([이름, 값, 색], i) => {
+    const x = 좌 + i * (칸폭 + px(6));
+    g.font = F(600, px(8)); g.fillStyle = P16N.흐림; g.fillText(이름, x, px(160));
+    g.font = F(800, px(14)); g.fillStyle = 색; g.fillText(값, x, px(178));
+  });
+
+  /* 지도 */
+  if (땅) g.drawImage(땅, px(38), px(194), px(284), px(110));
+
+  /* 대륙별 막대 여섯 — 지금 카드의 막대를 살렸습니다(사용자: 「이거까지 살릴 수 있나」).
+     0 인 대륙은 이름·숫자를 흐리게 — 「아직 안 간 대륙」이 눈에 걸리되 주인공처럼 서지 않게. */
+  g.font = F(700, px(8)); g.fillStyle = P16N.흐림;
+  g.fillText('대륙별', 좌, px(323));
+  const 막대왼 = 좌 + px(68), 막대폭 = 우 - px(50) - 막대왼;
+  대륙.forEach(([이름, 총, 갔], i) => {
+    const y0 = px(331 + i * 17.5);
+    g.font = F(800, px(10)); g.fillStyle = 갔 ? P16N.잉크 : 흐린글;
+    g.fillText(줄여쓰기(g, 이름, px(62)), 좌, y0 + px(10.5));
+    g.fillStyle = 연선; rrect(g, 막대왼, y0 + px(4.5), 막대폭, px(5), px(2.5)); g.fill();
+    if (갔 && 총){
+      g.fillStyle = P16N.잉크;
+      rrect(g, 막대왼, y0 + px(4.5), Math.max(px(5), 막대폭 * Math.min(1, 갔 / 총)), px(5), px(2.5)); g.fill();
+    }
+    g.textAlign = 'right';
+    g.font = F(500, px(7.5)); g.fillStyle = 흐린글;
+    const 분모 = `/${총}`;
+    g.fillText(분모, 우, y0 + px(11));
+    const 분모폭 = g.measureText(분모).width;
+    g.font = F(800, px(10.5)); g.fillStyle = 갔 ? P16N.잉크 : P16N.아주흐림;
+    g.fillText(String(갔), 우 - 분모폭, y0 + px(11));
     g.textAlign = 'left';
-    g.font = F(800, bx(10.5)); g.fillStyle = P16N.잉크;
-    g.fillText(이름, x0, ry + bx(10));
-    g.font = F(500, bx(8)); g.fillStyle = P16N.흐림;
-    g.fillText(`${총}개국 중`, x0, ry + bx(20));
-    const 왼 = x0 + bx(이름폭 + 틈), 오 = x1 - bx(18 + 틈);
-    const th = bx(5), ty0 = ry + bx(11) - th / 2;
-    g.fillStyle = P16N.홈; g.fillRect(왼, ty0, 오 - 왼, th);
-    g.fillStyle = P16N.잉크;
-    g.fillRect(왼, ty0, (오 - 왼) * Math.max(0, Math.min(1, 총 ? 수 / 총 : 0)), th);
-    /* 0 은 흐리게 — 「아직 안 간 대륙」이 눈에 걸리되 숫자가 주인공처럼 서지 않게 */
-    g.font = F(800, bx(11)); g.textAlign = 'right';
-    g.fillStyle = 수 ? P16N.잉크 : P16N.아주흐림;
-    g.fillText(String(수), x1, ry + bx(15));
-    g.textAlign = 'left';
-  }
-  function 대륙한줄씩(y0){
-    대륙.forEach((d, i) => 대륙하나(d, 좌, 우, y0 + bx(i * (22 + 5)), 58, 10));
-  }
-  /* 세로(1350)는 높이가 모자라 두 칸씩 석 줄로 접습니다(시안 ㈂). */
-  function 대륙두칸씩(y0){
-    const 칸폭 = (폭 - px(16)) / 2;
-    대륙.forEach((d, i) => {
-      const x0 = 좌 + (i % 2) * (칸폭 + px(16));
-      대륙하나(d, x0, x0 + 칸폭, y0 + bx(Math.floor(i / 2) * (22 + 6)), 50, 7);
-    });
-  }
+  });
 
-  /* ── 가장 많이 간 나라 셋 ── 성향 카드의 궁합 자리. 깃발 · 이름 · N도시 */
-  function 셋그리기(y0){
-    윗선(y0);
-    g.font = F(800, bx(11)); g.fillStyle = P16N.잉크; g.textAlign = 'left';
-    g.fillText('가장 많이 간 나라', 좌, y0 + bx(1 + 8 + 10));
-    const top = y0 + bx(1 + 8 + 13 + 6);
-    const 칸폭 = (폭 - px(20)) / 3;
-    const fw = bx(30), fh = fw * 26 / 36;
-    셋.forEach(([이름, 수, c], i) => {
-      const x0 = 좌 + i * (칸폭 + px(10));
+  /* 절취선 — 양끝 홈은 맨 끝에 투명으로 뚫습니다. */
+  g.save();
+  g.strokeStyle = '#D8D1C4'; g.lineWidth = Math.max(1, px(1.5)); g.setLineDash([px(4.5), px(3)]);
+  g.beginPath(); g.moveTo(px(12), 절취); g.lineTo(W - px(12), 절취); g.stroke();
+  g.restore();
+
+  /* 가장 많이 간 나라 — 해외 셋(한국은 부르는 쪽이 뺍니다). 1·2·3 은 주황. */
+  if (셋.length){
+    g.font = F(700, px(8)); g.fillStyle = P16N.흐림;
+    g.fillText('가장 많이 간 나라', 좌, px(469));
+    셋.forEach(([이름, 도시수, c], i) => {
+      const x0 = 좌 + i * (칸폭 + px(6)), top = px(478);
+      g.font = F(800, px(10.5)); g.fillStyle = P16N.주황;
+      g.fillText(String(i + 1), x0, top + px(13.5));
       const f = 깃발.get(c);
-      if (f) 깃발놓기(g, f, x0, top, fw, fh);
-      else { g.fillStyle = P16N.홈; g.fillRect(x0, top, fw, fh); }
-      const lx = x0 + fw + bx(7), lw = 칸폭 - fw - bx(7);
-      g.font = F(800, bx(10.5)); g.fillStyle = P16N.잉크;
-      g.fillText(줄여쓰기(g, 이름, lw), lx, top + bx(9.5));
-      g.font = F(500, bx(8)); g.fillStyle = P16N.흐림;
-      g.fillText(`${수}도시`, lx, top + bx(19.5));
+      if (f) 깃발놓기(g, f, x0 + px(11), top + px(1.5), px(24), px(17.3));
+      else { g.fillStyle = P16N.홈; g.fillRect(x0 + px(11), top + px(1.5), px(24), px(17.3)); }
+      g.font = F(800, px(10)); g.fillStyle = P16N.잉크;
+      g.fillText(줄여쓰기(g, 이름, 칸폭 - px(40)), x0 + px(40), top + px(9.5));
+      g.font = F(500, px(7.5)); g.fillStyle = P16N.흐림;
+      g.fillText(`${도시수}도시`, x0 + px(40), top + px(19.5));
     });
   }
 
-  /* ── 모은 깃발 ── 성향 카드의 추천 자리. 많이 간 나라부터(부르는 쪽 차례). */
-  function 깃발벽(){
-    if (꼴 === '스토리'){
-      윗선(깃발y);
-      const by = 깃발y + bx(1 + 8 + 10);
-      g.font = F(800, bx(11)); g.fillStyle = P16N.잉크; g.textAlign = 'left';
-      g.fillText('모은 깃발 ', 좌, by);
-      const tw = g.measureText('모은 깃발 ').width;
-      g.fillStyle = P16N.주황; g.fillText(String(n), 좌 + tw, by);
-    } else if (꼴 === '세로') 윗선(깃발y);
+  /* 모은 깃발 — 도시 많이 간 나라부터(부르는 쪽 차례 — 한국이 제일 많으면 맨 앞). */
+  g.font = F(800, px(9.5)); g.fillStyle = P16N.잉크;
+  g.fillText('모은 깃발 ', 좌, 깃발제목y);
+  const 제목폭 = g.measureText('모은 깃발 ').width;
+  g.fillStyle = P16N.주황; g.fillText(String(n), 좌 + 제목폭, 깃발제목y);
+  if (칸){
     const 자리xy = i => [좌 + (i % 칸.칸) * (칸.w + 칸.틈),
-                        gy + Math.floor(i / 칸.칸) * (칸.h + 칸.틈)];
+                        깃발위 + Math.floor(i / 칸.칸) * (칸.h + 칸.틈)];
     for (let i = 0; i < 보일; i++){
-      const [x, yy] = 자리xy(i);
+      const [x, y] = 자리xy(i);
       const f = 깃발.get(코드[i]);
-      if (f) 깃발놓기(g, f, x, yy, 칸.w, 칸.h);
-      else { g.fillStyle = P16N.홈; g.fillRect(x, yy, 칸.w, 칸.h); }
+      if (f) 깃발놓기(g, f, x, y, 칸.w, 칸.h);
+      else { g.fillStyle = P16N.홈; g.fillRect(x, y, 칸.w, 칸.h); }
     }
     if (칸.넘침){
-      const [x, yy] = 자리xy(보일), bw = 칸.w * 2 + 칸.틈;
-      g.fillStyle = P16N.홈; g.fillRect(x, yy, bw, 칸.h);
+      const [x, y] = 자리xy(보일), bw = 칸.w * 2 + 칸.틈;
+      g.fillStyle = P16N.홈; g.fillRect(x, y, bw, 칸.h);
       g.font = F(800, 칸.h * .72); g.fillStyle = P16N.흐림; g.textAlign = 'center';
-      g.fillText(`+${n - 보일}`, x + bw / 2, yy + 칸.h * .75);
+      g.fillText(`+${n - 보일}`, x + bw / 2, y + 칸.h * .75);
       g.textAlign = 'left';
     }
   }
+
+  /* 맨 아래 작은 글씨 — 바깥 여백이 없으니 「기로」 바닥 줄 대신 표 안에 적습니다. */
+  g.font = F(600, px(8.5)); g.fillStyle = 흐린글; g.textAlign = 'center';
+  g.fillText('기로 · 나의 여행 지도 만들기', W / 2, px(624));
+  g.textAlign = 'left';
+  g.restore();
+
+  /* 절취선 양끝 홈 — 투명하게 뚫습니다(귀퉁이와 같은 투명). */
+  g.save();
+  g.globalCompositeOperation = 'destination-out';
+  for (const x of [0, W]){ g.beginPath(); g.arc(x, 절취, 홈, 0, Math.PI * 2); g.fill(); }
+  g.restore();
 
   return new Promise(r => cv.toBlob(r, 'image/png'));
 }
@@ -2767,6 +2791,37 @@ if (typeof window !== 'undefined') window.__drawCheck = async () => {
     if (!깨짐.size) m.push('그림이 깨지니 카드가 통째로 안 나옴');
     bad('발자국 지도가 카드에 들어가는가 · 깨져도 버티는가', m);
   } catch (e){ bad('발자국 지도가 카드에 들어가는가', ['터짐: ' + e.message]); }
+  /* ── 발자국 탑승권(b832) ── 사용자가 고른 것: 스토리 한 가지 · 여백 없음 · 둥근 귀퉁이와 절취선 홈은 투명.
+     ⚠ 투명은 PNG 라야 남습니다 — 누가 JPEG 로 바꾸면(성향 카드는 JPEG 입니다) 귀퉁이가 검게 칠해집니다. 그걸 잡습니다.
+     ⚠ 정사각으로 불러도 스토리로 나와야 합니다(사용자: 「정사각형 필요없어」). */
+  try {
+    const m = [];
+    const 나라 = ['KR','JP','IT','CH','LV','NL','US','VN','FI','SI','ES','TH','BE','CZ','GB',
+                'PL','VA','DE','HU','SK','AT','LT','RU','PH','KH','SG','HR','EE','FR'];
+    const 대륙줄 = [['아시아', 48, 7], ['유럽', 44, 21], ['아프리카', 54, 0],
+                   ['북아메리카', 23, 1], ['남아메리카', 12, 0], ['오세아니아', 14, 0]];
+    const 표 = codes => ({ kind:'stamps', codes, countries: codes.length, cities: codes.length * 2,
+      conts: 3, total: 195, pct: codes.length / 195 * 100, rank: personaRank(codes.length),
+      top: codes.filter(c => c !== 'KR').slice(0, 3).map(c => [c, 2, c]), byCont: 대륙줄,
+      land: '<path class="been" d="M100 120 h120 v90 h-120 z"/>' });
+    for (const [이름, spec] of [['깃발 29', 표(나라)], ['깃발 0', 표([])],
+                               ['깃발 60', 표([...나라, ...나라, 'MX', 'BR'])],
+                               ['지도 깨짐', { ...표(나라.slice(0, 3)), land: '<path d="망가진' }]]){
+      const { blob } = await cardImage(spec, 'square');
+      if (!blob?.size){ m.push(`${이름}: 빈 그림`); continue; }
+      if (blob.type !== 'image/png') m.push(`${이름}: PNG 가 아님(${blob.type}) — 귀퉁이 투명이 사라짐`);
+      const bmp = await createImageBitmap(blob);
+      if (bmp.width !== 1080 || bmp.height !== 1920) m.push(`${이름}: ${bmp.width}×${bmp.height} — 스토리(1080×1920)여야 함`);
+      const cv = document.createElement('canvas'); cv.width = bmp.width; cv.height = bmp.height;
+      const g = cv.getContext('2d'); g.drawImage(bmp, 0, 0);
+      const 알파 = (x, y) => g.getImageData(Math.round(x), Math.round(y), 1, 1).data[3];
+      const 절취 = bmp.width / 360 * 448;
+      if (알파(1, 1) !== 0 || 알파(bmp.width - 2, bmp.height - 2) !== 0) m.push(`${이름}: 귀퉁이가 투명하지 않음`);
+      if (알파(2, 절취) !== 0 || 알파(bmp.width - 3, 절취) !== 0) m.push(`${이름}: 절취선 홈이 투명하지 않음`);
+      if (알파(bmp.width / 2, bmp.height / 2) !== 255 || 알파(bmp.width / 2, 6) !== 255) m.push(`${이름}: 표 안쪽이 비었음`);
+    }
+    bad('발자국 탑승권 — 스토리 한 가지 · 귀퉁이·홈 투명 · 깃발 0/29/60 · 지도 깨짐', m);
+  } catch (e){ bad('발자국 탑승권', ['터짐: ' + e.message]); }
 
   console.table(out);
   const ng = out.filter(o => o.결과.startsWith('✗'));

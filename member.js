@@ -15,12 +15,12 @@
  * 하나입니다 — 일행 목록도, 정산 송금 줄도 같은 것을 씁니다.
  *
  * 층: dom.js · db.js · net.js · calc.js · trip.js · ui.js 만 씁니다. */
-import { $, esc, toast, copyText, avatarImg } from './dom.js?v=b831';
-import { sb } from './db.js?v=b831';
-import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b831';
-import { dateRange } from './calc.js?v=b831';
-import { trip, members, setMembers, nameOf } from './trip.js?v=b831';
-import { arm } from './ui.js?v=b831';
+import { $, esc, toast, copyText, avatarImg } from './dom.js?v=b832';
+import { sb } from './db.js?v=b832';
+import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b832';
+import { dateRange } from './calc.js?v=b832';
+import { trip, members, setMembers, nameOf } from './trip.js?v=b832';
+import { arm } from './ui.js?v=b832';
 
 /* app.js 만 아는 것 셋. **`me` 는 값이 아니라 함수로 받습니다** —
    로그인할 때마다 바뀌는데 값으로 받으면 처음 것을 붙들고 있습니다. */

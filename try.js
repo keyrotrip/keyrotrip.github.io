@@ -10,7 +10,7 @@
  * ⚠ 궁합 링크(?mate=)는 이것과 상관없이 삽니다 — 코드는 mate.js 가 sessionStorage 에 담고,
  *   로그인 뒤 분석 탭 맨 위(persona.js 의 #matehere)에 뜹니다. 로그인 «전»의
  *   「친구는 ○○ 유형 — 다섯 곳만 매기면 궁합」 한 줄만 없어졌습니다. */
-import { sb } from './db.js?v=b831';
+import { sb } from './db.js?v=b832';
 
 /* 담아 두던 자리(localStorage). 이제 새로 담는 곳은 없고 읽어서 옮기기만 합니다. */
 const KEY = 't2:try';

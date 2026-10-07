@@ -12,13 +12,13 @@
  * 보내야 해서 저쪽을 부를 일이 생깁니다.
  *
  * 층: dom.js · db.js · calc.js · trip.js · net.js 만 씁니다. */
-import { $, esc, toast } from './dom.js?v=b831';
-import { asDate, D1, ymd } from './calc.js?v=b831';
-import { setAiTripId, setSuggested, suggested } from './ai.js?v=b831';
-import { sb } from './db.js?v=b831';
-import { fail, netTimeout, NOROW } from './net.js?v=b831';
-import { trip, plans, legs, setPlans, pickedDay, setPlanSeedGeo } from './trip.js?v=b831';
-import { arm } from './ui.js?v=b831';
+import { $, esc, toast } from './dom.js?v=b832';
+import { asDate, D1, ymd } from './calc.js?v=b832';
+import { setAiTripId, setSuggested, suggested } from './ai.js?v=b832';
+import { sb } from './db.js?v=b832';
+import { fail, netTimeout, NOROW } from './net.js?v=b832';
+import { trip, plans, legs, setPlans, pickedDay, setPlanSeedGeo } from './trip.js?v=b832';
+import { arm } from './ui.js?v=b832';
 
 /* 검토 결과의 등급 색. **app.js 에도 같은 표가 있었는데 여기서 내보냅니다** —
    두 곳에 적어두면 언젠가 한쪽만 고칩니다(D1·asDate 에서 겪은 것과 같은 일). */
