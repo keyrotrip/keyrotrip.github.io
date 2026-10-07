@@ -264,7 +264,7 @@ export function 보기파일(out, opt = {}){
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>기로 · 내 기록 (${esc(받은날)})</title>
-<style>${CSS}</style></head>
+<style>${모양}</style></head>
 <body><main>
 <header class="top"><p class="eb">기로 · 내 기록</p>
   <h1>${누구 ? `${esc(누구)}님의 여행 기록` : '나의 여행 기록'}</h1>
@@ -281,8 +281,10 @@ ${칸.map(([k, 제목, 몇, 몸]) => `<section id="${k}"><h2>${제목}${몇 ? ` 
 </main></body></html>`;
 }
 
-/* 종이 한 장의 모양 — 앱과 같은 종이색·잉크색·주황. 어두운 화면이면 어둡게, 인쇄하면 흰 종이로. */
-const CSS = `
+/* 종이 한 장의 모양 — 앱과 같은 종이색·잉크색·주황. 어두운 화면이면 어둡게, 인쇄하면 흰 종이로.
+   ⚠ 이름을 CSS 로 두지 마십시오 — 브라우저에 원래 있는 CSS(CSS.escape)와 겹쳐 tools/check-refs.mjs 가 그것을 쓰는
+     map.js·planview.js 를 「import 없이 씀」으로 잡습니다(b836 CI 빨강). */
+const 모양 = `
 :root{--bg:#F3F0E8;--card:#FBFAF6;--ink:#1B1B1F;--ink2:#3A3630;--mute:#6B675F;--line:#DFDAD0;--soft:#E6E1D6;
   --brand:#B5441A;--chip:#E9E4D8;--link:#1D4ED8;color-scheme:light}
 @media (prefers-color-scheme:dark){:root{--bg:#141417;--card:#1D1D21;--ink:#EDEAE3;--ink2:#D3CFC6;--mute:#A39E94;
