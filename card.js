@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b830';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b831';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b830';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b831';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b830`;
+    img.src = `./persona/${code}.webp?v=b831`;
   });
 }
 
@@ -564,7 +564,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b830`;
+    img.src = `./persona/m/${code}.jpg?v=b831`;
   });
 }
 
@@ -697,7 +697,16 @@ async function drawP16(s, W, H, F){
     }
     /* 설명 */
     g.font = F(500, px(10.5)); g.fillStyle = 흰 ? 'rgba(255,255,255,.95)' : P16N.흐림;
-    const dl = wrapText(g, s.desc || '', 글폭);
+    /* 두 줄이 되면 «고르게» 나눕니다(화면 .pdesc 의 text-wrap:balance 와 같은 뜻) — 그냥 접으면 까칠한 개척자 설명이
+       「…쉽게 만족하지 않는 / 타입」으로 끊겨 「타입」만 홀로 남았습니다(10-07 그려 보고 잡음). 줄 수가 늘지 않는 데까지
+       폭을 줄여 가며 접습니다. */
+    let dl = wrapText(g, s.desc || '', 글폭);
+    if (dl.length > 1)
+      for (let w = 글폭 - px(4); w > 글폭 * .5; w -= px(4)){
+        const 시험 = wrapText(g, s.desc || '', w);
+        if (시험.length > dl.length) break;
+        dl = 시험;
+      }
     for (let i = dl.length - 1; i >= 0; i--){ g.fillText(dl[i], tx, ty); ty -= px(15); }
     ty -= px(6);
     /* 이름 — 주인공. 길면 19 까지 줄이고(「먼 길 마다않는 외골수」), 그래도 넘치면 두 줄. */
@@ -2103,19 +2112,19 @@ export function axisSpectrum(ax){
 /* 2×2×2×2 = 16. **빈 칸도 겹침도 없습니다.** */
 export const PERSONA16 = {
   FLNG:{ n:'동네 단골',            d:'가던 데 또 가는 게 제일 편한 타입' },
-  FLNP:{ n:'눈 높은 재방문러',      d:'같은 데 가면서도 매번 트집 잡는 타입' },
+  FLNP:{ n:'눈 높은 재방문러',      d:'단골집도 갈 때마다 다시 채점하는 타입' },   /* 10-07 사용자(전: 「매번 트집 잡는」) */
   FLDG:{ n:'한 나라 순정파',        d:'멀리 날아가서도 그 나라만 찾는 타입' },
   FLDP:{ n:'먼 길 마다않는 외골수',  d:'비행기 열 시간 타고 가서 또 그 동네 가는 타입' },
   FMNG:{ n:'근거리 도장깨기',       d:'가까운 유명지는 다 밟아야 직성이 풀리는 타입' },
   FMNP:{ n:'가성비 심사위원',       d:'가까운 데 다니면서 값어치를 따지는 타입' },
   FMDG:{ n:'세계 명소 완주자',      d:'지구 반대편 유명지까지 다 보러 가는 타입' },
-  FMDP:{ n:'명소 검열관',          d:'유명하다는 곳마다 가서 실망하고 오는 타입' },
+  FMDP:{ n:'명소 검열관',          d:'유명하다는 곳은 다 가 보고 냉정하게 채점하는 타입' },   /* 10-07 사용자(전: 「실망하고 오는」) */
   HLNG:{ n:'골목 탐험가',          d:'가까운 동네 뒷골목이 제일 재밌는 타입' },
   HLNP:{ n:'숨은 맛집 사냥꾼',      d:'아는 사람만 아는 곳을 찾아내야 직성이 풀리는 타입' },
   HLDG:{ n:'깊이 파는 사람',        d:'한 나라를 구석구석 다 훑는 타입' },
   HLDP:{ n:'한 나라 전문가',        d:'그 나라는 현지인보다 잘 아는 타입' },
   HMNG:{ n:'동네 오지 순례자',      d:'가까운 곳에서도 남들 안 가는 데만 찾는 타입' },
-  HMNP:{ n:'까칠한 개척자',         d:'새로운 곳을 찾아놓고 또 아쉬워하는 타입' },
+  HMNP:{ n:'까칠한 개척자',         d:'남들 모르는 곳을 찾아내고도 쉽게 만족하지 않는 타입' },   /* 10-07 사용자(전: 「또 아쉬워하는」) */
   HMDG:{ n:'지구 반대편 방랑자',    d:'멀고 낯선 곳일수록 신나는 타입' },
   HMDP:{ n:'지도 밖 순례자',        d:'검색해도 안 나오는 곳만 골라 가는 타입' },
 };

@@ -3986,45 +3986,56 @@ svg.fg{ display:block; width:100%; aspect-ratio:1 / 1; height:auto; }
 /* ⚠ **글자 다섯 줄 + 상위 % 가 배너 안에 들어가야 합니다.** 배너가
    1.8:1 이라 폭 356 이면 높이가 198 뿐입니다 — 글자를 조여 두지 않으면
    「글자 크게」로 키운 사람에게서 위가 잘립니다(`--ts` 가 곱해집니다). */
-.ptxt{ align-self:end; padding:0 35% 14px 22px; z-index:1;
+/* ⚠⚠ **공유 카드 시안 B 와 같은 차례입니다(b831, 사용자: 「분석탭 성향화면도 바꾸자」).** ⚠⚠
+   위 → 아래: [FMDP 주황 알약] 나의 여행 유형 → 이름(주인공, 흰) → 설명 → 네 축 알약 → 상위 % · 개국 · 도시.
+   b830 까지는 코드(FMDP)가 34px 로 제일 컸고 이름은 21px 주황이었습니다 — 남들은 FMDP 를 모르고
+   기억하는 것은 「명소 검열관」이라 카드(card.js drawP16)에서 먼저 뒤집었고, 화면도 따라갑니다.
+   ⚠ **오른쪽은 비웁니다 — 거기에 주인공(그림)이 서 있습니다.** 전에는 `.ptxt` 오른쪽 여백 35% 로 비웠는데,
+     축 알약 넷이 한 줄에 들어가려면 그 폭(약 200px)이 모자랍니다(11px 로 약 245px). 그래서 묶음은
+     넓게 두고 **이름 · 설명만 폭을 묶습니다**(카드도 이름 .66 · 설명 .58 로 따로 묶습니다). 알약은 그림
+     아래쪽 짙은 그늘 위라 주인공과 겹쳐도 읽힙니다. */
+.ptxt{ align-self:end; padding:0 16px 14px 22px; z-index:1;
        text-shadow:0 1px 6px rgba(0,0,0,.65), 0 0 2px rgba(0,0,0,.45); }
 .phero.noart .ptxt{ text-shadow:none; }
-/* ⚠ 오른쪽 44% 는 비웁니다 — 거기에 주인공이 서 있습니다. */
+.phead{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 7px; }
 .peyebrow{ font-size:calc(12px * var(--ts)); font-weight:600;
-           color:rgba(255,255,255,.90); }
-.pcode{ font-size:calc(34px * var(--ts)); font-weight:800; color:#fff;
-        letter-spacing:calc(2px * var(--ts)); line-height:1.05; margin-top:1px; }
-/* ⚠ **브랜드 주황을 그대로 쓰면 어두운 그림 위에서 안 읽힙니다.**
-   `--primary`(#F25E26)는 명도가 낮아 야경 위에서 묻힙니다(실측: HMDP 부둣가).
-   히어로에서만 밝은 쪽으로 올립니다 — 사진 위 글자는 원래 그렇게 씁니다.
-   ⚠ 그림이 없을 때(`.noart`)는 크림 바탕이라 «원래 주황»으로 되돌립니다. */
+           color:rgba(255,255,255,.88); }
+/* 코드 — 작은 주황 알약. ⚠ 그늘(text-shadow)을 끕니다 — 알약 안 글자에 그늘이 번지면 지저분합니다(카드도 끕니다).
+   ⚠ 자간이 글자 «뒤»에도 붙어 오른쪽이 넓어 보이므로 오른쪽 안쪽 여백을 그만큼 덜 줍니다. */
+.pcode{ display:inline-block; font-size:calc(10.5px * var(--ts)); font-weight:800; line-height:1;
+        letter-spacing:.12em; padding:3px 5px 3px 6px; border-radius:4px;
+        background:#FF9166; color:#fff; text-shadow:none; }
+/* ⚠ **브랜드 주황(--brand #F25E26)을 그대로 쓰면 어두운 그림 위에서 안 읽힙니다**(실측: HMDP 부둣가).
+   그림 위에서는 밝은 주황(#FF9166, 카드 P16N.밝은주황), 그림이 없을 때(`.noart`)는 원래 주황입니다. */
 /* ⚠⚠ **`word-break:keep-all` 이 없으면 한글이 «글자 사이»에서 끊깁니다.** ⚠⚠
    브라우저 기본값은 한글을 아무 데서나 자릅니다 — 「먼 길 마다않는 외골
-   수」처럼 낱말이 두 동강 납니다(사용자 지적, b737). 밑의 `.pdesc`·`.paxis`
-   에는 이미 있었는데 이름 줄에만 빠져 있었습니다.
+   수」처럼 낱말이 두 동강 납니다(사용자 지적, b737).
    ⚠ `text-wrap:balance` 는 두 줄이 될 때 «한 줄에 한 낱말만» 남는 꼴을
      막습니다. 못 알아듣는 브라우저는 그냥 무시합니다(그래도 keep-all 은 삽니다). */
-.pname{ font-size:calc(21px * var(--ts)); font-weight:800; color:#FF9166;
-        margin-top:2px; word-break:keep-all; text-wrap:balance; }
-/* ⚠ 이름 긴 유형은 한 단계 줄입니다 — 「먼 길 마다않는 외골수」(10자)가
-   21px 이면 228px 이라 글자 칸(213px)을 넘습니다. 18px 이면 195px 로 듭니다.
-   다는 쪽은 persona.js·p16.js 입니다(이름 길이 10자 이상). */
-.pname.long{ font-size:calc(18px * var(--ts)); }
-.phero.noart .pname{ color:var(--primary); }
-.pdesc{ font-size:calc(13px * var(--ts)); color:rgba(255,255,255,.94);
-        margin-top:4px; line-height:1.4; word-break:keep-all; text-wrap:balance; }
-.paxis{ font-size:calc(11px * var(--ts)); color:rgba(255,255,255,.80);
-        margin-top:4px; line-height:1.4; word-break:keep-all; }
+/* 이름 — 주인공(카드 27). 폭은 묶음의 72%(카드 .66 과 같은 자리까지). */
+.pname{ font-size:calc(26px * var(--ts)); font-weight:800; color:#fff; line-height:1.18;
+        max-width:72%; margin-top:6px; word-break:keep-all; text-wrap:balance; }
+/* ⚠ 이름 긴 유형은 한 단계 줄입니다 — 「먼 길 마다않는 외골수」·「지구 반대편 방랑자」(10자 이상).
+   다는 쪽은 persona.js · people.js · p16.js 입니다. */
+.pname.long{ font-size:calc(21px * var(--ts)); }
+.pdesc{ font-size:calc(13px * var(--ts)); color:rgba(255,255,255,.94); max-width:64%;
+        margin-top:5px; line-height:1.4; word-break:keep-all; text-wrap:balance; }
+/* 네 축 낱말 — 알약 넷(전에는 「유명한 곳 · 새로운 곳 · …」 한 줄 글). 반투명 바탕 + 가는 흰 테. */
+.paxis{ display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.paxis span{ font-size:calc(11px * var(--ts)); font-weight:600; line-height:1.3; white-space:nowrap;
+             padding:2px 7px; border-radius:999px; color:#fff; text-shadow:none;
+             background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.42); }
 /* ⚠⚠ **그림이 안 오면 흰 글자를 쓰면 안 됩니다** — 크림 바탕에 흰 글자는
-   안 보입니다. persona.js 가 `onerror` 로 이 클래스를 답니다. */
+   안 보입니다. persona.js 가 `onerror` 로 이 클래스를 답니다. 색은 카드의 그림 없는 판(P16N)과 같습니다. */
 .phero.noart{ background:none; }
 .phero.noart .psizer{ display:none; }
 .phero.noart .pscrim{ display:none; }
 .phero.noart .ptxt{ padding:4px var(--s-md) 12px; }
 .phero.noart .peyebrow{ color:var(--ink-48); }
-.phero.noart .pcode{ color:var(--primary); }
-.phero.noart .pdesc,
-.phero.noart .paxis{ color:var(--ink-48); }
+.phero.noart .pcode{ background:var(--brand); }
+.phero.noart .pname{ color:var(--ink); }
+.phero.noart .pdesc{ color:var(--ink-48); }
+.phero.noart .paxis span{ background:#E3DDD0; border-color:var(--hairline); color:var(--ink); }
 /* ⚠ **상위 % 도 왼쪽 아래 글자 묶음에 넣습니다(b736, 사용자 결정).**
    b735 에는 오른쪽 위 알약이었는데, 글자가 두 군데로 갈려서 눈이 두 번
    움직였습니다. 그림에서 «비워 둔 자리»는 왼쪽 아래 한 곳뿐입니다.
@@ -4033,7 +4044,7 @@ svg.fg{ display:block; width:100%; aspect-ratio:1 / 1; height:auto; }
    다녔나»를 말하므로 붙여 둡니다. 줄바꿈은 허용합니다 — 「글자 크게」에서
    둘이 한 줄에 못 들어갈 수 있습니다. */
 .pstat{ display:flex; align-items:baseline; flex-wrap:wrap; gap:3px 9px;
-        margin-top:5px; }
+        margin-top:7px; }
 .prank{ display:inline; margin:0; padding:0; border-radius:0; background:none;
         font-size:calc(12px * var(--ts)); font-weight:700; color:#FF9166; }
 .pcnt{ font-size:calc(12px * var(--ts)); font-weight:600;

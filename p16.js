@@ -33,8 +33,8 @@
  *   성향 화면·카드 그림·친구 궁합이 다 쓰는 하나입니다. 여기서 따로 재면
  *   같은 두 유형이 화면마다 다른 점수를 냅니다.
  */
-import { $, esc, coverDeck, toTop } from './dom.js?v=b830';
-import { PERSONA16, AXIS_NAME, AXIS_WORD, personaMatch } from './card.js?v=b830';
+import { $, esc, coverDeck, toTop } from './dom.js?v=b831';
+import { PERSONA16, AXIS_NAME, AXIS_WORD, personaMatch } from './card.js?v=b831';
 
 /* ⚠ 코드 열여섯의 «차례»는 PERSONA16 에 적힌 차례 그대로입니다 —
    FLNG → HMDP 로, 축 네 자리가 자리별로 뒤집히는 차례라 이웃끼리 한 글자만
@@ -68,14 +68,13 @@ function 카드(code, k, 시작){
       <div class="phero">
         <!-- 자리막이(b743). 큰 그림이 붙기 전까지 이 자리를 채웁니다. -->
         <div class="psizer"
-             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b830')"></div>
-        <img src="./persona/m/${esc(code)}.jpg?v=b830" alt=""
+             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b831')"></div>
+        <img src="./persona/m/${esc(code)}.jpg?v=b831" alt=""
              loading="${언제}" decoding="async"
              onerror="this.closest('.phero').classList.add('noart')">
         <div class="pscrim"></div>
         <div class="ptxt">
-          <div class="peyebrow">여행 유형</div>
-          <div class="pcode">${esc(code)}</div>
+          <div class="phead"><span class="pcode">${esc(code)}</span><span class="peyebrow">여행 유형</span></div>
           <div class="pname${긴이름}">${esc(t.n || code)}</div>
           ${t.d ? `<div class="pdesc">${esc(t.d)}</div>` : ''}
         </div>
@@ -164,7 +163,7 @@ function 격자(){
        얹었기 때문입니다. `onerror` 로 «그림 없음» 표시를 답니다. */
     return `<button class="p16cell${나 ? ' mine' : ''}" data-p16go="${code}">
       <span class="sz"></span>
-      <img src="./persona/t/${code}.jpg?v=b830" alt="" loading="lazy" decoding="async"
+      <img src="./persona/t/${code}.jpg?v=b831" alt="" loading="lazy" decoding="async"
            onerror="this.closest('.p16cell').classList.add('noart')">
       <span class="sh"></span>${표}
       <span class="p16lb"><i>${code}</i><b>${esc(t.n)}</b></span>
@@ -204,7 +203,7 @@ function 이웃받기(){
   for (const d of [1, -1, 2, -2]){
     const c = 코드들[(i + d + 코드들.length) % 코드들.length];
     const im = new Image();
-    im.src = `./persona/m/${c}.jpg?v=b830`;
+    im.src = `./persona/m/${c}.jpg?v=b831`;
   }
 }
 
