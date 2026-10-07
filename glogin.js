@@ -17,7 +17,7 @@
  *   (`select_account` — 우리 로그아웃은 구글 세션을 안 끊어서, 안 물으면 방금 나온 계정으로 되돌아옵니다).
  * ⚠ 받은 표는 화면·주소·기록 어디에도 안 남깁니다(login.html 이 주소 꼬리를 db.js 보다 먼저 지움).
  * 층: db 만 씁니다. */
-import { sb } from './db.js?v=b829';
+import { sb } from './db.js?v=b830';
 
 export const GOOGLE_CLIENT_ID = '96116457629-vlk2pfe1vr359plthoth9dlcp6ljd1tv.apps.googleusercontent.com';
 /* 구글로 떠나기 전에 적어 두는 것(state·raw). t2: — 로그아웃하면 forgetLocal 이 지웁니다. */

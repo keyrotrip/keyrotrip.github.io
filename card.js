@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b829';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b830';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b829';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b830';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b829`;
+    img.src = `./persona/${code}.webp?v=b830`;
   });
 }
 
@@ -564,7 +564,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b829`;
+    img.src = `./persona/m/${code}.jpg?v=b830`;
   });
 }
 
@@ -2103,13 +2103,13 @@ export function axisSpectrum(ax){
 /* 2×2×2×2 = 16. **빈 칸도 겹침도 없습니다.** */
 export const PERSONA16 = {
   FLNG:{ n:'동네 단골',            d:'가던 데 또 가는 게 제일 편한 타입' },
-  FLNP:{ n:'눈 높은 재방문러',      d:'단골집도 갈 때마다 다시 채점하는 타입' },   /* 10-07 사용자 — 전엔 「매번 트집 잡는」 */
+  FLNP:{ n:'눈 높은 재방문러',      d:'같은 데 가면서도 매번 트집 잡는 타입' },
   FLDG:{ n:'한 나라 순정파',        d:'멀리 날아가서도 그 나라만 찾는 타입' },
   FLDP:{ n:'먼 길 마다않는 외골수',  d:'비행기 열 시간 타고 가서 또 그 동네 가는 타입' },
   FMNG:{ n:'근거리 도장깨기',       d:'가까운 유명지는 다 밟아야 직성이 풀리는 타입' },
   FMNP:{ n:'가성비 심사위원',       d:'가까운 데 다니면서 값어치를 따지는 타입' },
   FMDG:{ n:'세계 명소 완주자',      d:'지구 반대편 유명지까지 다 보러 가는 타입' },
-  FMDP:{ n:'명소 검열관',          d:'단골집도 갈 때마다 다시 채점하는 타입' },   /* 10-07 사용자 「설명도 위로 바꾸라고」 — 전엔 「실망하고 오는」 */
+  FMDP:{ n:'명소 검열관',          d:'유명하다는 곳마다 가서 실망하고 오는 타입' },
   HLNG:{ n:'골목 탐험가',          d:'가까운 동네 뒷골목이 제일 재밌는 타입' },
   HLNP:{ n:'숨은 맛집 사냥꾼',      d:'아는 사람만 아는 곳을 찾아내야 직성이 풀리는 타입' },
   HLDG:{ n:'깊이 파는 사람',        d:'한 나라를 구석구석 다 훑는 타입' },

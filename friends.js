@@ -25,14 +25,14 @@
  * ⚠ 줄 전체를 단추 하나로 만들지 않습니다 — 오른쪽 사진·단추가 따로 눌려야 해서 «사람 단추 + 옆 단추»
  *   형제로 둡니다(단추 안에 단추는 안 됩니다). 그래서 누르기 처리는 도시·단추를 사람보다 «먼저» 봅니다.
  */
-import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b829';
-import { sb } from './db.js?v=b829';
-import { netTimeout } from './net.js?v=b829';
-import { cities, countryName } from './cities.js?v=b829';
+import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b830';
+import { sb } from './db.js?v=b830';
+import { netTimeout } from './net.js?v=b830';
+import { cities, countryName } from './cities.js?v=b830';
 /* 소식의 도시 사진을 누르면 여는 화면(b789). city.js 는 이 파일을 안 읽으므로 고리가 없습니다. */
-import { openCity } from './city.js?v=b829';
+import { openCity } from './city.js?v=b830';
 /* 「팔로잉」·「삭제」를 한 번 더 눌러 정하는 장치(b800). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b829';
+import { arm } from './ui.js?v=b830';
 
 let ctx = { me: () => null, openPerson: () => {} };
 export function setFriendsCtx(o){ ctx = { ...ctx, ...o }; }

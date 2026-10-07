@@ -11,7 +11,7 @@
  *   사슬이 `closeSetSub(true)` 로 받고, ← 단추는 app.js 가 여기로 넘깁니다.
  * ⚠ 설정을 열고 닫을 때(app.js 의 showProfile) `resetSetNav()` 로 늘 목록부터.
  */
-import { $, toTop } from './dom.js?v=b829';
+import { $, toTop } from './dom.js?v=b830';
 
 let 지금 = null;                  /* 열린 항목(data-sp) — 목록이면 null */
 
