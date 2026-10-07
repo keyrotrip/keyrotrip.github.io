@@ -19,14 +19,16 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b834';
-import { sb } from './db.js?v=b834';
-import { netTimeout } from './net.js?v=b834';
+import { $, esc, toast } from './dom.js?v=b835';
+import { sb } from './db.js?v=b835';
+import { netTimeout } from './net.js?v=b835';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },
   { k: 's', kpi: 'signups', 이름: '새 가입',     단위: '명' },
-  { k: 'b', kpi: 'back',    이름: '다시 온 사람', 단위: '명', 기록: true, 새: true },
+  /* 「다시 온 사람」 자리(10-08 사용자: 「결국 가입한 날 빼고 차이 없는거아냐?」 → 「차라리 탈퇴 수를 넣는게 낫지 않냐」).
+     「새 가입」 옆에 두어 들어온 사람과 나간 사람이 짝으로 보입니다. 숫자는 db/117 을 돌린 날부터입니다. */
+  { k: 'x', kpi: 'deletes', 이름: '탈퇴',       단위: '명', 탈퇴: true },
   { k: 'r', kpi: 'ratings', 이름: '새 별점',     단위: '개' },
   { k: 'p', kpi: 'persona', 이름: '성향 확정',   단위: '명' },
   { k: 't', kpi: 'trips',   이름: '새 여행',     단위: '개', 새: true },
@@ -54,6 +56,7 @@ const 눈금올림 = v => { for (let 십 = 1; ; 십 *= 10) for (const c of [2, 4
 /* 114 를 돌린 서버인가 — 새 숫자가 오는지로 봅니다. */
 const 새서버 = D => !!(D && D.typical);
 const 새안내 = '<p class="aunote au114">db/114_usage_studio.sql 을 돌리면 이 자리에 숫자가 나와요.</p>';
+const 탈퇴서버 = D => D?.kpi?.deletes != null;      /* db/117 을 돌렸나 */
 
 /* ── 받기 ── 같은 기간을 1분 안에 다시 열면 받은 것을 그대로 씁니다(관리자 화면을 오갈 때마다 세지 않게). */
 export async function loadUsage(force){
@@ -82,6 +85,7 @@ function 그리기(){
   const 판 = $('adm_use'), D = 자료;
   if (!판 || !D) return;
   if (!새서버(D) && 지표들.find(x => x.k === 지표)?.새) 지표 = 'a';   /* 112 서버엔 그 숫자가 없습니다 */
+  if (지표 === 'x' && !탈퇴서버(D)) 지표 = 'a';                      /* 117 전 서버엔 탈퇴가 없습니다 */
   const 몸 = 보는칸 === 'en' ? 깊이(D) + 평균(D) + 기능(D) + 어디까지(D)
            : 보는칸 === 'au' ? 사람들(D) + 자주(D) + 언제(D) + 재방문(D)
            : 보는칸 === 'ad' ? 표(D)
@@ -106,8 +110,10 @@ function 머리(){
 }
 const 기간말 = D => D.all ? `${긴날(D.first || D.from).replace(/ \(.\)$/, '')}부터 지금까지` : `지난 ${D.days}일 동안`;
 
-/* 쓴 사람·다시 온 사람을 지난 기간과 견줄 수 있나 — 지난 기간 첫날까지 기록이 있어야 합니다. 전체는 견줄 기간이 없습니다. */
-const 견줄수있나 = (D, x) => !D.all && (!x.기록 || (D.since && D.since <= 날빼기(D.from, D.days)));
+/* 지난 기간과 견줄 수 있나 — 쓴 사람은 앱 연 날 기록이, 탈퇴는 탈퇴를 센 기록(117)이 지난 기간 첫날까지 있어야
+   합니다. 전체는 견줄 기간이 없습니다. */
+const 견줄수있나 = (D, x) => !D.all && (!x.기록 || (D.since && D.since <= 날빼기(D.from, D.days)))
+  && (!x.탈퇴 || (D.del_since && D.del_since <= 날빼기(D.from, D.days)));
 
 function 차이(cur, prev){
   if (cur === prev) return { t: '그대로', c: '' };
@@ -125,9 +131,9 @@ function 개요(D){
     ? `앱을 연 날은 <b>오늘부터</b> 쌓여요`
     : `${늦게시작 ? `${긴날(D.since).replace(/ \(.\)$/, '')}부터` : 기간말(D)} <b>${수(K.active)}명</b>이 기로를 열었어요`;
   const 카드 = 지표들.map(x => {
-    const 없음 = x.새 && !새서버(D);
+    const 없음 = (x.새 && !새서버(D)) || (x.탈퇴 && !탈퇴서버(D));
     const cur = Number(K[x.kpi] ?? 0), prev = Number(K[x.kpi + '_prev'] ?? 0);
-    const 견줌 = 없음 ? { t: 'db/114 필요', c: 'na' }
+    const 견줌 = 없음 ? { t: x.탈퇴 && !탈퇴서버(D) ? 'db/117 필요' : 'db/114 필요', c: 'na' }
       : 견줄수있나(D, x) ? 차이(cur, prev) : { t: D.all ? '' : '견줄 기록 없음', c: 'na' };
     return `<button type="button" role="tab" data-au-k="${x.k}" aria-selected="${x.k === 지표}"
       class="${x.k === 지표 ? 'on' : ''}"${없음 ? ' disabled' : ''}><span class="l">${esc(x.이름)}</span>
@@ -137,8 +143,8 @@ function 개요(D){
     <p class="ausum">${요약}</p>
     <div class="aukpi aukpi6" role="tablist" aria-label="지표">${카드}</div>
     <p class="aunote">${D.all ? '전체 기간은 견줄 앞 기간이 없어요' : `▲▼ 는 바로 앞 ${D.days}일과 견준 값이에요`}
-      · 다시 온 사람 = 가입한 날이 아닌 날에도 앱을 연 사람${늦게시작 || !기록중
-      ? ` · 「쓴 사람」「다시 온 사람」은 ${기록중 ? 긴날(D.since).replace(/ \(.\)$/, '') : '오늘'}부터 세요` : ''}</p>
+      · 탈퇴 = 계정을 지운 사람${D.del_since ? `(${긴날(D.del_since).replace(/ \(.\)$/, '')}부터 셈)` : ''}${늦게시작 || !기록중
+      ? ` · 「쓴 사람」은 ${기록중 ? 긴날(D.since).replace(/ \(.\)$/, '') : '오늘'}부터 세요` : ''}</p>
     <div class="aucap" id="au_cap" aria-live="polite"></div>
     <div class="auchartwrap" id="au_chartwrap">${그래프(D)}</div>
     <div class="aux"><span>${짧은날(D.from)}</span><span>${짧은날(D.series?.[Math.floor((D.series.length - 1) / 2)]?.d || D.from)}</span><span>${짧은날(D.today)}</span></div>
@@ -157,17 +163,22 @@ const 평소값 = D => {
   return { lo: Number(T.lo), hi: Number(T.hi), avg: T.avg == null ? null : Number(T.avg), n: Number(T.n) };
 };
 const 기록지표 = () => !!지표들.find(x => x.k === 지표)?.기록;
+/* 그 숫자를 «세기 시작한 날» — 쓴 사람은 앱 연 날 기록(since), 탈퇴는 db/117 을 돌린 날(del_since). 그 앞 날은 0 이 아니라
+   「기록 전」입니다 — 0 으로 그리면 그날 아무도 안 나간 것처럼 보입니다. 다른 숫자는 처음부터 있습니다(undefined). */
+const 세기시작 = (D, k = 지표) => k === 'x' ? (D.del_since || null)
+  : 지표들.find(x => x.k === k)?.기록 ? (D.since || null) : undefined;
+const 기록전날 = (D, d, k = 지표) => { const s = 세기시작(D, k); return s !== undefined && (!s || d < s); };
 function 평소(D){
   const x = 지표들.find(v => v.k === 지표) || 지표들[0];
   if (D.all) return '';
   if (!새서버(D)) return 새안내;
   const T = 평소값(D);
   if (!T) return `<p class="aucmp">「평소」는 앞 기록이 2주 넘게 쌓이면 나와요</p>`;
-  const xs = (D.series || []).filter(p => !(기록지표() && (!D.since || p.d < D.since)));
+  const xs = (D.series || []).filter(p => !기록전날(D, p.d));
   if (!xs.length) return '';
   const 합 = xs.reduce((a, p) => a + Number(p[지표] || 0), 0);
   const 띠말 = T.hi > 0 ? `<div class="aulg"><span><i class="band"></i>평소 하루 값의 가운데 절반</span></div>` : '';
-  const 뜻 = `<p class="aunote">평소 = 이 기간 바로 앞 ${T.n}일${기록지표() ? '(앱 연 날 기록이 있는 날)' : ''}</p>`;
+  const 뜻 = `<p class="aunote">평소 = 이 기간 바로 앞 ${T.n}일${기록지표() ? '(앱 연 날 기록이 있는 날)' : 지표 === 'x' ? '(탈퇴를 센 날)' : ''}</p>`;
   if (T.avg == null) return 띠말 + 뜻;              /* avg 없는 114 첫 판 — 판정은 114 를 다시 돌리면 나옵니다 */
   const 기대 = T.avg * xs.length;
   const [말, c] = Math.max(합, 기대) < 5 ? ['아직 숫자가 작아 견주지 않아요', 'na']
@@ -190,9 +201,9 @@ function 그래프(D){
   const 최대 = 눈금올림(Math.max(1, ...값, T ? T.hi : 0));
   const X = i => G.왼 + (n <= 1 ? (G.W - G.왼 - G.오) / 2 : i * (G.W - G.왼 - G.오) / (n - 1));
   const Y = v => G.위 + (G.H - G.위 - G.아래) * (1 - v / 최대);
-  /* 「쓴 사람」「다시 온 사람」의 기록 전 날 — 선을 거기서부터 긋고 앞은 흐린 칸. */
-  let 앞 = 0;
-  if (기록지표()){ const i = D.since ? xs.findIndex(p => p.d >= D.since) : -1; 앞 = i < 0 ? n : i; }
+  /* 「쓴 사람」「탈퇴」의 기록 전 날 — 선을 거기서부터 긋고 앞은 흐린 칸. */
+  const 첫날 = xs.findIndex(p => !기록전날(D, p.d));
+  const 앞 = 첫날 < 0 ? n : 첫날;
   const 점 = 값.map((v, i) => [X(i), Y(v)]).slice(앞);
   const 선 = 점.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join('');
   const 바닥 = Y(0).toFixed(1);
@@ -232,7 +243,7 @@ function 그래프잇기(){
   const 최대 = 눈금올림(Math.max(1, ...값, T ? T.hi : 0));
   const X = i => G.왼 + (n <= 1 ? (G.W - G.왼 - G.오) / 2 : i * (G.W - G.왼 - G.오) / (n - 1));
   const Y = v => G.위 + (G.H - G.위 - G.아래) * (1 - v / 최대);
-  const 기록전 = i => 기록지표() && (!D.since || xs[i].d < D.since);
+  const 기록전 = i => 기록전날(D, xs[i].d);
   const 말 = i => `${i === n - 1 ? '오늘' : 긴날(xs[i].d)} · ${기록전(i) ? '기록 전' : `${수(값[i])}${x단위.단위}`}`;
   const 캡 = $('au_cap'), 털 = $('au_hair'), 점 = $('au_dot');
   const 놓기 = () => { 털.setAttribute('visibility', 'hidden'); 점.setAttribute('visibility', 'hidden'); 캡.textContent = 말(n - 1); };
@@ -444,16 +455,15 @@ function 재방문(D){
 }
 
 /* ⑫ 고급 — 모든 숫자 표(유튜브 「고급 모드」). 90일까지는 날마다, 넘으면 주마다(월요일부터).
-   ⚠ 주마다일 때 「쓴 사람」「다시 온」은 그 주 «하루 평균»입니다 — 날마다 사람 수를 더하면 같은 사람이 여러 번 세어져
+   ⚠ 주마다일 때 「쓴 사람」은 그 주 «하루 평균»입니다 — 날마다 사람 수를 더하면 같은 사람이 여러 번 세어져
      「사람」이 아니라 「사람×날」이 됩니다. 맨 위 「이 기간」 줄은 서버가 센 기간 전체 사람 수(한 사람은 한 번)입니다. */
-const 열 = [['a', '쓴 사람'], ['b', '다시 온'], ['s', '가입'], ['r', '별점'], ['p', '성향'], ['t', '여행'],
+const 열 = [['a', '쓴 사람'], ['s', '가입'], ['x', '탈퇴'], ['r', '별점'], ['p', '성향'], ['t', '여행'],
             ['pl', '일정'], ['e', '지출'], ['ai', 'AI'], ['f', '팔로우']];
-const 사람열 = new Set(['a', 'b']);
+const 사람열 = new Set(['a']);
 function 표줄(D){
   const xs = D.series || [], 주마다 = xs.length > 92;
-  const 기록전 = d => !D.since || d < D.since;
   if (!주마다) return { 주마다, 줄: xs.slice().reverse().map(p => ({ 날: p.d, 글: `${짧은날(p.d)} ${요일[new Date(`${p.d}T00:00:00Z`).getUTCDay()]}`,
-    ...Object.fromEntries(열.map(([k]) => [k, 사람열.has(k) && 기록전(p.d) ? null : Number(p[k] || 0)])) })) };
+    ...Object.fromEntries(열.map(([k]) => [k, 기록전날(D, p.d, k) ? null : Number(p[k] || 0)])) })) };
   const 묶음 = new Map();
   for (const p of xs){
     const w = 주첫날(p.d);
@@ -463,8 +473,8 @@ function 표줄(D){
   const 줄 = [...묶음].map(([w, ps]) => {
     const r = { 날: w, 글: `${짧은날(w)}~` };
     for (const [k] of 열){
-      if (사람열.has(k)){ const 된 = ps.filter(p => !기록전(p.d)); r[k] = 된.length ? 된.reduce((a, p) => a + Number(p[k] || 0), 0) / 된.length : null; }
-      else r[k] = ps.reduce((a, p) => a + Number(p[k] || 0), 0);
+      const 된 = ps.filter(p => !기록전날(D, p.d, k)), 합 = 된.reduce((a, p) => a + Number(p[k] || 0), 0);
+      r[k] = !된.length ? null : 사람열.has(k) ? 합 / 된.length : 합;
     }
     return r;
   }).reverse();
@@ -474,15 +484,15 @@ function 표(D){
   if (!새서버(D)) return `<div class="card auc"><h2>모든 숫자</h2>${새안내}</div>`;
   const { 주마다, 줄 } = 표줄(D), K = D.kpi || {};
   const 합 = k => (D.series || []).reduce((a, p) => a + Number(p[k] || 0), 0);
-  const 위 = { a: K.active, b: K.back, ...Object.fromEntries(열.filter(([k]) => !사람열.has(k)).map(([k]) => [k, 합(k)])) };
-  const 칸 = (k, v) => v == null ? '<td class="na">–</td>' : `<td>${사람열.has(k) && 주마다 ? 소수(v) : 수(v)}</td>`;
+  const 위 = { a: K.active, ...Object.fromEntries(열.filter(([k]) => !사람열.has(k)).map(([k]) => [k, 합(k)])) };
+  const 칸 = (k, v) => v == null || (k === 'x' && !탈퇴서버(D)) ? '<td class="na">–</td>' : `<td>${사람열.has(k) && 주마다 ? 소수(v) : 수(v)}</td>`;
   return `<div class="card auc">
     <h2><span class="grow">모든 숫자</span><button type="button" class="small aucsv" data-au-csv="1">CSV 받기</button></h2>
-    <p class="aunote" style="margin-top:0">${기간말(D)} · ${주마다 ? '주마다(월요일부터) — 쓴 사람·다시 온은 그 주 하루 평균' : '날마다'}</p>
+    <p class="aunote" style="margin-top:0">${기간말(D)} · ${주마다 ? '주마다(월요일부터) — 쓴 사람은 그 주 하루 평균' : '날마다'}</p>
     <div class="autw"><table class="aucoh autbl"><thead><tr><th>${주마다 ? '주' : '날'}</th>${열.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead>
       <tbody><tr class="sum"><th scope="row">이 기간</th>${열.map(([k]) => 칸(k, 위[k] ?? null)).join('')}</tr>
       ${줄.map(r => `<tr><th scope="row">${esc(r.글)}</th>${열.map(([k]) => 칸(k, r[k])).join('')}</tr>`).join('')}</tbody></table></div>
-    <p class="aunote">「이 기간」의 쓴 사람·다시 온은 기간 안에 한 번이라도 연 사람(한 사람은 한 번) · – 는 앱 연 날 기록 전</p>
+    <p class="aunote">「이 기간」의 쓴 사람은 기간 안에 한 번이라도 연 사람(한 사람은 한 번) · – 는 기록 전(쓴 사람은 앱 연 날 기록 · 탈퇴는 db/117 전)</p>
   </div>`;
 }
 /* CSV — 엑셀에서 한글이 안 깨지게 BOM 을 붙입니다. 날짜는 오래된 것부터(표는 최근이 위).

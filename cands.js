@@ -13,16 +13,16 @@
  * 같이 데려왔습니다.
  *
  * 층: 아래층 여럿과 planmap · citysearch · cards 를 씁니다. */
-import { $, esc, emptyDo } from './dom.js?v=b834';
-import { sb } from './db.js?v=b834';
-import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b834';
-import { dayLabel, distKm, travelMinutes, legFirst } from './calc.js?v=b834';
-import { trip, plans, legs } from './trip.js?v=b834';
-import { search } from './cities.js?v=b834';
-import { picked } from './citysearch.js?v=b834';
-import { mapLinks } from './planmap.js?v=b834';
-import { openPlanForm } from './cards.js?v=b834';
-import { syncSheets } from './ui.js?v=b834';
+import { $, esc, emptyDo } from './dom.js?v=b835';
+import { sb } from './db.js?v=b835';
+import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b835';
+import { dayLabel, distKm, travelMinutes, legFirst } from './calc.js?v=b835';
+import { trip, plans, legs } from './trip.js?v=b835';
+import { search } from './cities.js?v=b835';
+import { picked } from './citysearch.js?v=b835';
+import { mapLinks } from './planmap.js?v=b835';
+import { openPlanForm } from './cards.js?v=b835';
+import { syncSheets } from './ui.js?v=b835';
 
 let ctx = { loadPlans: async () => {}, openAi: () => {}, loadChats: async () => {} };
 export function setCandsCtx(o){ ctx = { ...ctx, ...o }; }
@@ -458,6 +458,26 @@ export async function fillOnePlan(id, title, date, memo){
   return ok;
 }
 
+/* ── 일정 좌표 채우기(b835) ── 표 불러오기와 같은 길(sheetimp.js 의 `좌표찾기`)입니다.
+ * ① AI 가 줄마다 «실제로 어디인지»의 현지 이름을 짓고(「오이타 공항」 → 「大分空港」),
+ * ② 그날 지역 기준점 가까이에서 지도 자료(OSM)로 찾고, ③ 못 찾은 곳(대개 숙소)은 주소로 국토지리원·OSM.
+ * **AI 는 좌표를 짓지 않습니다** — 좌표는 늘 지도 자료에서 옵니다.
+ * 사용자(10-08): 「AI 성능이 너무 떨어져」 — 앱 AI 가 「좌표를 채울 수 없어요」라고만 했습니다. 이 단추(아래 fillCoords)는
+ *   한국어 제목을 그대로 OSM 에 물어 거의 못 찾았고, AI 대화에는 좌표를 채우는 동작이 아예 없었습니다.
+ *   이제 둘 다 이 함수를 씁니다(aiui.js 의 「좌표 채우기」 신호).
+ * ⚠ 열려 있는 여행(trip.js 의 trip · plans · legs)만 다룹니다.
+ * 돌려주는 값: 좌표찾기 그대로 + { 없음: true }(좌표 빠진 일정이 없을 때). */
+export async function 일정좌표채우기(진행 = () => {}, 그만 = () => false){
+  const list = (plans || []).filter(p => p.lat == null || p.lng == null)
+    .map(p => ({ id: p.id, date: p.date, title: p.title, memo: p.memo, move_note: p.move_note, area: '' }));
+  if (!trip || !list.length) return { 찍음: 0, 못찾음: [], 장소아님: 0, 없음: true };
+  /* 쓸 때 불러옵니다 — sheetimp.js 가 이 파일을 불러서, 위에서 불러오면 서로 물립니다. */
+  const { 좌표찾기 } = await import('./sheetimp.js?v=b835');
+  const r = await 좌표찾기(list, 진행, 그만);
+  await ctx.loadPlans();
+  return r;
+}
+
 async function fillCoords(){
   if (geoBusy){ geoBusy = false; return; }
   const list = needCoord();
@@ -465,7 +485,18 @@ async function fillCoords(){
   geoBusy = true; drawGeoBtn();
   let done = 0, miss = 0;
 
-  for (const it of list){
+  /* ① 일정은 먼저 AI 현지 이름 → 지도 자료로(위 `일정좌표채우기`, b835). */
+  if (list.some(x => x.kind === 'plans')){
+    const r = await 일정좌표채우기((단계, i, n) => {
+      if (geoBusy) $('geobtn').textContent = 단계 === '이름' ? '이름 찾는 중…'
+        : 단계 === '주소' ? '주소로 찾는 중…' : `채우는 중… ${i}/${n}`;
+    }, () => !geoBusy);
+    done += r.찍음 || 0;
+  }
+
+  /* ② 남은 것(못 찾은 일정 · 후보)은 예전 길로 — 메모의 주소 · 구글 지도 링크 · 제목을 봅니다. */
+  const 남은 = geoBusy ? needCoord() : [];
+  for (const it of 남은){
     if (!geoBusy) break;
     const ok = await geoOne(it);
     if (ok === 'stop'){ geoBusy = false; break; }

@@ -22,10 +22,10 @@
  *
  * 층: dom.js · db.js · trip.js · cands.js 만 씁니다. 화면(불러오기 카드)은
  *     bring.js 가 그립니다 — 여기는 읽고·넣고·찾는 일만 합니다. */
-import { sb } from './db.js?v=b834';
-import { trip, plans, legs } from './trip.js?v=b834';
-import { 여행기준, osmLookup, addressQueries } from './cands.js?v=b834';
-import { distKm } from './calc.js?v=b834';
+import { sb } from './db.js?v=b835';
+import { trip, plans, legs } from './trip.js?v=b835';
+import { 여행기준, osmLookup, addressQueries } from './cands.js?v=b835';
+import { distKm } from './calc.js?v=b835';
 
 /* ── 머리줄 찾기 ──────────────────────────────────────────────────────
  * 칸 이름은 사람마다 다르게 씁니다. 날짜와 «무엇을 하나» 두 칸만 있으면

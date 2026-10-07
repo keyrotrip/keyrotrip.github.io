@@ -11,9 +11,9 @@
  * 큰 덩어리는 작은 조각부터 떼어내면 남은 것이 저절로 작아집니다.
  *
  * 층: dom.js 만 씁니다. 여행도 로그인한 사람도 모릅니다. */
-import { $, esc, toast } from './dom.js?v=b834';
-import { sb } from './db.js?v=b834';
-import { fail } from './net.js?v=b834';
+import { $, esc, toast } from './dom.js?v=b835';
+import { sb } from './db.js?v=b835';
+import { fail } from './net.js?v=b835';
 
 /* 대화를 저장할 때 로그인한 사람이 필요합니다. app.js 만 아는 값이라 받습니다 —
    로그인할 때마다 바뀌므로 값이 아니라 **함수**로 받습니다. */
@@ -236,8 +236,37 @@ $('ai_send').addEventListener('click', async () => {
   await ctx.loadChats(tripId);
   drawSources(data.sources, data.web);
   ctx.drawCards(data);
+  /* AI 가 「좌표 채우기」를 냈으면 바로 돌립니다(b835, 사용자: 「검색해서 넣으면 되잖아」). 좌표는 AI 가 짓지 않고
+     지도 자료에서 찾습니다 — cands.js 의 `일정좌표채우기`(일정 화면 「좌표 채우기」 단추와 같은 함수). */
+  if (data.fill_coords) await 좌표채우기답(tripId);
   /* drawChats 안에서 한 번 내리지만 그때는 출처와 제안 카드가 아직 없습니다.
      다 그리고 나서 한 번 더 내려야 새 답변의 끝이 보입니다. */
   ctx.aiToBottom();
 });
 
+
+/* ── AI 대화의 「좌표 채우기」(b835) ── 결과를 AI 답처럼 대화에 남깁니다.
+   ⚠ 열려 있는 여행만 다룹니다 — 다른 여행을 골라 놓고 말하면 그 여행을 열라고 합니다(좌표찾기가 열린 여행의 구간을 씁니다).
+   ⚠ 쓸 때 불러옵니다 — 이 파일이 cands.js·trip.js 를 위에서 부르면 모듈끼리 물릴 수 있습니다. */
+async function 좌표채우기답(tripId){
+  const 말 = async t => {
+    await sb.from('chats').insert({ trip_id: tripId || null, user_id: ctx.me().id, role: 'model', content: t });
+    await ctx.loadChats(tripId);
+    ctx.aiToBottom();
+  };
+  const { trip } = await import('./trip.js?v=b835');
+  if (!tripId || trip?.id !== tripId) return 말('좌표를 채우려면 그 여행을 열어 둔 채로 다시 말해 주세요.');
+  const { 일정좌표채우기 } = await import('./cands.js?v=b835');
+  showTyping();
+  let r;
+  try { r = await 일정좌표채우기(); }
+  catch { r = { 안됨: true }; }
+  finally { hideTyping(); }
+  if (r.없음) return 말('좌표가 빠진 일정이 없어요.');
+  /* 이름 짓기도 AI 를 한 번 씁니다(하루 한도에서 빠짐) — 한도를 다 쓴 것이면 서버가 준 이유를 그대로 보입니다. */
+  if (r.안됨) return 말(r.이유 ? `좌표를 찾지 못했어요 — ${r.이유}` : '지금은 좌표를 찾지 못했어요. 잠시 뒤 다시 말해 주세요.');
+  const 못 = [...new Set((r.못찾음 || []).map(g => g.이름).filter(Boolean))];
+  return 말(`좌표 ${r.찍음 || 0}곳을 채웠어요.` +
+    (못.length ? `\n못 찾은 곳: ${못.join(', ')} — 그 일정의 메모에 구글 지도 링크를 붙이면 바로 잡혀요.` : '') +
+    (r.멈춤 ? '\n지도 자료가 잠깐 막혀서 중간에 멈췄어요. 조금 뒤 다시 말해 주세요.' : ''));
+}

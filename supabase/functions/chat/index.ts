@@ -1251,7 +1251,8 @@ Deno.serve(async (req) => {
       '    { "type":"add_plan", "date":"YYYY-MM-DD", "start_time":"HH:MM" 또는 null,',
       '      "title":"제목", "category":"위와 같음", "memo":"한 줄" 또는 null,',
       '      "lat":숫자 또는 null, "lng":숫자 또는 null }',
-      '  ]',
+      '  ],',
+      '  "fill_coords": false',
       '}',
       '',
       'places · actions 규칙:',
@@ -1265,6 +1266,18 @@ Deno.serve(async (req) => {
       '  ("1. 쌍용각  2. 죽서루" 처럼). 사용자는 다음 말에서 "1번", "그거" 로',
       '  가리킨다. reply 에 이름이 없으면 네가 방금 낸 것을 너도 못 찾는다 —',
       '  카드는 대화에 안 남고 이 글만 남는다.',
+      '',
+      // b835 — 사용자: 「AI 성능이 너무 떨어져」. 「오이타 공항은 왜 좌표를 못 넣었어?」·「검색해서 넣으면 되잖아」에
+      // 「시스템에 없어서 못 넣어요」라고만 했습니다. 좌표를 채우는 동작이 아예 없었기 때문입니다.
+      // 이제 이 신호를 내면 화면(aiui.js)이 cands.js 의 `일정좌표채우기`를 돌립니다 — AI 는 현지 이름만 짓고
+      // 좌표는 지도 자료(국토지리원·OSM)에서 옵니다. 좌표를 지어내지 않는 규칙은 그대로입니다.
+      'fill_coords 규칙 — 좌표(지도 위치) 채우기:',
+      '- 사용자가 일정의 좌표·지도 위치를 채워 달라거나, 좌표가 왜 비었냐고 묻거나, 검색해서 넣으라고 하면',
+      '  fill_coords 를 true 로 둔다. 그러면 앱이 좌표가 빠진 일정을 지도 자료(일본은 국토지리원, 그 밖은',
+      '  OpenStreetMap)에서 찾아 넣고 결과를 따로 알려 준다.',
+      '- 그때 reply 는 「좌표가 빠진 일정의 위치를 지도에서 찾아 넣을게요」처럼 한 줄로 쓴다.',
+      '  「못 한다」·「검색 기능이 없다」·「시스템에 없다」고 하지 않는다 — 앱이 할 수 있다.',
+      '- 좌표 숫자를 네가 지어내지 않는다. 좌표 이야기가 아니면 fill_coords 는 false 로 둔다.',
       '',
       'sources 규칙 — 이건 사용자에게 그대로 보여준다. 정확해야 한다:',
       // 짝을 **한 곳에서만** 만듭니다. 아래 흰 목록도 같은 SRC_MAP 을 씁니다.
@@ -1495,7 +1508,7 @@ Deno.serve(async (req) => {
 
     // JSON 을 못 받아도 말은 전합니다. 형식이 깨졌다고 답까지 버릴 이유는 없습니다.
     let out: { reply?: string; places?: unknown[]; actions?: unknown[];
-               sources?: unknown[] } = {};
+               sources?: unknown[]; fill_coords?: unknown } = {};
     try { out = JSON.parse(raw); } catch { out = { reply: raw }; }
 
     // ── 안전장치 (문서 7장) ──
@@ -1620,6 +1633,8 @@ Deno.serve(async (req) => {
       // 알고 이유를 모릅니다. 화면에서 "이 링크는 못 읽었어요"라고 말해줍니다.
       blogs: blogReport.length ? blogReport : undefined,
       used: take.used, limit: take.limit,
+      // b835 — 「좌표 채우기」 신호. 묻고 답할 때만(초안·불러오기는 아님). 화면이 받아서 지도 자료로 찾습니다.
+      fill_coords: (!draft && !imp && out.fill_coords === true) ? true : undefined,
       // 어느 날이 비었는지는 화면에서 알려줍니다. 다시 짜달라고 할지 사용자가 정합니다.
       days: (draft || imp) ? days : undefined,
     });
