@@ -11,9 +11,9 @@
  * 큰 덩어리는 작은 조각부터 떼어내면 남은 것이 저절로 작아집니다.
  *
  * 층: dom.js 만 씁니다. 여행도 로그인한 사람도 모릅니다. */
-import { $, esc, toast } from './dom.js?v=b835';
-import { sb } from './db.js?v=b835';
-import { fail } from './net.js?v=b835';
+import { $, esc, toast } from './dom.js?v=b836';
+import { sb } from './db.js?v=b836';
+import { fail } from './net.js?v=b836';
 
 /* 대화를 저장할 때 로그인한 사람이 필요합니다. app.js 만 아는 값이라 받습니다 —
    로그인할 때마다 바뀌므로 값이 아니라 **함수**로 받습니다. */
@@ -254,9 +254,9 @@ async function 좌표채우기답(tripId){
     await ctx.loadChats(tripId);
     ctx.aiToBottom();
   };
-  const { trip } = await import('./trip.js?v=b835');
+  const { trip } = await import('./trip.js?v=b836');
   if (!tripId || trip?.id !== tripId) return 말('좌표를 채우려면 그 여행을 열어 둔 채로 다시 말해 주세요.');
-  const { 일정좌표채우기 } = await import('./cands.js?v=b835');
+  const { 일정좌표채우기 } = await import('./cands.js?v=b836');
   showTyping();
   let r;
   try { r = await 일정좌표채우기(); }

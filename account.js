@@ -16,10 +16,10 @@
  * 층: dom.js · db.js · net.js · trip.js 만 씁니다. 프로필 화면의 '보관함·지도
  *     열기' 손잡이는 **두고 왔습니다** — 바로 아랫줄에 있었지만 그건 화면
  *     넘기기지 내 계정이 아닙니다. */
-import { $, esc, toast } from './dom.js?v=b835';
-import { sb } from './db.js?v=b835';
-import { fail, netTimeout, forgetLocal } from './net.js?v=b835';
-import { plans, expenses, bookings } from './trip.js?v=b835';
+import { $, esc, toast } from './dom.js?v=b836';
+import { sb } from './db.js?v=b836';
+import { fail, netTimeout, forgetLocal } from './net.js?v=b836';
+import { plans, expenses, bookings } from './trip.js?v=b836';
 
 
 let ctx = { me: () => null, logError: () => {} };
@@ -164,26 +164,28 @@ $('rp_send').addEventListener('click', async () => {
 /* ── 내 자료 내려받기 ────────────────────────────────────────────────
  * 데이터베이스에는 되돌리기가 없습니다. 잘못 지우면 그냥 사라집니다.
  * 서버 열쇠를 쓰지 않고 내 권한으로만 읽습니다 — RLS 가 내 것만 내줍니다.
- * 남의 여행에 초대돼 있으면 그 여행도 같이 받습니다. 볼 수 있는 것이 곧 내 자료입니다. */
-$('dumpbtn').addEventListener('click', async () => {
-  const b = $('dumpbtn');
-  $('dumperr').classList.add('hide');
-  b.disabled = true; b.innerHTML = '<span class="load">모으는 중…</span>';
+ * 남의 여행에 초대돼 있으면 그 여행도 같이 받습니다. 볼 수 있는 것이 곧 내 자료입니다.
+ * ⚠ **두 가지로 받습니다(b836).** 사용자(10-08): 「기록을 json 파일로 받는다는데 일반 유저들은 이게 무슨
+ *   파일인지 모르는데 나도 잘 몰라」. 인스타그램 「내 정보 받기」처럼 —
+ *   보기용 = 사람이 읽는 HTML 한 장(myrecord.js) · 옮기기용 = 지금까지의 JSON(처리방침 「전송 요구」가 이 파일).
+ *   **모으는 것은 하나입니다**(아래 `모으기`) — 둘이 다른 표를 받으면 어느 쪽이 온전한지 모르게 됩니다. */
 
-  /* 표마다 조건이 다르지 않습니다. RLS 가 이미 걸러 주므로 통째로 받습니다. */
-  const TABLES = ['trips', 'trip_legs', 'trip_members', 'plans', 'expenses',
-                  'expense_shares', 'bookings', 'packing', 'links', 'candidates',
-                  'city_ratings', 'plan_ratings', 'trip_reviews', 'chats',
-                  'profiles', 'user_prefs'];
-  /* 표 이름을 한국어로 옮기는 짝. **위로 올려두었습니다** — 아래 목록만
-     쓰고 있었고, 정작 오류 문구는 `city_ratings(PGRST301)` 처럼 표 이름과
-     오류 코드를 그대로 내보내고 있었습니다. 둘이 같은 짝을 써야 합니다. */
-  const NAME = { trips:'여행', trip_legs:'구간', trip_members:'일행', plans:'일정',
-                 expenses:'지출', expense_shares:'분담', bookings:'예약',
-                 packing:'준비물', links:'링크', candidates:'후보',
-                 city_ratings:'도시 별점', plan_ratings:'맛집 별점',
-                 trip_reviews:'여행 후기', chats:'AI 대화',
-                 profiles:'프로필', user_prefs:'설정' };
+/* 표마다 조건이 다르지 않습니다. RLS 가 이미 걸러 주므로 통째로 받습니다. */
+const TABLES = ['trips', 'trip_legs', 'trip_members', 'plans', 'expenses',
+                'expense_shares', 'bookings', 'packing', 'links', 'candidates',
+                'city_ratings', 'plan_ratings', 'trip_reviews', 'chats',
+                'profiles', 'user_prefs'];
+/* 표 이름을 한국어로 옮기는 짝. **위로 올려두었습니다** — 아래 목록만
+   쓰고 있었고, 정작 오류 문구는 `city_ratings(PGRST301)` 처럼 표 이름과
+   오류 코드를 그대로 내보내고 있었습니다. 둘이 같은 짝을 써야 합니다. */
+const NAME = { trips:'여행', trip_legs:'구간', trip_members:'일행', plans:'일정',
+               expenses:'지출', expense_shares:'분담', bookings:'예약',
+               packing:'준비물', links:'링크', candidates:'후보',
+               city_ratings:'도시 별점', plan_ratings:'맛집 별점',
+               trip_reviews:'여행 후기', chats:'AI 대화',
+               profiles:'프로필', user_prefs:'설정' };
+
+async function 모으기(){
   const out = { app:'기로', savedAt:new Date().toISOString(), user:ctx.me().id, data:{} };
   const failed = [];
   for (const t of TABLES){
@@ -196,6 +198,25 @@ $('dumpbtn').addEventListener('click', async () => {
     out.data[t] = r.data || [];
   }
   /* 도시 목록은 우리가 만든 자료라 안 넣습니다 — 잃어버릴 것은 내가 쓴 것뿐입니다. */
+  return { out, failed };
+}
+
+/* 파일 내려 주기 — 둘이 같이 씁니다.
+   ⚠ 주소를 누르자마자 거두면(revoke) 받기 전에 끊는 브라우저가 있습니다 — 조금 뒤에 거둡니다(adminuse CSV 와 같게). */
+function 내려주기(blob, 이름){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 이름;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+
+/* 단추 하나 = 파일 한 가지. 종류: 'html'(보기용) · 'json'(옮기기용). */
+async function 받기(단추, 종류){
+  const b = $(단추);
+  $('dumperr').classList.add('hide');
+  b.disabled = true; b.innerHTML = '<span class="load">모으는 중…</span>';
+  const { out, failed } = await 모으기();
 
   /* ⚠⚠ **하나도 못 받았으면 파일을 안 내립니다(b716, b698 점검 여덟째).** ⚠⚠
      여태 표를 전부 실패해도 `{}` 를 담은 파일이 그대로 떨어지고 토스트는
@@ -205,18 +226,24 @@ $('dumpbtn').addEventListener('click', async () => {
        있습니다. 「못 받은 표가 하나도 없는가」로 가릅니다.
      ⚠ 일부만 실패한 경우는 **내립니다** — 받을 수 있는 것까지 못 받게
        하는 것이 더 나쁩니다. 대신 파일 이름에 표를 남겨 나중에 이 파일이
-       온전한 것인 줄 알고 쓰지 않게 합니다. */
+       온전한 것인 줄 알고 쓰지 않게 합니다(보기용은 파일 맨 위에도 적습니다). */
   if (failed.length === TABLES.length){
     b.disabled = false; b.textContent = '다시 받기';
     return fail('아무것도 못 받았어요. 연결을 확인하고 다시 받아주세요.', 'dump');
   }
   const n = Object.values(out.data).reduce((s, v) => s + v.length, 0);
-  const blob = new Blob([JSON.stringify(out, null, 1)], { type:'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `giro-backup-${new Date().toISOString().slice(0,10)}${
-                  failed.length ? '-불완전' : ''}.json`;
-  a.click(); URL.revokeObjectURL(a.href);
+  const 날 = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });   /* 서울 날짜 YYYY-MM-DD */
+  const 꼬리 = failed.length ? '-불완전' : '';
+  if (종류 === 'json'){
+    내려주기(new Blob([JSON.stringify(out, null, 1)], { type:'application/json' }), `giro-backup-${날}${꼬리}.json`);
+  } else {
+    /* 쓸 때 불러옵니다 — 받기 단추를 누르는 사람은 드뭅니다.
+       ⚠ 도시 이름은 앱이 불러 둔 도시 목록에서 찾습니다. 아직 안 불러졌으면 파일에 «도시 번호»가 찍히므로
+         한 번 불러 둡니다(이미 있으면 바로 돌아옵니다). 못 불러도 파일은 내립니다. */
+    try { await (await import('./citysearch.js?v=b836')).loadCities(); } catch {}
+    const { 보기파일 } = await import('./myrecord.js?v=b836');
+    내려주기(new Blob([보기파일({ ...out, failed })], { type:'text/html;charset=utf-8' }), `기로-내기록-${날}${꼬리}.html`);
+  }
 
   b.disabled = false; b.textContent = '다시 받기';
   /* 총합만 보면 맞는지 알 수가 없습니다. 표마다 몇 개인지 늘어놓습니다 —
@@ -237,7 +264,15 @@ $('dumpbtn').addEventListener('click', async () => {
   /* 새로 그릴 때마다 단추도 새것이라 여기서 답니다. */
   $('dumplist').querySelector('#dumpclose').onclick =
     () => $('dumplist').classList.add('hide');
-  toast(`${n.toLocaleString()}개를 저장했어요`);
+  toast(종류 === 'json' ? `${n.toLocaleString()}개를 저장했어요`
+                        : '내 기록 파일을 받았어요 — 받은 파일을 누르면 열려요');
   if (failed.length)
     fail('일부는 못 받았어요: ' + failed.join(', ') + '. 잠시 뒤 다시 받아주세요.', 'dump');
-});
+}
+$('viewbtn').addEventListener('click', () => 받기('viewbtn', 'html'));
+$('dumpbtn').addEventListener('click', () => 받기('dumpbtn', 'json'));
+
+/* 보기 파일(myrecord.js)은 누를 때 불러오므로 CI 의 자가검사 훑기(window.__*Check)가 못 봅니다.
+   그래서 여기 — 처음부터 불리는 파일 — 에 걸어 둡니다. 서버도 로그인도 안 씁니다. */
+if (typeof window !== 'undefined')
+  window.__myrecordCheck = async () => (await import('./myrecord.js?v=b836')).검사();

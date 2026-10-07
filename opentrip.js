@@ -17,21 +17,21 @@
  * `channel`·`bumpTimer`·`bumpPending` 은 실시간의 상태라 같이 왔습니다.
  *
  * 층: 아래층과 이미 떼어낸 조각 여럿을 씁니다. 그쪽은 이 파일을 안 부릅니다. */
-import { $, esc } from './dom.js?v=b835';
-import { sb } from './db.js?v=b835';
-import { fail, netTimeout, netIsDown, drawOffbar, cacheGet, cacheSet } from './net.js?v=b835';
-import { D1, asDate, dateRange, localTime, todayYmd } from './calc.js?v=b835';
+import { $, esc } from './dom.js?v=b836';
+import { sb } from './db.js?v=b836';
+import { fail, netTimeout, netIsDown, drawOffbar, cacheGet, cacheSet } from './net.js?v=b836';
+import { D1, asDate, dateRange, localTime, todayYmd } from './calc.js?v=b836';
 import { trip, plans, legs, members, expenses, bookings,
-         setTrip, setPickedDay } from './trip.js?v=b835';
-import { loadCities } from './citysearch.js?v=b835';
-import { clearCityOpen } from './city.js?v=b835';
-import { loadReview } from './review.js?v=b835';
-import { loadMembers } from './member.js?v=b835';
-import { loadExpenses } from './expense.js?v=b835';
-import { loadBookings, loadPacking, loadLinks } from './prep.js?v=b835';
-import { inTrip, showTab } from './tabs.js?v=b835';
-import { loadLegs, fillCityList } from './legs.js?v=b835';
-import { loadPlans, backToList, openedOnToday } from './tripview.js?v=b835';
+         setTrip, setPickedDay } from './trip.js?v=b836';
+import { loadCities } from './citysearch.js?v=b836';
+import { clearCityOpen } from './city.js?v=b836';
+import { loadReview } from './review.js?v=b836';
+import { loadMembers } from './member.js?v=b836';
+import { loadExpenses } from './expense.js?v=b836';
+import { loadBookings, loadPacking, loadLinks } from './prep.js?v=b836';
+import { inTrip, showTab } from './tabs.js?v=b836';
+import { loadLegs, fillCityList } from './legs.js?v=b836';
+import { loadPlans, backToList, openedOnToday } from './tripview.js?v=b836';
 
 let ctx = { me: () => null, appTab: () => '' };
 export function setOpenTripCtx(o){ ctx = { ...ctx, ...o }; }
