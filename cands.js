@@ -13,16 +13,16 @@
  * 같이 데려왔습니다.
  *
  * 층: 아래층 여럿과 planmap · citysearch · cards 를 씁니다. */
-import { $, esc, emptyDo } from './dom.js?v=b836';
-import { sb } from './db.js?v=b836';
-import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b836';
-import { dayLabel, distKm, travelMinutes, legFirst } from './calc.js?v=b836';
-import { trip, plans, legs } from './trip.js?v=b836';
-import { search } from './cities.js?v=b836';
-import { picked } from './citysearch.js?v=b836';
-import { mapLinks } from './planmap.js?v=b836';
-import { openPlanForm } from './cards.js?v=b836';
-import { syncSheets } from './ui.js?v=b836';
+import { $, esc, emptyDo } from './dom.js?v=b837';
+import { sb } from './db.js?v=b837';
+import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b837';
+import { dayLabel, distKm, travelMinutes, legFirst } from './calc.js?v=b837';
+import { trip, plans, legs } from './trip.js?v=b837';
+import { search } from './cities.js?v=b837';
+import { picked } from './citysearch.js?v=b837';
+import { mapLinks } from './planmap.js?v=b837';
+import { openPlanForm } from './cards.js?v=b837';
+import { syncSheets } from './ui.js?v=b837';
 
 let ctx = { loadPlans: async () => {}, openAi: () => {}, loadChats: async () => {} };
 export function setCandsCtx(o){ ctx = { ...ctx, ...o }; }
@@ -472,7 +472,7 @@ export async function 일정좌표채우기(진행 = () => {}, 그만 = () => fa
     .map(p => ({ id: p.id, date: p.date, title: p.title, memo: p.memo, move_note: p.move_note, area: '' }));
   if (!trip || !list.length) return { 찍음: 0, 못찾음: [], 장소아님: 0, 없음: true };
   /* 쓸 때 불러옵니다 — sheetimp.js 가 이 파일을 불러서, 위에서 불러오면 서로 물립니다. */
-  const { 좌표찾기 } = await import('./sheetimp.js?v=b836');
+  const { 좌표찾기 } = await import('./sheetimp.js?v=b837');
   const r = await 좌표찾기(list, 진행, 그만);
   await ctx.loadPlans();
   return r;

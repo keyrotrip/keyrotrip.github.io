@@ -17,8 +17,8 @@
  * 끄는 자리**라, 떼면 그 조각이 나머지 전부를 알아야 합니다.
  *
  * 층: dom.js 와 planmap.js(Leaflet 을 미리 받아둘지 정하는 자리) 만 씁니다. */
-import { $ } from './dom.js?v=b836';
-import { ensureLeaflet } from './planmap.js?v=b836';
+import { $ } from './dom.js?v=b837';
+import { ensureLeaflet } from './planmap.js?v=b837';
 
 let ctx = { logError: () => {} };
 export function setSwRegCtx(o){ ctx = { ...ctx, ...o }; }

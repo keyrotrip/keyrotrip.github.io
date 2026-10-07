@@ -14,9 +14,9 @@
  *
  * 층: dom.js · db.js · cities.js. persona.js 를 import 하지 않습니다(고리) — 저장 뒤 할 일은 받아서 부릅니다.
  * 뒤로가기는 tripview.js 의 사슬이 닫습니다(isVisitsOpen · closeVisits). */
-import { $, esc, toast } from './dom.js?v=b836';
-import { sb } from './db.js?v=b836';
-import { cities } from './cities.js?v=b836';
+import { $, esc, toast } from './dom.js?v=b837';
+import { sb } from './db.js?v=b837';
+import { cities } from './cities.js?v=b837';
 
 let 판 = null;   /* { uid, 줄, 값: Map(도시 → 1~5), 처음, 다음 } */
 
