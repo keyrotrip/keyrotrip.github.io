@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b832';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b833';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b832';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b833';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b832`;
+    img.src = `./persona/${code}.webp?v=b833`;
   });
 }
 
@@ -564,7 +564,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b832`;
+    img.src = `./persona/m/${code}.jpg?v=b833`;
   });
 }
 
@@ -575,6 +575,12 @@ function 덮어그리기(g, img, x, y, w, h){
   if (sr > dr){ sw = img.height * dr; sx = (img.width - sw) / 2; }
   else if (sr < dr){ sh = img.width / dr; sy = (img.height - sh) / 2; }
   g.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+/* 둥근 칸에 꽉 차게(궁합 그림, b833). */
+function 둥근덮어그리기(g, img, x, y, w, h, r){
+  g.save(); rrect(g, x, y, w, h, r); g.clip();
+  덮어그리기(g, img, x, y, w, h);
+  g.restore();
 }
 
 /* ══ 바닥 ── 가는 선 · 기로 · 부르는 말 ═══════════════════════════════
@@ -620,9 +626,11 @@ async function drawP16(s, W, H, F){
   const PX = 0, PY = 0, PW = W, PH = H;
   const u = PW / 360;
   const px = v => v * u;
-  g.fillStyle = P16N.종이; g.fillRect(PX, PY, PW, PH);
+  /* ⚠ **네 귀퉁이를 둥글게, 바깥은 투명으로(b833, 사용자: 「성향카드도 귀퉁이 둥글게」).** 발자국 탑승권(drawStamps)과
+     같은 반지름(16)입니다 — 둘을 나란히 올려도 모서리가 같습니다. 바깥을 안 칠하므로 맨 끝 저장은 **PNG** 입니다. */
   g.save();
-  g.beginPath(); g.rect(PX, PY, PW, PH); g.clip();
+  rrect(g, PX, PY, PW, PH, px(16)); g.clip();
+  g.fillStyle = P16N.종이; g.fillRect(PX, PY, PW, PH);
 
   const 궁합있음 = !!(s.best && s.worst);
   const [art, 좋은그림, 나쁜그림] = await Promise.all([
@@ -885,8 +893,9 @@ async function drawP16(s, W, H, F){
       const cx0 = PX + 좌 + i * (칸폭 + px(10));
       const ih = bx(그림높이), iw = ih * 1.5, ix = cx0 + bx(10);
       g.fillStyle = 색; g.fillRect(cx0, top, Math.max(1.5, bx(2)), ih + bx(5 + 11 + 15 + 11));
-      if (그림) 덮어그리기(g, 그림, ix, top, iw, ih);
-      else { g.fillStyle = P16_PANEL[m.code[0] === 'H' ? 'H' : 'F']; g.fillRect(ix, top, iw, ih); }
+      /* 그림 모서리도 둥글게(b833, 사용자: 「궁합 사진들도 라운드지게」) — 화면(.mateimg 10px)과 같은 느낌. */
+      if (그림) 둥근덮어그리기(g, 그림, ix, top, iw, ih, px(9));
+      else { g.fillStyle = P16_PANEL[m.code[0] === 'H' ? 'H' : 'F']; rrect(g, ix, top, iw, ih, px(9)); g.fill(); }
       let ly = top + ih + bx(5 + 9);
       g.font = F(700, bx(8.5)); g.fillStyle = 색;
       g.fillText(줄여쓰기(g, `${딱지} · ${m.score}%`, iw), ix, ly);
@@ -909,8 +918,8 @@ async function drawP16(s, W, H, F){
     [[s.best, '환상의 메이트', P16N.좋음, 좋은그림],
      [s.worst, '극과 극 메이트', P16N.나쁨, 나쁜그림]].forEach(([m, 딱지, 색, 그림], i) => {
       const cx0 = PX + 좌 + i * (칸폭 + px(10));
-      if (그림) 덮어그리기(g, 그림, cx0, top, th, th);
-      else { g.fillStyle = P16_PANEL[m.code[0] === 'H' ? 'H' : 'F']; g.fillRect(cx0, top, th, th); }
+      if (그림) 둥근덮어그리기(g, 그림, cx0, top, th, th, px(7));
+      else { g.fillStyle = P16_PANEL[m.code[0] === 'H' ? 'H' : 'F']; rrect(g, cx0, top, th, th, px(7)); g.fill(); }
       const lx = cx0 + th + bx(7), lw = 칸폭 - th - bx(7);
       g.textAlign = 'left';
       g.font = F(700, bx(8)); g.fillStyle = 색;
@@ -939,14 +948,12 @@ async function drawP16(s, W, H, F){
   기로바닥(g, PX, PY, PW, PH, 바닥높이, px, F, '나의 여행 성향 알아보기');
 
   g.restore();
-  /* ⚠⚠ **PNG 가 아니라 JPEG 입니다(b775).** 이제 사진이 셋이라 PNG 면
-     2MB 가 넘습니다(실측: 스토리 2,222KB). 옛 주석은 「사진이 없어 단색이
-     넓게 깔리니 PNG 로도 작다」였는데 그 전제가 사라졌고, PNG 를 쓰던
-     다른 이유(투명판)도 같이 없어졌습니다. 카톡·인스타는 어차피 다시
-     눌러 담습니다.
-     ⚠ 저장 쪽(`saveCardImage`)이 `blob.type` 을 보고 확장자를 정하므로
-       여기만 바꾸면 됩니다. */
-  return new Promise(r => cv.toBlob(r, 'image/jpeg', .92));
+  /* ⚠⚠ **다시 PNG 입니다(b833).** 네 귀퉁이를 투명하게 둥글렸기 때문입니다 — JPEG 는 투명을 못 담아
+     귀퉁이가 검게 칠해집니다(발자국 탑승권과 같은 까닭). b775 에 JPEG 로 바꾼 까닭은 크기였습니다
+     (사진 셋이라 PNG 면 스토리 2,222KB). 크기는 다시 커지지만 공유는 폰 안에서 넘기는 것이고,
+     사용자가 인스타에서 투명 귀퉁이가 잘 나오는 것을 확인했습니다(10-08).
+     ⚠ 저장 쪽(`saveCardImage`)이 `blob.type` 을 보고 확장자를 정하므로 여기만 바꾸면 됩니다. */
+  return new Promise(r => cv.toBlob(r, 'image/png'));
 }
 
 /* ── 발자국 카드 = 여행 탑승권 (b832, 2026-10-07 사용자가 고른 시안 6-2) ─────────────────
@@ -2822,6 +2829,27 @@ if (typeof window !== 'undefined') window.__drawCheck = async () => {
     }
     bad('발자국 탑승권 — 스토리 한 가지 · 귀퉁이·홈 투명 · 깃발 0/29/60 · 지도 깨짐', m);
   } catch (e){ bad('발자국 탑승권', ['터짐: ' + e.message]); }
+  /* ── 성향 카드(b833) ── 사용자: 「성향카드도 귀퉁이 둥글게」. 둥근 귀퉁이는 투명이라 **PNG** 라야 합니다 —
+     b775 처럼 JPEG 로 되돌리면 귀퉁이가 검게 칠해집니다. 그걸 잡습니다. */
+  try {
+    const m = [];
+    const t = PERSONA16.FMDP;
+    const spec = { kind:'p16', code:'FMDP', rank:'상위 3%', axisWords:'유명한 곳 · 새로운 곳 · 멀리 · 까다로움',
+      name:t.n, desc:t.d, countries:29, cities:77, bars: AXIS_NAME.map(n => [n, 50, false]),
+      best:{ code:'HLNG', score:99, name:PERSONA16.HLNG.n, line:'' },
+      worst:{ code:'HMNP', score:10, name:PERSONA16.HMNP.n, line:'' },
+      picks:{ match:['체르마트'], opposite:['쑤저우'] }, mrz:null, title:'', shareLine:'' };
+    const { blob } = await cardImage(spec, 'story');
+    if (blob?.type !== 'image/png') m.push(`PNG 가 아님(${blob?.type}) — 귀퉁이 투명이 사라짐`);
+    const bmp = await createImageBitmap(blob);
+    const cv = document.createElement('canvas'); cv.width = bmp.width; cv.height = bmp.height;
+    const g = cv.getContext('2d'); g.drawImage(bmp, 0, 0);
+    const 알파 = (x, y) => g.getImageData(Math.round(x), Math.round(y), 1, 1).data[3];
+    if ([알파(1, 1), 알파(bmp.width - 2, 1), 알파(1, bmp.height - 2), 알파(bmp.width - 2, bmp.height - 2)].some(v => v !== 0))
+      m.push('귀퉁이가 투명하지 않음');
+    if (알파(bmp.width / 2, bmp.height / 2) !== 255) m.push('카드 안쪽이 비었음');
+    bad('성향 카드 — 둥근 귀퉁이 투명 · PNG', m);
+  } catch (e){ bad('성향 카드 둥근 귀퉁이', ['터짐: ' + e.message]); }
 
   console.table(out);
   const ng = out.filter(o => o.결과.startsWith('✗'));

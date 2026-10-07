@@ -4198,9 +4198,11 @@ svg.fg{ display:block; width:100%; aspect-ratio:1 / 1; height:auto; }
      늘어나는 칸(stretch)이라 제일 큰 것에 맞춰지고, 그 안의 판이 그
      높이를 다 씁니다 — 내 유형처럼 밑글이 짧은 판도 키가 같아집니다.
      안 맞추면 넘길 때 판이 커졌다 작아졌다 합니다. */
+/* ⚠⚠ **크기·진하기는 p16.js 의 `크기맞추기` 가 손가락 위치를 따라 이어서 바꿉니다(10-08, 사용자: 「팍 튀어 오르는
+   느낌」).** 여기 값은 처음 그릴 때와 멀리 있는 칸의 값이고, 거기 끝값(.93 · .52)과 같아야 합니다.
+   ⚠ **transition 을 달지 마십시오** — 달면 손가락보다 늦게 따라오다가 «툭» 하고 따라잡습니다(전에 0.18초였음). */
 .p16slide{ flex:0 0 100%; min-width:0; scroll-snap-align:center; display:flex;
-           transform:scale(.93); opacity:.52;
-           transition:transform .18s var(--ease), opacity .18s var(--ease); }
+           transform:scale(.93); opacity:.52; }
 .p16slide.on{ transform:none; opacity:1; }
 /* ⚠⚠ **그림과 밑글이 «한 판»입니다(b745, 사용자: 「아래 카드영역까지
    한판이 되어야지」).** 그림만 카드처럼 두고 글을 밖에 놓았더니 둘이

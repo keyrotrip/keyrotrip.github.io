@@ -33,8 +33,8 @@
  *   성향 화면·카드 그림·친구 궁합이 다 쓰는 하나입니다. 여기서 따로 재면
  *   같은 두 유형이 화면마다 다른 점수를 냅니다.
  */
-import { $, esc, coverDeck, toTop } from './dom.js?v=b832';
-import { PERSONA16, AXIS_NAME, AXIS_WORD, personaMatch } from './card.js?v=b832';
+import { $, esc, coverDeck, toTop } from './dom.js?v=b833';
+import { PERSONA16, AXIS_NAME, AXIS_WORD, personaMatch } from './card.js?v=b833';
 
 /* ⚠ 코드 열여섯의 «차례»는 PERSONA16 에 적힌 차례 그대로입니다 —
    FLNG → HMDP 로, 축 네 자리가 자리별로 뒤집히는 차례라 이웃끼리 한 글자만
@@ -68,8 +68,8 @@ function 카드(code, k, 시작){
       <div class="phero">
         <!-- 자리막이(b743). 큰 그림이 붙기 전까지 이 자리를 채웁니다. -->
         <div class="psizer"
-             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b832')"></div>
-        <img src="./persona/m/${esc(code)}.jpg?v=b832" alt=""
+             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b833')"></div>
+        <img src="./persona/m/${esc(code)}.jpg?v=b833" alt=""
              loading="${언제}" decoding="async"
              onerror="this.closest('.phero').classList.add('noart')">
         <div class="pscrim"></div>
@@ -163,7 +163,7 @@ function 격자(){
        얹었기 때문입니다. `onerror` 로 «그림 없음» 표시를 답니다. */
     return `<button class="p16cell${나 ? ' mine' : ''}" data-p16go="${code}">
       <span class="sz"></span>
-      <img src="./persona/t/${code}.jpg?v=b832" alt="" loading="lazy" decoding="async"
+      <img src="./persona/t/${code}.jpg?v=b833" alt="" loading="lazy" decoding="async"
            onerror="this.closest('.p16cell').classList.add('noart')">
       <span class="sh"></span>${표}
       <span class="p16lb"><i>${code}</i><b>${esc(t.n)}</b></span>
@@ -203,7 +203,7 @@ function 이웃받기(){
   for (const d of [1, -1, 2, -2]){
     const c = 코드들[(i + d + 코드들.length) % 코드들.length];
     const im = new Image();
-    im.src = `./persona/m/${c}.jpg?v=b832`;
+    im.src = `./persona/m/${c}.jpg?v=b833`;
   }
 }
 
@@ -250,12 +250,38 @@ function 가운데바뀜(k){
 }
 
 
+/* 손가락을 «따라» 커지고 흐려집니다(10-08, 사용자: 「도감에서 좌우로 스크롤 할 때 부드럽게 돼야하는데 팍 튀어
+   오르는 느낌이 있어」). 전에는 가운데가 바뀌는 «순간» 클래스 하나(.on)로 0.18초 만에 93% → 100% 로 컸습니다 —
+   손은 아직 움직이는데 카드만 팍 튀었습니다. 이제 화면 한가운데에서 떨어진 거리(칸 단위 0~1)만큼 크기(1 → .93)와
+   진하기(1 → .52)를 이어서 바꿉니다. 끝값은 app.css 의 .p16slide 기본값과 같습니다 — 둘을 같이 고치십시오.
+   ⚠ 열여섯을 다 재지 않습니다(b747) — 칸 간격이 일정하니 스크롤 위치 하나로 셈하고, 가까운 다섯 칸만 칠합니다.
+   ⚠ 먼저 다 읽고(위치) 나중에 씁니다(크기) — 섞으면 한 프레임에 배치 계산이 여러 번 일어납니다.
+   ⚠ transform · opacity 만 바꿉니다 — 둘 다 배치를 다시 안 해서 굴리는 동안 싸게 그려집니다. */
+function 크기맞추기(t){
+  const a = t.children[0], b = t.children[1];
+  if (!a) return;
+  const 칸새 = b ? b.offsetLeft - a.offsetLeft : a.offsetWidth;
+  if (!칸새) return;
+  const 처음 = a.offsetLeft - (t.clientWidth - a.offsetWidth) / 2;
+  const 자리 = (t.scrollLeft - 처음) / 칸새;
+  const 첫 = Math.max(0, Math.floor(자리) - 2), 끝 = Math.min(t.children.length - 1, Math.ceil(자리) + 2);
+  for (let k = 첫; k <= 끝; k++){
+    const d = Math.min(1, Math.abs(k - 자리));
+    const s = t.children[k].style;
+    /* 가운데 근처(칸의 3% 안)는 정확히 100% — 스크롤 자리가 소수점이라 99.9% 로 남으면 글자가 살짝 흐려집니다. */
+    s.transform = d < .03 ? 'none' : `scale(${(1 - .07 * d).toFixed(4)})`;
+    s.opacity = d < .03 ? '1' : (1 - .48 * d).toFixed(3);
+  }
+}
+
+
 function 캐러셀잡기(){
   const t = $('p16track');
   if (!t) return;
   const 시작 = Math.max(0, 코드들.indexOf(지금));
   가운데로(t, 시작, false);
   가운데바뀜(시작);
+  크기맞추기(t);
 
   /* ⚠⚠ **굴리는 동안 하는 일을 한 프레임에 한 번으로 묶습니다(b747).** ⚠⚠
      `scroll` 은 한 번 넘기는 동안 수십 번 옵니다. 올 때마다 재고 고치면
@@ -267,6 +293,7 @@ function 캐러셀잡기(){
       잡았나 = true;
       requestAnimationFrame(() => {
         잡았나 = false;
+        크기맞추기(t);
         const k = 가운데칸(t);
         if (k !== 아까){ 아까 = k; 가운데바뀜(k); }
       });
