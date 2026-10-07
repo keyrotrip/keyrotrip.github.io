@@ -18,8 +18,8 @@
  *   이미 압니다 — 카톡으로 받았으니까요.
  *
  * 층: dom.js · card.js 만 씁니다(계산도 화면도 순수). */
-import { esc, copyText } from './dom.js?v=b833';
-import { personaMatch, personaMateLine, PERSONA16 } from './card.js?v=b833';
+import { esc, copyText } from './dom.js?v=b834';
+import { personaMatch, personaMateLine, PERSONA16 } from './card.js?v=b834';
 
 const KEY = 't2:mate';
 const 코드꼴 = /^[FH][ML][ND][GP]$/;

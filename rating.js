@@ -14,18 +14,18 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b833';
-import { sb } from './db.js?v=b833';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b833';
-import { dateRange } from './calc.js?v=b833';
-import { starHtml, paintStars, starValue } from './stars.js?v=b833';
+import { $, esc, josa, tipOff } from './dom.js?v=b834';
+import { sb } from './db.js?v=b834';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b834';
+import { dateRange } from './calc.js?v=b834';
+import { starHtml, paintStars, starValue } from './stars.js?v=b834';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b833';
+         countryInfo } from './cities.js?v=b834';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음 } from './rate.js?v=b833';
-import { openCity } from './city.js?v=b833';
-import { loadCities } from './citysearch.js?v=b833';
+         removeRate, 별받음 } from './rate.js?v=b834';
+import { openCity } from './city.js?v=b834';
+import { loadCities } from './citysearch.js?v=b834';
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }
@@ -225,7 +225,9 @@ function 제자리안내(조용){
   /* 처음 안내는 **아무것도 안 매긴** 사람에게만 — 국내만 매긴 사람에게 「가본 곳엔 별을…」은 틀린 말입니다. */
   const 매긴수 = Object.values(myRates || {}).filter(r => r?.stars != null).length;
   $('tip_rate_t').innerHTML = 매긴수 === 0
-    ? `가본 곳엔 별을, 가보고 싶은 곳엔 ♡를 눌러요 · <b>해외 도시 ${성향문턱}곳이면 여행 성향이 확정돼요</b>`
+    /* 두 문장은 줄을 나눕니다(10-08, 사용자: 「이거 줄바꿈좀 제대로 하자」) — 「 · 」로 이으면 둘째 문장이 줄 중간에서
+       끊겨 「…10곳이면 / 여행 성향이 확정돼요」로 갈렸습니다. */
+    ? `가본 곳엔 별을, 가보고 싶은 곳엔 ♡를 눌러요<br><b>해외 도시 ${성향문턱}곳이면 여행 성향이 확정돼요</b>`
     : `<b>해외 도시 ${성향문턱 - n}곳만 더</b> 매기면 여행 성향이 확정돼요`;
 }
 
