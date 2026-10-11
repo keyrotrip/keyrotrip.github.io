@@ -13,15 +13,15 @@
  *
  * 층: dom.js · db.js · cities.js · card.js · net.js 만 씁니다. */
 import { $, esc, toast, flagOf, flagOk, emptyDo, backLabel, toTop,
-         coverDeck } from './dom.js?v=b841';
-import { openCity } from './city.js?v=b841';
-import { distKm } from './calc.js?v=b841';
-import { sb } from './db.js?v=b841';
-import { cities, countryName, continentOf } from './cities.js?v=b841';
+         coverDeck } from './dom.js?v=b842';
+import { openCity } from './city.js?v=b842';
+import { distKm } from './calc.js?v=b842';
+import { sb } from './db.js?v=b842';
+import { cities, countryName, continentOf } from './cities.js?v=b842';
 /* ⚠ `PERSONA_ICON` 은 b649 에 안 쓰게 됐습니다 — 발자국 카드가 여권 스탬프
    면으로 바뀌면서 선 아이콘 자리가 없어졌습니다(큰 수와 지도가 그 일을
    합니다). 안 쓰는 것을 가져오면 나중에 "여기도 쓰나" 하고 헷갈립니다. */
-import { shareCard, personaRank } from './card.js?v=b841';
+import { shareCard, personaRank } from './card.js?v=b842';
 
 /* UN 회원 193 + 옵서버 2. 여행앱들이 쓰는 기준값입니다.
    **app.js 도 씁니다**(발자국 막대) — 두 곳에 적으면 언젠가 한쪽만 고칩니다.
@@ -584,7 +584,9 @@ export async function openMap(){
   /* 카드 통째로 접힙니다(b815 — 아래 「국가별 접기」). 나라 줄은 그냥 이름 줄입니다. */
   const byC = {};
   mapCities.forEach(c => (byC[c.cc] = byC[c.cc] || []).push(c));
-  const order = Object.entries(byC).sort((a, b) => b[1].length - a[1].length);
+  /* 같은 수면 나라 이름 가나다(b842) — 전에는 들어온 차례(첫 도시 이름순)라
+     한 곳씩 간 나라들이 영국·폴란드·바티칸·독일…처럼 뒤섞여 보였습니다. */
+  const order = Object.entries(byC).sort(많은나라먼저);
   $('m_country').innerHTML = order.length
     ? order.map(([code, cs]) => `<div class="ctryblk" data-ctry="${esc(code)}">
         <div class="row ctryh"><span class="label">${esc(countryName[code] || code)}</span>
@@ -671,7 +673,7 @@ export function funRows(도시들, 별점표){
     }
   const byC = {};
   도시들.forEach(c => (byC[c.cc] = byC[c.cc] || []).push(c));
-  const order = Object.entries(byC).sort((a, b) => b[1].length - a[1].length);
+  const order = Object.entries(byC).sort(많은나라먼저);
   const sv = 도시들.map(c => 별점표[c.id]).filter(v => v != null);
   const avg = sv.length ? sv.reduce((a, b) => a + b, 0) / sv.length : null;
   /* ── 후한 나라 · 박한 나라(b483) ────────────────────────────────────
@@ -695,17 +697,46 @@ export function funRows(도시들, 별점표){
        ['박한 나라', 이름(나라평균[나라평균.length - 1])]]
     : [];
 
+  /* ── 해외에서 가장 많이 간 나라(b842) ───────────────────────────────
+     ⚠ **한국은 뺍니다** — 발자국 카드(위 발자국스펙 `top`)와 같은 규칙입니다(10-07 사용자:
+       「가장 많이 간 나라에서 한국은 빼자」). 한국 사람 거의 모두에게 늘 「한국」이라 말하는 게 없었습니다.
+     ⚠ **두 곳 이상일 때만** 말합니다 — 다 한 곳씩이면 「가장 많이 간」 나라가 없습니다.
+     ⚠ **같은 수면 같이 적습니다**(가나다 — 둘이면 둘 다, 셋부터는 「첫 나라 외 N개국」). 전에는 동점이면
+       들어온 차례로 아무 나라나 하나를 골랐습니다(한국 1·일본 1 → 「일본 · 1곳」, 재 봄).
+       셋부터 줄이는 까닭: 375 폭에서 「스페인·이탈리아 외 1개국 · 각 2곳」은 두 줄로 넘어갔습니다(재 봄 —
+       줄 높이 50px, 다른 줄 36px). 둘까지는 한 줄에 들어갑니다. */
+  const 해외 = order.filter(([코드]) => 코드 !== 'KR');
+  const 최다 = 해외.length ? 해외[0][1].length : 0;
+  const 공동 = 해외.filter(([, cs]) => cs.length === 최다).map(([코드]) => countryName[코드] || 코드);
+  const 많이간 = 최다 < 2 ? [] : [['해외에서 가장 많이 간 나라',
+    공동.length === 1 ? `${공동[0]} · ${최다}곳`
+    : 공동.length === 2 ? `${공동.join('·')} · 각 ${최다}곳`
+    : `${공동[0]} 외 ${공동.length - 1}개국 · 각 ${최다}곳`]];
+
+  /* ⚠ **두 곳 미만이면 세 줄 다 뺍니다(b842).** 한 곳이면 「가장 북쪽 서울 · 가장 남쪽 서울」로
+       같은 도시를 두 번 말하고, 먼 두 도시는 「–」뿐이었습니다. 두 곳부터는 셋 다 늘 값이 있습니다. */
+  const 자리 = withPos.length < 2 ? [] : [
+    ['가장 북쪽', north.name],
+    ['가장 남쪽', south.name],
+    ['가장 먼 두 도시', `${far.a.name} ~ ${far.b.name} · ${Math.round(far.d).toLocaleString()}km`],
+  ];
+
   return [
-    ['가장 많이 간 국가', order.length
-      ? `${countryName[order[0][0]] || order[0][0]} · ${order[0][1].length}곳` : '–'],
-    ['가장 북쪽', north ? north.name : '–'],
-    ['가장 남쪽', south ? south.name : '–'],
-    ['가장 먼 두 도시', far
-      ? `${far.a.name} ~ ${far.b.name} · ${Math.round(far.d).toLocaleString()}km` : '–'],
-    ['내 별점 평균', avg != null ? `★ ${avg.toFixed(2)}` : '–'],
+    ...많이간,
+    ...자리,
+    /* ★3.5 모양(b842) — 전에는 여기만 「★ 3.50」(띄움·둘째 자리)이라 바로 아래 「이탈리아 ★3.9」와
+       달랐습니다. 앱의 다른 평균(나라·도시 화면·분석 탭)이 다 소수 한 자리입니다. */
+    ['내 별점 평균', avg != null ? `★${avg.toFixed(1)}` : '–'],
     ['별 다섯을 준 곳', String(sv.filter(v => v === 5).length) + '곳'],
     ...후박,
   ];
+}
+
+/* 도시 많은 나라부터, 같으면 나라 이름 가나다(b842). 국가별 목록과 위 분석이 같은 차례를 씁니다 —
+   「해외에서 가장 많이 간 나라」의 공동 이름도 이 차례로 나옵니다. */
+function 많은나라먼저(a, b){
+  return b[1].length - a[1].length
+    || (countryName[a[0]] || a[0]).localeCompare(countryName[b[0]] || b[0], 'ko');
 }
 
 /* ── 국가별 접기(b813 → b815) ─────────────────────────────────────────
