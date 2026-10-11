@@ -14,35 +14,35 @@
  *
  * 층: dom.js · db.js · cities.js · card.js · map.js 만 씁니다.
  *     app.js 는 import 하지 않습니다 — ctx 로 받습니다(persona.js 머리말). */
-import { $, esc, emptyDo } from './dom.js?v=b838';
-import { sb } from './db.js?v=b838';
-import { cities, cityCountry } from './cities.js?v=b838';
+import { $, esc, emptyDo } from './dom.js?v=b839';
+import { sb } from './db.js?v=b839';
+import { cities, cityCountry } from './cities.js?v=b839';
 /* 별 갈래와 그 이름. ⚠ **보관함 시트와 같은 것을 씁니다**(b727) — 따로 세면
    「★4점대 32곳」이 두 화면에서 달라집니다. 규칙은 stars.js 한 곳입니다. */
-import { 별갈래, BAND_NAME } from './stars.js?v=b838';
+import { 별갈래, BAND_NAME } from './stars.js?v=b839';
 /* 도시 평균과 인원(`{avg_stars, n_rated}`). ⚠ **`n_rated` 에는 내가
    들어 있습니다**(rate.js 의 avgTail 주석) — 남들과 견줄 때는 나를 빼야 합니다. */
-import { cityStat } from './rate.js?v=b838';
+import { cityStat } from './rate.js?v=b839';
 /* `cityStat` 이 비어 있을 때 한 번 싣습니다. ⚠ rate.js·rating.js 는
    anal.js 를 모르므로 고리가 안 생깁니다(확인함). */
-import { loadRateData } from './rating.js?v=b838';
+import { loadRateData } from './rating.js?v=b839';
 /* 리포트는 persona.js 가 그립니다 — 여기는 자리만 내줍니다(b547).
    ⚠ `personaAxes`·`PERSONA16`·`AXIS_NAME`·`AXIS_WORD` 를 여기서 뗐습니다.
      요약 카드가 없어져서 이 파일은 성향을 **한 번도 안 셉니다** — 세는
      것은 persona.js 한 곳입니다. */
-import { renderPersona } from './persona.js?v=b838';
+import { renderPersona } from './persona.js?v=b839';
 /* ⚠ `funRows` 는 **계산만** 합니다 — 그리는 것은 여기 몫입니다. 지도
    화면과 같은 함수를 써야 같은 물음에 같은 답이 나옵니다(map.js 머리말). */
 /* 추천과 궁합은 성향 리포트에서 꺼내온 것입니다(b461) — 계산은 원래
    있던 곳(rec.js · mate.js) 그대로 씁니다. 여기서 다시 세면 두 화면이
    다른 답을 내놓습니다. */
-import { similarPicks } from './rec.js?v=b838';
+import { similarPicks } from './rec.js?v=b839';
 /* 여행 만들기로 바로 잇습니다(b463) — newtrip.js 는 anal.js 를 모르므로
    고리가 안 생깁니다(확인함). */
-import { openNew } from './newtrip.js?v=b838';
-import { pickCity } from './citysearch.js?v=b838';
+import { openNew } from './newtrip.js?v=b839';
+import { pickCity } from './citysearch.js?v=b839';
 /* 카드 셋(b810) — 도시 어워즈 · 거리별 별점 · 여행지 월드컵(옛 「진짜 최애」). mycity.js 는 anal.js 를 모르므로 고리가 없습니다. */
-import { drawMyCities } from './mycity.js?v=b838';
+import { drawMyCities } from './mycity.js?v=b839';
 
 let ctx = { me: () => null, showApp: () => {} };
 export function setAnalCtx(o){ ctx = { ...ctx, ...o }; }
@@ -315,52 +315,51 @@ export async function loadAnal(){
       }
     }
 
-    /* ── ④ 별점이 갈린 곳 ──
-       ⚠⚠ **「남이 둘 이상」으로 걸렀다가 되돌렸습니다(b658).** 실기기에서
-         재보니 그 조건에 맞는 도시가 **0곳**이었습니다 — 지금 이 앱은 쓰는
-         사람이 사실상 둘이라 거의 모든 도시가 `n_rated = 2`(나 + 한 명)
-         입니다. 그러면 이 줄은 **영구히 안 보입니다.**
-         「통계적으로 더 옳은 문턱」이 「아무것도 안 보이는 화면」이 되면
-         그건 옳은 문턱이 아닙니다.
-       → 한 명이어도 보여주고, **인원을 함께 적습니다.** `avgTail` 이 이미
-         같은 판단을 합니다(rate.js) — 숫자를 숨기지 말고 근거를 밝힌다.
-       ⚠ 그래서 제목이 「남들과 갈리는 곳」이 아니라 「별점이 갈린 곳」입니다.
-         한 명일 때 「남들」은 거짓입니다.
-       ⚠ 1.0(별 한 칸) 미만은 안 넣습니다 — 반 칸 차이를 「갈린다」고 하면
-         거의 모든 도시가 걸립니다. */
+    /* ── ④ 별점이 갈린 곳 → 아래 「남들과 다른 내 별점」 카드로 나갔습니다(b839). 그 머리말에 b658·b673·b749 의 결정을 옮겨 적었습니다. ── */
+
+    /* 리포트 안 「내 별점」 자리로. 리포트가 없으면 제자리(탭 맨 아래). */
+    if (뭔가) 별점칸.appendChild(카드);   /* 「별점」 칸 맨 위(b811 — 전에는 리포트 안 #statspot) */
+
+    /* ══ ⑤ 남들과 다른 내 별점(b839) ═══════════════════════════════════
+     * 사용자(10-11): 아이디어 「별점 1 — 남들과 다른 내 별점」 → 「만들자」. 다른 사람 평균과 견줘 «내가 더 좋아한 곳 ·
+     * 더 아쉬웠던 곳» 둘로 가르고, 견준 곳이 세 곳 넘으면 «후하게/짜게 주나» 한 줄을 답니다.
+     * ⚠ 전에 「내 별점」 안에 있던 「별점이 갈린 곳」(b658·b673·b749)을 키워 따로 뺐습니다 — 두 벌로 두면 같은 도시가 두 번 나옵니다.
+     *   거기서 정한 것은 그대로: 다른 사람이 한 명이어도 보여주고 인원을 적음(b658 — 거르면 이 앱에선 영영 안 보임) ·
+     *   「나 / 다른 사람」(b673) · 사진(b749) · 별 한 칸(1.0) 넘게 갈린 곳만 · 주황(위) / 파랑(아래).
+     * ⚠ 「나만 좋아한 곳」이 아니라 「내가 더 좋아한 곳」입니다 — 다른 사람이 한 명일 때 「나만」은 거짓입니다(b673 과 같은 까닭).
+     * ⚠ 다른 사람 평균(city_stats)에는 「별점 가리기」·비활성화한 사람의 별점도 들어갑니다 — **사용자 결정(10-11): 「가리기 한
+     *   사람이라도 다 넣어줘 어차피 무기명으로 보이는거니까」.** 한 명이어도 이름 없이 숫자만 나가므로 그대로 둡니다.
+     * ⚠ 후한지 짠지는 견준 곳이 세 곳 넘을 때만 — 두 곳으로 「평균 0.8 후하게」라고 하면 우연을 말합니다. 0.2 안쪽은 「비슷하게」. */
     {
-      const 갈림 = 짝.filter(x => Math.abs(x.차) >= 1.0)
-        .sort((a, b) => Math.abs(b.차) - Math.abs(a.차)).slice(0, 4);
-      if (갈림.length){
-        카드.insertAdjacentHTML('beforeend',
-          `<div class="picks"><span class="label">별점이 갈린 곳</span></div>` +
-          갈림.map(x => {
-            const c = (cities || []).find(y => y.id === x.id);
-            const 위 = x.차 > 0 ? 'up' : 'down';
-            /* ⚠ **「내 / 남」이 아니라 「나 / 다른 사람」입니다(b673,
-               사용자 결정).** 한 글자 라벨은 짧아서 좋은 게 아니라
-               **말 같지 않습니다** — 「남 3.0」은 읽히지 않고 해독됩니다.
-             ⚠ 사람 수 괄호는 남겨 둡니다. 이 앱은 아직 쓰는 사람이
-               둘이라 대부분 「(1명)」인데, 그걸 감추면 「다른 사람들이
-               이렇게 매겼다」로 읽혀 **여러 명인 척**하게 됩니다. */
-            /* ⚠ 도시 사진을 답니다(b749, 사용자: 「별점이 갈린 곳도 사진
-               넣자」). 「다음 여행」과 같은 수법 — 사진이 없으면 크림 칸에
-               이름 첫 글자(city.js 가 쓰는 것과 같습니다). */
-            const 이름 = c?.name || x.id;
-            return `<div class="gaprow">
+      const 위로 = 짝.filter(x => x.차 >= 1.0).sort((a, b) => b.차 - a.차).slice(0, 3);
+      const 아래로 = 짝.filter(x => x.차 <= -1.0).sort((a, b) => a.차 - b.차).slice(0, 3);
+      if (짝.length >= 3 || 위로.length || 아래로.length){
+        /* 줄 모양은 옛 「별점이 갈린 곳」 그대로입니다(.gaprow — 사진 · 이름 · 나 · 다른 사람 (N명)). */
+        const 줄 = x => {
+          const c = (cities || []).find(y => y.id === x.id);
+          const 이름 = c?.name || x.id;
+          return `<div class="gaprow">
               <span class="gapim"${c?.image_url
                 ? ` style="background-image:url('${esc(c.image_url)}')"` : ''}
                 >${c?.image_url ? '' : esc(String(이름).slice(0, 1))}</span>
               <b>${esc(이름)}</b>
-              <span class="${위}">나 ${x.내.toFixed(1)}</span>
+              <span class="${x.차 > 0 ? 'up' : 'down'}">나 ${x.내.toFixed(1)}</span>
               <span>다른 사람 ${x.남.toFixed(1)} (${x.남수}명)</span></div>`;
-          }).join(''));
-        뭔가 = true;
+        };
+        const 평균차 = 짝.length >= 3 ? 짝.reduce((s, x) => s + x.차, 0) / 짝.length : null;
+        const 한줄 = 평균차 == null ? ''
+          : Math.abs(평균차) < 0.2 ? `다른 사람과 비슷하게 줘요 · 견준 도시 ${짝.length}곳`
+          : `다른 사람보다 평균 ★${Math.abs(평균차).toFixed(1)} ${평균차 > 0 ? '후하게' : '짜게'} 줘요 · 견준 도시 ${짝.length}곳`;
+        const 남다른 = document.createElement('div');
+        남다른.className = 'card quiet starcard';
+        남다른.innerHTML = '<h2>남들과 다른 내 별점</h2>' +
+          (한줄 ? `<div class="memo">${esc(한줄)}</div>` : '') +
+          (위로.length ? `<div class="picks"><span class="label">내가 더 좋아한 곳</span></div>` + 위로.map(줄).join('') : '') +
+          (아래로.length ? `<div class="picks"><span class="label">내가 더 아쉬웠던 곳</span></div>` + 아래로.map(줄).join('') : '') +
+          (!위로.length && !아래로.length ? '<div class="memo">별 한 칸 넘게 갈린 도시는 아직 없어요.</div>' : '');
+        별점칸.appendChild(남다른);
       }
     }
-
-    /* 리포트 안 「내 별점」 자리로. 리포트가 없으면 제자리(탭 맨 아래). */
-    if (뭔가) 별점칸.appendChild(카드);   /* 「별점」 칸 맨 위(b811 — 전에는 리포트 안 #statspot) */
   }
 
   /* ══ ②-2 내 도시 이야기(b810, 2026-10-01) ══════════════════════════════

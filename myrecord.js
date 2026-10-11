@@ -22,10 +22,10 @@
  *   그 내장을 쓰는 다른 파일을 잡습니다(b836 CI 빨강).
  * 층: dom(esc) · cities(도시) · card(성향 이름·네 축) · world(지도 좌표). account.js 가 누를 때 불러옵니다.
  */
-import { esc } from './dom.js?v=b838';
-import { cities, countryName } from './cities.js?v=b838';
-import { PERSONA16, AXIS_WORD } from './card.js?v=b838';
-import { WORLD_PATHS } from './world.js?v=b838';
+import { esc } from './dom.js?v=b839';
+import { cities, countryName } from './cities.js?v=b839';
+import { PERSONA16, AXIS_WORD } from './card.js?v=b839';
+import { WORLD_PATHS } from './world.js?v=b839';
 
 const 요일 = ['일', '월', '화', '수', '목', '금', '토'];
 const 쪼개기 = s => String(s || '').slice(0, 10).split('-').map(Number);
@@ -66,7 +66,8 @@ const 서울날 = ts => new Date(ts || Date.now()).toLocaleDateString('sv-SE', {
 const 수 = v => Number(v ?? 0).toLocaleString('ko-KR', { maximumFractionDigits: 2 });
 const 별 = v => v == null ? '' : `★ ${Number(v).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}`;
 /* 누를 수 있는 주소·사진 주소는 http(s) 뿐입니다. */
-const 안전주소 = u => { const s = String(u || '').trim(); return /^https?:\/\/\S+$/i.test(s) ? s : ''; };
+/* ⚠ 정규식을 괄호로 감쌉니다 — 「return /…/」 꼴은 tools/check-refs.mjs 가 나눗셈으로 읽어 안의 $ 를 이름(dom.js 의 $)으로 셉니다(b839 에 걸림). */
+const 안전주소 = u => { const s = String(u || '').trim(); return (/^https?:\/\/\S+$/i).test(s) ? s : ''; };
 const 글 = s => esc(String(s ?? '').trim());
 const 있나 = s => String(s ?? '').trim() !== '';
 const 남은것 = r => r && !r.deleted_at;

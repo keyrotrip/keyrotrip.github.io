@@ -4302,6 +4302,54 @@ svg.fg{ display:block; width:100%; aspect-ratio:1 / 1; height:auto; }
 .mate .mc{ display:block; font-size:calc(11px * var(--ts)); color:var(--ink-48);
            margin-top:1px; letter-spacing:.5px; }
 
+/* ── 성향 칸 더보기(b839, pmore.js) ── 나를 만든 도시 · 성향 변천사 · 친구 중 여행 메이트 ─────────────
+   ⚠ 사진 칸은 「별점이 갈린 곳」의 .gapim 을 그대로 씁니다(크기만 조금 키움) — 같은 앱 안의 도시 사진은 한 모양.
+   ⚠ 친구 줄의 색은 「여행 궁합」 카드와 같은 --mate-good / --mate-bad 입니다(딱지 글자에만). */
+.pmrows > .pmrow{ padding:10px 0; }
+.pmrows > .pmrow + .pmrow{ border-top:1px solid var(--divider-soft); }
+.pmh{ display:flex; align-items:baseline; gap:6px; margin-bottom:8px; }
+.pmh b{ font-size:calc(14px * var(--ts)); font-weight:700; }
+.pmh span{ font-size:var(--f-sm); color:var(--ink-48); }
+.pmcs{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pmc{ display:flex; align-items:center; gap:8px; min-width:0; }
+.pmc .gapim{ width:52px; }
+.pmt{ min-width:0; display:flex; flex-direction:column; gap:1px; }
+.pmt b{ font-size:calc(14px * var(--ts)); font-weight:600;
+        overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pmt span{ font-size:var(--f-sm); color:var(--ink-48); font-variant-numeric:tabular-nums; }
+
+ol.phl{ list-style:none; margin:12px 0 4px; padding:0; }
+/* 그림 아래로 잇는 세로줄 — 지나온 길처럼 읽히게. 마지막(지금)에는 없음. */
+.phs{ position:relative; display:flex; gap:12px; padding:0 0 16px; }
+.phs::before{ content:""; position:absolute; left:27px; top:42px; bottom:4px; width:2px;
+              background:var(--divider-soft); border-radius:2px; }
+.phs:last-child{ padding-bottom:4px; }
+.phs:last-child::before{ display:none; }
+.phimg{ flex:none; width:56px; aspect-ratio:3 / 2; object-fit:cover; border-radius:8px; background:var(--pearl); }
+.phb{ min-width:0; display:flex; flex-direction:column; gap:1px; }
+.phd{ font-size:var(--f-sm); color:var(--ink-48); }
+.phs.now .phd{ color:var(--star-dim); font-weight:600; }
+.phb b{ font-size:calc(15px * var(--ts)); font-weight:700; word-break:keep-all; }
+.phc{ margin-left:6px; font-size:calc(11px * var(--ts)); font-weight:600; color:var(--ink-48); letter-spacing:.5px; }
+.phw{ font-size:var(--f-sm); color:var(--ink-80); }
+.pha{ font-size:var(--f-sm); color:var(--star-dim); font-weight:600; }
+
+.pfl{ margin-top:6px; }
+.pfrow{ display:flex; align-items:center; gap:10px; width:100%; padding:9px 0; margin:0;
+        background:none; border:0; border-top:1px solid var(--divider-soft); border-radius:0;
+        font:inherit; color:inherit; text-align:left; cursor:pointer; }
+.pfrow:first-child{ border-top:0; }
+.pfav{ flex:none; width:40px; height:40px; border-radius:50%; background:var(--pearl) center/cover no-repeat;
+       display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--ink-48); }
+.pfn{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.pfn b{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pfn span{ font-size:var(--f-sm); color:var(--ink-48); }
+.pfs{ flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:1px; }
+.pfs b{ font-size:calc(18px * var(--ts)); font-weight:800; font-variant-numeric:tabular-nums; }
+.pfs span{ font-size:calc(11px * var(--ts)); font-weight:600; }
+.pfs.good span{ color:var(--mate-good); }
+.pfs.bad span{ color:var(--mate-bad); }
+
 /* 빈 대륙 칩 자리가 여백을 남기지 않게(b448) — 채우는 쪽을 걷어냈습니다
    (home.js 의 loadFootprint). 요소는 남겨 두었습니다. */
 #s_cont:empty{ display:none; }
