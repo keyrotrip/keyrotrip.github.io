@@ -12,10 +12,10 @@
  * ⚠ 확정 전(해외 10곳 미만)에는 셋 다 안 냅니다(persona.js) — 흔들리는 코드로 지은 이야기는 같이 흔들립니다.
  * ⚠ 맨 바깥 이름은 한글로 둡니다 — tools/check-refs.mjs 가 영문 이름을 다른 파일과 견줍니다(b836 의 CSS 사고).
  * 층: dom · db · card(성향) · calc(거리). persona.js 가 부르고, 사람 화면은 누를 때 불러옵니다(people.js — 고리 없이). */
-import { esc, emptyDo, josa } from './dom.js?v=b839';
-import { sb } from './db.js?v=b839';
-import { personaAxes, personaMatch, PERSONA16, AXIS_WORD, AXIS_NAME } from './card.js?v=b839';
-import { distKm, SEOUL } from './calc.js?v=b839';
+import { esc, emptyDo, josa, avatarImg } from './dom.js?v=b840';
+import { sb } from './db.js?v=b840';
+import { personaAxes, personaMatch, PERSONA16, AXIS_WORD, AXIS_NAME } from './card.js?v=b840';
+import { distKm, SEOUL } from './calc.js?v=b840';
 
 const 국내 = 'KR';
 const 코드꼴 = /^[FH][ML][ND][GP]$/;
@@ -35,7 +35,7 @@ const 사진칸 = (c, 이름) => {
   const u = 사진주소(c?.image_url);
   return `<span class="gapim"${u ? ` style="background-image:url('${esc(u)}')"` : ''}>${u ? '' : esc([...String(이름 || '?')][0] || '?')}</span>`;
 };
-const 성향그림 = code => `./persona/t/${esc(code)}.jpg?v=b839`;
+const 성향그림 = code => `./persona/t/${esc(code)}.jpg?v=b840`;
 
 /* ══ ② 성향 변천사 ══════════════════════════════════════════════════════
  * 별점 줄(city_ratings — created_at 이 있는 것)을 매긴 차례로 세우고, 해외가 문턱(10곳)에 닿은 뒤로는 한 줄 더할 때마다
@@ -179,7 +179,11 @@ export async function 친구메이트Html(내코드){
   const r = await sb.rpc('friend_personas');
   /* db/119 를 안 돌렸으면 함수가 없습니다 — 카드를 안 냅니다(고장처럼 보이는 빈 상자를 띄우지 않음). */
   if (r.error) return '';
-  const 줄 = 친구줄(내코드, r.data);
+  return 친구카드Html(내코드, r.data);
+}
+/* 그리기만 따로 — 자가검사가 서버 없이 봅니다. */
+export function 친구카드Html(내코드, 친구들){
+  const 줄 = 친구줄(내코드, 친구들);
   if (!줄.length) return `<div class="card"><h2>친구 중 여행 메이트</h2>${emptyDo(
     '팔로우한 친구가 성향을 확정하면 나와 가장 잘 맞는 친구를 알려줘요', '친구 찾기', 'findfriend')}</div>`;
   const 보일 = 줄.slice(0, 8);
@@ -187,10 +191,12 @@ export async function 친구메이트Html(내코드){
   return `<div class="card pfmates"><h2>친구 중 여행 메이트</h2>
     <div class="pfl">${보일.map((p, i) => {
       const 딱지 = 둘넘 && i === 0 ? ['good', '환상의 메이트'] : 둘넘 && i === 줄.length - 1 ? ['bad', '극과 극'] : null;
-      const 얼굴 = 사진주소(p.avatar_url);
-      const 이름 = String(p.name || '').trim() || '이름 없음';
+      /* ⚠ 이름이 없으면 「여행자」 — 친구 목록·사람 화면과 같은 말(b799 사용자: 「이름 없음」→「여행자」). b839 첫 판은
+           「이름 없음」이라 실제 계정에서 어긋났습니다(10-11 크롬으로 재 봄). 얼굴도 친구 목록과 같은 avatarImg —
+           사진이 없거나 깨지면 이름 첫 글자 동그라미. */
+      const 이름 = String(p.name || '').trim() || '여행자';
       return `<button type="button" class="pfrow" data-person="${esc(p.user_id)}">
-        <span class="pfav"${얼굴 ? ` style="background-image:url('${esc(얼굴)}')"` : ''}>${얼굴 ? '' : esc([...이름][0])}</span>
+        ${avatarImg(사진주소(p.avatar_url), p.user_id, 이름, '', 'pfav')}
         <span class="pfn"><b>${esc(이름)}</b><span>${esc(PERSONA16[p.persona]?.n || p.persona)} · ${esc(p.persona)}</span></span>
         <span class="pfs${딱지 ? ' ' + 딱지[0] : ''}"><b>${p.점}%</b>${딱지 ? `<span>${딱지[1]}</span>` : ''}</span>
       </button>`;
@@ -217,7 +223,7 @@ export function 성향더보기({ ax, code, rates, world, 문턱 }){
     친구칸.innerHTML = html;
     친구칸.onclick = e => {
       const b = e.target.closest('[data-person]');
-      if (b) import('./people.js?v=b839').then(m => m.openPerson(b.dataset.person));
+      if (b) import('./people.js?v=b840').then(m => m.openPerson(b.dataset.person));
     };
   }).catch(e => { console.error('@pmore', e); self.reportError?.(e); });
 }
@@ -267,5 +273,9 @@ if (typeof window !== 'undefined') window.__pmoreCheck = () => {
   const 친구 = 친구줄('FMNP', [{ user_id: 'a', name: '<b>민지</b>', persona: 'HLDG' }, { user_id: 'b', name: '준', persona: 'FMNP' },
                                 { user_id: 'c', name: '코드없음', persona: null }]);
   봄('친구는 궁합 높은 순 · 코드 없는 사람 뺌', 친구.length === 2 && 친구[0].점 >= 친구[1].점, JSON.stringify(친구.map(p => [p.name, p.점])));
+  const 카드 = 친구카드Html('FMNP', [{ user_id: 'a', name: '<b>민지</b>', persona: 'HLDG' }, { user_id: 'b', name: null, persona: 'FMNP' }]);
+  봄('이름 없는 친구는 「여행자」', 카드.includes('<b>여행자</b>') && !카드.includes('이름 없음'), '「여행자」 아님');
+  봄('친구 이름은 글자로만(이스케이프)', 카드.includes('&lt;b&gt;민지') && !카드.includes('<b><b>'), '이스케이프 안 됨');
+  봄('둘 넘으면 환상의 메이트 · 극과 극 딱지', 카드.includes('환상의 메이트') && 카드.includes('극과 극'), '딱지 없음');
   return out;
 };
