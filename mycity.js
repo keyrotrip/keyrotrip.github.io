@@ -11,11 +11,11 @@
  *   것만 씁니다. ★4.5 가 ★5 를 이기는 식으로 별점과 어긋나는 순위도 안 만듭니다 — 같은 별점끼리만 겨룹니다.
  * ⚠ **국내도 셉니다**(사용자). 성향(card.js)은 국내를 빼지만, 여기는 «내가 매긴 도시» 이야기입니다.
  * 층: dom · db · cities · calc · city(도시 화면). anal.js 가 부릅니다(drawMyCities). persona.js 는 모릅니다. */
-import { $, esc, toast, josa, flagOf, flagOk } from './dom.js?v=b837';
-import { sb } from './db.js?v=b837';
-import { cities, countryName, countryInfo } from './cities.js?v=b837';
-import { distKm, SEOUL } from './calc.js?v=b837';
-import { openCity } from './city.js?v=b837';
+import { $, esc, toast, josa, flagOf, flagOk } from './dom.js?v=b838';
+import { sb } from './db.js?v=b838';
+import { cities, countryName, countryInfo } from './cities.js?v=b838';
+import { distKm, SEOUL } from './calc.js?v=b838';
+import { openCity } from './city.js?v=b838';
 
 const 국내 = 'KR';
 const 셋말 = n => ['', '한', '두', '세', '네', '다섯'][n] || String(n);
@@ -488,13 +488,19 @@ export async function drawMyCities(rows, 칸 = {}, uid){
     try { const el = 만들기(); if (곳 && el) 곳.appendChild(el); }
     catch (e){ console.error('@mycity', e); self.reportError?.(e); }
   };
-  붙이기(칸.어워즈, () => 어워즈(목록));
   붙이기(칸.별점, () => 거리별(목록));
   /* b824: 별점 칸에 둘 더 — 종류별 · 나라별(거리별과 같은 줄 모양). 차례는 사용자가 고른 번호 순(1 종류 · 2 나라). */
   붙이기(칸.별점, () => 종류별(목록));
   붙이기(칸.별점, () => 나라별(목록));
-  try { const el = await 최애(목록, uid); if (칸.어워즈 && el) 칸.어워즈.appendChild(el); }
+  /* ⚠ b838 — **여행지 월드컵이 어워즈 칸 맨 위**(10-11 사용자: 「어워즈 탭에서 여행지 월드컵을 제일 위로 올려주고」).
+     월드컵은 저장된 순위를 받아야 그려지므로(동점이 있을 때 한 번) **먼저 기다렸다가 위에 붙이고** 도시 어워즈를 그 아래에
+     붙입니다 — 어워즈를 먼저 그리고 나중에 월드컵을 위로 끼우면 어워즈가 아래로 밀려 화면이 튑니다.
+     별점 칸 카드는 기다리지 않게 위에서 먼저 붙였습니다. */
+  let 월드컵 = null;
+  try { 월드컵 = await 최애(목록, uid); }
   catch (e){ console.error('@mycity', e); self.reportError?.(e); }
+  if (칸.어워즈 && 월드컵) 칸.어워즈.appendChild(월드컵);
+  붙이기(칸.어워즈, () => 어워즈(목록));
 }
 
 /* ── 자가검사 ── 콘솔에서 __myCityCheck(). 지어낸 도시로 규칙만 봅니다. */

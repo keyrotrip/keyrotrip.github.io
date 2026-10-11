@@ -13,16 +13,16 @@
  * 같이 데려왔습니다.
  *
  * 층: 아래층 여럿과 planmap · citysearch · cards 를 씁니다. */
-import { $, esc, emptyDo } from './dom.js?v=b837';
-import { sb } from './db.js?v=b837';
-import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b837';
-import { dayLabel, distKm, travelMinutes, legFirst } from './calc.js?v=b837';
-import { trip, plans, legs } from './trip.js?v=b837';
-import { search } from './cities.js?v=b837';
-import { picked } from './citysearch.js?v=b837';
-import { mapLinks } from './planmap.js?v=b837';
-import { openPlanForm } from './cards.js?v=b837';
-import { syncSheets } from './ui.js?v=b837';
+import { $, esc, emptyDo } from './dom.js?v=b838';
+import { sb } from './db.js?v=b838';
+import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b838';
+import { dayLabel, distKm, travelMinutes, legFirst } from './calc.js?v=b838';
+import { trip, plans, legs } from './trip.js?v=b838';
+import { search, cities } from './cities.js?v=b838';
+import { picked } from './citysearch.js?v=b838';
+import { mapLinks } from './planmap.js?v=b838';
+import { openPlanForm } from './cards.js?v=b838';
+import { syncSheets } from './ui.js?v=b838';
 
 let ctx = { loadPlans: async () => {}, openAi: () => {}, loadChats: async () => {} };
 export function setCandsCtx(o){ ctx = { ...ctx, ...o }; }
@@ -213,13 +213,26 @@ function 여행중심(){
  *   만드는 구조라, 한 번 새면 계속 샙니다.
  * ⚠ 도쿄→교토처럼 구간이 둘인 여행에서는 평균이 **둘 사이 어딘가**를
  *   가리킵니다. 그러면 반경 창이 사실상 두 배가 되어 아무거나 통과합니다.
- * ⚠ 구간에 도시 중심이 없으면(직접 적은 목적지) 옛 방식으로 떨어집니다.
+ * ⚠ 구간에 도시 중심이 없으면(직접 적은 목적지·옛 여행) **그 도시를 도시 목록에서 찾아 그 중심을** 씁니다(b838).
+ *   전에는 바로 옛 방식(`여행중심()` — 이미 찍힌 일정의 평균)으로 떨어져서, 찍힌 일정이 하나도 없으면
+ *   **기준점이 아예 없었습니다** — 그러면 나라 안 어디든 이름만 맞으면 받습니다(10-11 삼척 여행에서 재 봄:
+ *   구간 center 가 비어 있었고, 그때는 「중앙시장」 한 곳이 찍혀 있어 그 평균으로 120km 안에서 찾았음).
+ *   차례: 구간 중심 → 구간 도시의 중심 → (구간이 없으면) 여행 중심 → 여행 도시의 중심 → 찍힌 일정의 평균.
  *   그때도 나라(`countrycodes`)는 걸려 있습니다. */
+const 중심 = x => x && x.center_lat != null && x.center_lng != null ? [Number(x.center_lat), Number(x.center_lng)] : null;
+/* 구간(또는 여행)의 도시 — 도시 번호가 있으면 그것, 없으면 **이름이 똑같은 도시가 같은 나라에 하나뿐일 때만**
+   (강원·경남의 「고성」처럼 둘이면 어느 쪽인지 모르므로 안 씁니다 — 틀린 기준점은 없는 것보다 나쁩니다). */
+function 목록도시(x){
+  if (!x || !cities) return null;
+  if (x.city_id){ const c = cities.find(c => c.id === x.city_id); if (c) return c; }
+  const 이름 = String(x.destination || '').replace(/\s+/g, ' ').trim();
+  if (!이름) return null;
+  const 같은 = cities.filter(c => c.name === 이름 && (!x.country || c.country === x.country || c.cc === x.country));
+  return 같은.length === 1 ? 같은[0] : null;
+}
 export function 여행기준(date){
   const l = legOf(date);
-  if (l && l.center_lat != null && l.center_lng != null)
-    return [Number(l.center_lat), Number(l.center_lng)];
-  return 여행중심();
+  return 중심(l) || 중심(목록도시(l)) || (!l && (중심(trip) || 중심(목록도시(trip)))) || 여행중심();
 }
 
 /* ── 이름으로 좌표 찾기 ───────────────────────────────────────────────
@@ -472,7 +485,7 @@ export async function 일정좌표채우기(진행 = () => {}, 그만 = () => fa
     .map(p => ({ id: p.id, date: p.date, title: p.title, memo: p.memo, move_note: p.move_note, area: '' }));
   if (!trip || !list.length) return { 찍음: 0, 못찾음: [], 장소아님: 0, 없음: true };
   /* 쓸 때 불러옵니다 — sheetimp.js 가 이 파일을 불러서, 위에서 불러오면 서로 물립니다. */
-  const { 좌표찾기 } = await import('./sheetimp.js?v=b837');
+  const { 좌표찾기 } = await import('./sheetimp.js?v=b838');
   const r = await 좌표찾기(list, 진행, 그만);
   await ctx.loadPlans();
   return r;
