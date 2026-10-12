@@ -22,10 +22,10 @@
  *   그 내장을 쓰는 다른 파일을 잡습니다(b836 CI 빨강).
  * 층: dom(esc) · cities(도시) · card(성향 이름·네 축) · world(지도 좌표). account.js 가 누를 때 불러옵니다.
  */
-import { esc } from './dom.js?v=b844';
-import { cities, countryName } from './cities.js?v=b844';
-import { PERSONA16, AXIS_WORD } from './card.js?v=b844';
-import { WORLD_PATHS } from './world.js?v=b844';
+import { esc } from './dom.js?v=b845';
+import { cities, countryName } from './cities.js?v=b845';
+import { PERSONA16, AXIS_WORD } from './card.js?v=b845';
+import { WORLD_PATHS } from './world.js?v=b845';
 
 const 요일 = ['일', '월', '화', '수', '목', '금', '토'];
 const 쪼개기 = s => String(s || '').slice(0, 10).split('-').map(Number);

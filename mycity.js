@@ -11,11 +11,11 @@
  *   것만 씁니다. ★4.5 가 ★5 를 이기는 식으로 별점과 어긋나는 순위도 안 만듭니다 — 같은 별점끼리만 겨룹니다.
  * ⚠ **국내도 셉니다**(사용자). 성향(card.js)은 국내를 빼지만, 여기는 «내가 매긴 도시» 이야기입니다.
  * 층: dom · db · cities · calc · city(도시 화면). anal.js 가 부릅니다(drawMyCities). persona.js 는 모릅니다. */
-import { $, esc, toast, josa, flagOf, flagOk } from './dom.js?v=b844';
-import { sb } from './db.js?v=b844';
-import { cities, countryName, countryInfo } from './cities.js?v=b844';
-import { distKm, SEOUL } from './calc.js?v=b844';
-import { openCity } from './city.js?v=b844';
+import { $, esc, toast, josa, flagOf, flagOk } from './dom.js?v=b845';
+import { sb } from './db.js?v=b845';
+import { cities, countryName, countryInfo } from './cities.js?v=b845';
+import { distKm, SEOUL } from './calc.js?v=b845';
+import { openCity } from './city.js?v=b845';
 
 const 국내 = 'KR';
 const 셋말 = n => ['', '한', '두', '세', '네', '다섯'][n] || String(n);
@@ -327,8 +327,17 @@ function 종류별(목록){
   const 센곳 = 종류있는.length;
   const el = 카드('여행지 종류별 별점');
   el.insertAdjacentHTML('beforeend', 줄.map(t => 별줄(esc(t.보일), t, 높들.has(t), t.xs.length < 3)).join('') +
-    `<div class="memo" style="margin-top:10px">${말 ? esc(말) + ' · ' : ''}종류가 정해진 ${센곳}곳으로 셌어요</div>`);
+    `<div class="memo" style="margin-top:10px">${말 ? esc(말) + ' · ' : ''}종류가 정해진 ${센곳}곳으로 셌어요</div>` +
+    흐린줄말(줄));
   return el;
+}
+
+/* 흐린 줄이 왜 맨 아래인지 한 줄(b845, 사용자가 고른 「4번」). 줄은 «세 곳 넘는 것끼리 평균 순 → 그 밑에 두 곳 이하»라
+   (위 `세우기`), 설명이 없으면 「온천 ★4.3」이 「축제 ★3.4」 뒤에 와서 순서가 틀린 것처럼 보였습니다(사용자 계정, 10-12).
+   ⚠ 위 메모에 «이어 붙이지» 않습니다 — 이미 두 마디라 세 마디가 되면 읽다 맙니다(별점 분포 해석과 같은 규칙). */
+function 흐린줄말(줄){
+  return 줄.some(t => t.xs.length < 3)
+    ? '<div class="memo" style="margin-top:4px">흐린 줄은 두 곳 이하라 맨 아래에 따로 뒀어요</div>' : '';
 }
 
 /* ══ ⑤ 나라별 별점(b824, 사용자: 「별점 칸 2번」) ═════════════════════════════════════════
@@ -347,7 +356,7 @@ function 나라별(목록){
   const 밑 = [말, 한곳 ? `한 곳만 매긴 나라 ${한곳}곳은 뺐어요` : ''].filter(Boolean).map(esc).join(' · ');
   const el = 카드('나라별 별점');
   el.insertAdjacentHTML('beforeend', 줄.map(n => 별줄(깃(n.code) + esc(n.이름), n, 높들.has(n), n.xs.length < 3)).join('') +
-    (밑 ? `<div class="memo" style="margin-top:10px">${밑}</div>` : ''));
+    (밑 ? `<div class="memo" style="margin-top:10px">${밑}</div>` : '') + 흐린줄말(줄));
   return el;
 }
 

@@ -14,35 +14,35 @@
  *
  * 층: dom.js · db.js · cities.js · card.js · map.js 만 씁니다.
  *     app.js 는 import 하지 않습니다 — ctx 로 받습니다(persona.js 머리말). */
-import { $, esc, emptyDo } from './dom.js?v=b844';
-import { sb } from './db.js?v=b844';
-import { cities, cityCountry } from './cities.js?v=b844';
+import { $, esc, emptyDo } from './dom.js?v=b845';
+import { sb } from './db.js?v=b845';
+import { cities, cityCountry } from './cities.js?v=b845';
 /* 별 갈래와 그 이름. ⚠ **보관함 시트와 같은 것을 씁니다**(b727) — 따로 세면
    「★4점대 32곳」이 두 화면에서 달라집니다. 규칙은 stars.js 한 곳입니다. */
-import { 별갈래, BAND_NAME } from './stars.js?v=b844';
+import { 별갈래, BAND_NAME } from './stars.js?v=b845';
 /* 도시 평균과 인원(`{avg_stars, n_rated}`). ⚠ **`n_rated` 에는 내가
    들어 있습니다**(rate.js 의 avgTail 주석) — 남들과 견줄 때는 나를 빼야 합니다. */
-import { cityStat } from './rate.js?v=b844';
+import { cityStat } from './rate.js?v=b845';
 /* `cityStat` 이 비어 있을 때 한 번 싣습니다. ⚠ rate.js·rating.js 는
    anal.js 를 모르므로 고리가 안 생깁니다(확인함). */
-import { loadRateData } from './rating.js?v=b844';
+import { loadRateData } from './rating.js?v=b845';
 /* 리포트는 persona.js 가 그립니다 — 여기는 자리만 내줍니다(b547).
    ⚠ `personaAxes`·`PERSONA16`·`AXIS_NAME`·`AXIS_WORD` 를 여기서 뗐습니다.
      요약 카드가 없어져서 이 파일은 성향을 **한 번도 안 셉니다** — 세는
      것은 persona.js 한 곳입니다. */
-import { renderPersona } from './persona.js?v=b844';
+import { renderPersona } from './persona.js?v=b845';
 /* ⚠ `funRows` 는 **계산만** 합니다 — 그리는 것은 여기 몫입니다. 지도
    화면과 같은 함수를 써야 같은 물음에 같은 답이 나옵니다(map.js 머리말). */
 /* 추천과 궁합은 성향 리포트에서 꺼내온 것입니다(b461) — 계산은 원래
    있던 곳(rec.js · mate.js) 그대로 씁니다. 여기서 다시 세면 두 화면이
    다른 답을 내놓습니다. */
-import { similarPicks } from './rec.js?v=b844';
+import { similarPicks } from './rec.js?v=b845';
 /* 여행 만들기로 바로 잇습니다(b463) — newtrip.js 는 anal.js 를 모르므로
    고리가 안 생깁니다(확인함). */
-import { openNew } from './newtrip.js?v=b844';
-import { pickCity } from './citysearch.js?v=b844';
+import { openNew } from './newtrip.js?v=b845';
+import { pickCity } from './citysearch.js?v=b845';
 /* 카드 셋(b810) — 도시 어워즈 · 거리별 별점 · 여행지 월드컵(옛 「진짜 최애」). mycity.js 는 anal.js 를 모르므로 고리가 없습니다. */
-import { drawMyCities } from './mycity.js?v=b844';
+import { drawMyCities } from './mycity.js?v=b845';
 
 let ctx = { me: () => null, showApp: () => {} };
 export function setAnalCtx(o){ ctx = { ...ctx, ...o }; }
@@ -184,7 +184,7 @@ export async function loadAnal(){
    * 되돌리면 안 됩니다. 대신 「나는 어떤 여행자인가」에 답하는 숫자를 놓습니다.
    *
    * 셋을 한 카드에 담습니다 — 다 「내 별점」을 재료로 쓰는 이야기입니다:
-   *   ① 내 평균 vs 남들 평균 (짜게 주나 후하게 주나)
+   *   ① 내 평균 vs 남들 평균 (짜게 주나 후하게 주나) — b845 에 아래 ⑤ 「남들과 다른 내 별점」 맨 위로 옮김
    *   ② 얼마나 알려진 곳에 갔나 (fame 분포)
    *   ③ 남들과 갈리는 곳
    *
@@ -220,29 +220,10 @@ export async function loadAnal(){
     카드.innerHTML = '<h2>내 별점</h2>';
     let 뭔가 = false;
 
-    /* ── ① 평균 견주기 ── */
-    if (짝.length >= 5){
-      const 내평 = 짝.reduce((a, x) => a + x.내, 0) / 짝.length;
-      const 남평 = 짝.reduce((a, x) => a + x.남, 0) / 짝.length;
-      const 차 = 내평 - 남평;
-      /* 0.3 은 별 반 칸보다 작습니다. 그 아래를 「짜다/후하다」고 말하면
-         다음에 한 곳 더 매길 때 말이 뒤집힙니다. */
-      /* ⚠ 「남들」이 아니라 「다른 사람」입니다(b673) — 아래 칸 이름과
-         같은 말을 써야 합니다. 한 카드 안에서 「남들」과 「다른 사람」이
-         섞이면 둘이 다른 것인 줄 압니다. */
-      const 말 = 차 >= 0.3 ? '다른 사람보다 후하게 줍니다'
-               : 차 <= -0.3 ? '다른 사람보다 짜게 줍니다'
-               : '다른 사람과 비슷하게 줍니다';
-      const 부호 = 차 > 0 ? '+' : '';
-      카드.insertAdjacentHTML('beforeend', `
-        <div class="fpnums">
-          <div><b>${내평.toFixed(1)}</b><span>내 평균</span></div>
-          <div><b>${남평.toFixed(1)}</b><span>다른 사람 평균</span></div>
-          <div><b>${부호}${차.toFixed(1)}</b><span>차이</span></div>
-        </div>
-        <div class="memo">${esc(말)} · 견준 곳 ${짝.length}곳</div>`);
-      뭔가 = true;
-    }
+    /* ── ① 평균 견주기 → 아래 「남들과 다른 내 별점」 맨 위로 옮겼습니다(b845). ──
+       ⚠ 두 카드가 같은 비교를 따로 셌습니다 — 「비슷하다」 기준이 여기는 0.3, 저기는 0.2 였고 반올림도 따로라,
+         −0.35 가 여기서는 「차이 −0.4」, 바로 아래에서는 「★0.3 짜게」로 나왔습니다(시험 자료로 재 봄). 차이가
+         0.2~0.3 이면 여기는 「비슷하게」, 저기는 「짜게」로 반대말이었습니다. 이제 한 곳에서 한 번만 셉니다. */
 
     /* ── ② 얼마나 알려진 곳에 갔나 ──
        ⚠ **`fame` 은 작을수록 유명합니다**(db/033: 1 도쿄·파리 / 3 할슈타트).
@@ -329,11 +310,32 @@ export async function loadAnal(){
      * ⚠ 「나만 좋아한 곳」이 아니라 「내가 더 좋아한 곳」입니다 — 다른 사람이 한 명일 때 「나만」은 거짓입니다(b673 과 같은 까닭).
      * ⚠ 다른 사람 평균(city_stats)에는 「별점 가리기」·비활성화한 사람의 별점도 들어갑니다 — **사용자 결정(10-11): 「가리기 한
      *   사람이라도 다 넣어줘 어차피 무기명으로 보이는거니까」.** 한 명이어도 이름 없이 숫자만 나가므로 그대로 둡니다.
-     * ⚠ 후한지 짠지는 견준 곳이 세 곳 넘을 때만 — 두 곳으로 「평균 0.8 후하게」라고 하면 우연을 말합니다. 0.2 안쪽은 「비슷하게」. */
+     * ⚠⚠ **평균 견주기(내 평균 · 다른 사람 평균 · 차이)는 여기 한 곳입니다(b845, 사용자: 「1,2,4 하고」).** 전에는 위
+     *   「내 별점」 카드도 같은 것을 따로 세어 두 카드가 다른 숫자·반대말을 했습니다(위 ① 자리 주석).
+     *   · 견준 도시가 **다섯 곳 넘어야** 말합니다(옛 ①의 문턱 — 세 곳으로 「짜게 준다」고 할 수 없습니다).
+     *   · **보이는 숫자로 셉니다** — 두 평균을 소수 한 자리로 반올림한 «뒤» 빼서, 「3.6 · 4.0 · 차이 −0.4」처럼 셋이 늘 맞습니다.
+     *     말(후하게·짜게·비슷하게)도 그 차이 하나로 가릅니다 — 0.3 넘게 벌어져야 「후하게/짜게」(별 반 칸보다 작은 차이로
+     *     말하면 한 곳 더 매길 때 뒤집힙니다). 말투는 「~요」. */
     {
       const 위로 = 짝.filter(x => x.차 >= 1.0).sort((a, b) => b.차 - a.차).slice(0, 3);
       const 아래로 = 짝.filter(x => x.차 <= -1.0).sort((a, b) => a.차 - b.차).slice(0, 3);
-      if (짝.length >= 3 || 위로.length || 아래로.length){
+      let 견줌 = '';
+      if (짝.length >= 5){
+        const 한자리 = v => { const r = Math.round(v * 10) / 10; return Object.is(r, -0) ? 0 : r; };
+        const 내r = 한자리(짝.reduce((a, x) => a + x.내, 0) / 짝.length);
+        const 남r = 한자리(짝.reduce((a, x) => a + x.남, 0) / 짝.length);
+        const 차r = 한자리(내r - 남r);
+        const 말 = 차r >= 0.3 ? '다른 사람보다 후하게 줘요'
+                 : 차r <= -0.3 ? '다른 사람보다 짜게 줘요'
+                 : '다른 사람과 비슷하게 줘요';
+        견줌 = `<div class="fpnums">
+            <div><b>${내r.toFixed(1)}</b><span>내 평균</span></div>
+            <div><b>${남r.toFixed(1)}</b><span>다른 사람 평균</span></div>
+            <div><b>${차r > 0 ? '+' : ''}${차r.toFixed(1)}</b><span>차이</span></div>
+          </div>
+          <div class="memo">${esc(말)} · 견준 도시 ${짝.length}곳</div>`;
+      }
+      if (견줌 || 위로.length || 아래로.length){
         /* 줄 모양은 옛 「별점이 갈린 곳」 그대로입니다(.gaprow — 사진 · 이름 · 나 · 다른 사람 (N명)). */
         const 줄 = x => {
           const c = (cities || []).find(y => y.id === x.id);
@@ -346,14 +348,9 @@ export async function loadAnal(){
               <span class="${x.차 > 0 ? 'up' : 'down'}">나 ${x.내.toFixed(1)}</span>
               <span>다른 사람 ${x.남.toFixed(1)} (${x.남수}명)</span></div>`;
         };
-        const 평균차 = 짝.length >= 3 ? 짝.reduce((s, x) => s + x.차, 0) / 짝.length : null;
-        const 한줄 = 평균차 == null ? ''
-          : Math.abs(평균차) < 0.2 ? `다른 사람과 비슷하게 줘요 · 견준 도시 ${짝.length}곳`
-          : `다른 사람보다 평균 ★${Math.abs(평균차).toFixed(1)} ${평균차 > 0 ? '후하게' : '짜게'} 줘요 · 견준 도시 ${짝.length}곳`;
         const 남다른 = document.createElement('div');
         남다른.className = 'card quiet starcard';
-        남다른.innerHTML = '<h2>남들과 다른 내 별점</h2>' +
-          (한줄 ? `<div class="memo">${esc(한줄)}</div>` : '') +
+        남다른.innerHTML = '<h2>남들과 다른 내 별점</h2>' + 견줌 +
           (위로.length ? `<div class="picks"><span class="label">내가 더 좋아한 곳</span></div>` + 위로.map(줄).join('') : '') +
           (아래로.length ? `<div class="picks"><span class="label">내가 더 아쉬웠던 곳</span></div>` + 아래로.map(줄).join('') : '') +
           (!위로.length && !아래로.length ? '<div class="memo">별 한 칸 넘게 갈린 도시는 아직 없어요.</div>' : '');
@@ -370,10 +367,11 @@ export async function loadAnal(){
   catch (e) { console.error('@mycity', e); }
   /* 별점 칸이 비면(매긴 곳이 적으면) 무엇을 하면 채워지는지 한 줄 — 빈 화면 규칙(emptyDo). */
   if (!별점칸.children.length)
-    별점칸.innerHTML = `<div class="card">${emptyDo('도시를 5곳 넘게 매기면 여기에 별점 이야기가 나와요', '평가하러 가기', 'tabrate',
+    /* ⚠ 「5곳 넘게」가 아니라 「5곳」입니다(b845) — 다섯 곳째부터 나옵니다(mycity.js `목록.length < 5`, 재 봄). */
+    별점칸.innerHTML = `<div class="card">${emptyDo('도시를 5곳 매기면 여기에 별점 이야기가 나와요', '평가하러 가기', 'tabrate',
       '내 별점 · 거리별 별점')}</div>`;
   if (!어워즈칸.children.length)
-    어워즈칸.innerHTML = `<div class="card">${emptyDo('도시를 5곳 넘게 매기면 여기에 도시 어워즈와 여행지 월드컵이 나와요', '평가하러 가기',
+    어워즈칸.innerHTML = `<div class="card">${emptyDo('도시를 5곳 매기면 여기에 도시 어워즈와 여행지 월드컵이 나와요', '평가하러 가기',
       'tabrate', '최애 도시 · 숨은 보석 · 1·2·3위')}</div>`;
 
   /* ⚠ **진기록은 기록 탭으로 갔습니다(b546, 사용자 결정).**
