@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b849';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b850';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b849';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b850';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b849`;
+    img.src = `./persona/${code}.webp?v=b850`;
   });
 }
 
@@ -564,7 +564,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b849`;
+    img.src = `./persona/m/${code}.jpg?v=b850`;
   });
 }
 
@@ -626,10 +626,11 @@ async function drawP16(s, W, H, F){
   const PX = 0, PY = 0, PW = W, PH = H;
   const u = PW / 360;
   const px = v => v * u;
-  /* ⚠ **네 귀퉁이를 둥글게, 바깥은 투명으로(b833, 사용자: 「성향카드도 귀퉁이 둥글게」).** 발자국 탑승권(drawStamps)과
-     같은 반지름(16)입니다 — 둘을 나란히 올려도 모서리가 같습니다. 바깥을 안 칠하므로 맨 끝 저장은 **PNG** 입니다. */
+  /* ⚠ **네모입니다(b850).** b833 에 「성향카드도 귀퉁이 둥글게」로 둥근 귀퉁이 바깥을 투명하게 했는데, 인스타가 «올릴 때»
+       투명을 검게 메웁니다(drawStamps 머리말 ⚠⚠, 10-12 사용자 스크린샷). 발자국 탑승권을 「그냥 사각형으로 다 채우자」로
+       네모로 바꾸면서 같이 바꿨습니다 — 둘을 나란히 올려도 모서리가 같습니다. 그림이 위 귀퉁이까지, 종이가 아래 귀퉁이까지 갑니다.
+     ⚠ save/restore 짝은 그대로 둡니다(맨 끝 g.restore()). */
   g.save();
-  rrect(g, PX, PY, PW, PH, px(16)); g.clip();
   g.fillStyle = P16N.종이; g.fillRect(PX, PY, PW, PH);
 
   const 궁합있음 = !!(s.best && s.worst);
@@ -948,10 +949,8 @@ async function drawP16(s, W, H, F){
   기로바닥(g, PX, PY, PW, PH, 바닥높이, px, F, '나의 여행 성향 알아보기');
 
   g.restore();
-  /* ⚠⚠ **다시 PNG 입니다(b833).** 네 귀퉁이를 투명하게 둥글렸기 때문입니다 — JPEG 는 투명을 못 담아
-     귀퉁이가 검게 칠해집니다(발자국 탑승권과 같은 까닭). b775 에 JPEG 로 바꾼 까닭은 크기였습니다
-     (사진 셋이라 PNG 면 스토리 2,222KB). 크기는 다시 커지지만 공유는 폰 안에서 넘기는 것이고,
-     사용자가 인스타에서 투명 귀퉁이가 잘 나오는 것을 확인했습니다(10-08).
+  /* 바깥 귀퉁이 칠·투명은 없습니다 — 카드가 네모라 비는 픽셀이 없습니다(b850, 이 함수 머리 주석).
+     PNG 는 그대로(b833) — 글자·그림 가장자리 때문. 크기는 스토리 약 2.4MB.
      ⚠ 저장 쪽(`saveCardImage`)이 `blob.type` 을 보고 확장자를 정하므로 여기만 바꾸면 됩니다. */
   return new Promise(r => cv.toBlob(r, 'image/png'));
 }
@@ -962,11 +961,16 @@ async function drawP16(s, W, H, F){
  *
  * 고른 길(사용자): 「남들이 혹하게」 → 시안 열한 장(디자인 캔버스) 중 「6 탑승권」 →
  *   「이거(대륙 막대)까지 살릴 수 있나」(6-2) → 「여백없이 탑승권만」 → 「모서리 라운드」 →
- *   「그냥 투명으로」 → 「인스타 스토리용만 있음돼 정사각형 필요없어」.
- * ⚠⚠ **그림 전체가 탑승권입니다.** 바깥 여백이 없고, **네 귀퉁이(둥근 모서리)와 절취선
- *   양끝 홈은 투명**입니다(PNG 알파). 그래서 이 카드는 JPEG 가 아니라 **PNG** 입니다 —
- *   JPEG 로 바꾸면 귀퉁이가 검게 칠해집니다.
- *   b775 에 걷은 「투명판」은 카드 «바탕 전체»를 비우는 선택지였고, 이것은 귀퉁이만입니다.
+ *   「그냥 투명으로」 → 「인스타 스토리용만 있음돼 정사각형 필요없어」 →(10-12) 「그냥 사각형으로 다 채우자 흰색으로
+ *   모퉁이랑 빈부분」.
+ * ⚠⚠ **그림 전체가 탑승권이고, 네모입니다(b850).** 바깥 여백이 없고 둥근 귀퉁이·절취선 양끝 홈도 없습니다 —
+ *   위 귀퉁이는 주황 띠가, 아래 귀퉁이는 흰 표가 끝까지 갑니다. 비는(투명) 픽셀이 하나도 없습니다.
+ *   까닭: b832~b849 에는 둥근 귀퉁이·홈이 «투명»(PNG 알파)이었는데 **인스타가 «올릴 때» 투명을 검게 메웁니다.**
+ *   10-12 사용자 스크린샷 두 장 — 올리기 전 편집 화면에서는 투명(인스타 바탕이 비침), 올리고 나면 귀퉁이·홈이 검정.
+ *   PNG 로 보내도 인스타가 다시 저장하며 버리므로 우리 쪽에서 못 막습니다(10-08 「인스타에서 투명하게 잘되네」도
+ *   올리기 «전» 화면이었습니다). 인스타 바탕색으로 칠하는 안도 시안까지 만들었지만(사진 앱에선 색 귀퉁이가 남음)
+ *   사용자가 네모를 골랐습니다. → **투명·둥근 귀퉁이로 돌리자는 안은 «올린 뒤» 화면으로 확인하고 나서만.**
+ *   PNG 는 그대로 둡니다(글자 가장자리가 깨끗) — 투명 때문이 아닙니다.
  * ⚠ **스토리(1080×1920) 한 가지입니다.** 다른 크기로 불러도 폭에 맞춰 스토리 비로 그립니다.
  *   공유 시트는 원래 'story' 만 부릅니다(b393).
  * ⚠ 성향 카드(drawP16)와 «같은 틀»이던 것(b776)은 여기서 끝납니다 — 사용자가 탑승권을
@@ -1058,7 +1062,7 @@ async function drawStamps(s, W, H, F){
   const n = 코드.length;
   const 대륙 = (s.byCont || []).slice(0, 6);
   const 셋 = (s.top || []).slice(0, 3);
-  const 절취 = px(448), 홈 = px(10);
+  const 절취 = px(448);
   const 칸폭 = (폭 - px(12)) / 3;                  /* 도시·대륙·등급, 많이 간 나라 셋 */
 
   /* 지도 — 흰 표 위라 땅은 옅은 모래색, 나라 사이 선은 흰색입니다. 선을 안 그으면 붙어 있는
@@ -1081,9 +1085,9 @@ async function drawStamps(s, W, H, F){
   const 깃발 = new Map(await Promise.all(
     받을것.map(async c => [c, await 깃발그림(c, 굽는폭)])));
 
-  /* ══ 표 ══ 둥근 모서리로 잘라 그 안에만 칠합니다 — 귀퉁이는 안 칠해서 투명으로 남습니다. */
+  /* ══ 표 ══ 그림 전체를 네모로 채웁니다(b850 — 둥근 귀퉁이·절취선 홈을 걷음, 위 머리말 ⚠⚠).
+     위 귀퉁이는 주황 띠가 끝까지, 아래 귀퉁이는 흰 표가 끝까지 갑니다. 비는 픽셀이 하나도 없습니다. */
   g.save();
-  rrect(g, 0, 0, W, H, px(16)); g.clip();
   g.fillStyle = 흰; g.fillRect(0, 0, W, H);
   g.textBaseline = 'alphabetic'; g.textAlign = 'left';
 
@@ -1164,7 +1168,7 @@ async function drawStamps(s, W, H, F){
     g.textAlign = 'left';
   });
 
-  /* 절취선 — 양끝 홈은 맨 끝에 투명으로 뚫습니다. */
+  /* 절취선 — 점선만(양끝 홈은 b850 에 걷음). */
   g.save();
   g.strokeStyle = '#D8D1C4'; g.lineWidth = Math.max(1, px(1.5)); g.setLineDash([px(4.5), px(3)]);
   g.beginPath(); g.moveTo(px(12), 절취); g.lineTo(W - px(12), 절취); g.stroke();
@@ -1217,12 +1221,8 @@ async function drawStamps(s, W, H, F){
   g.textAlign = 'left';
   g.restore();
 
-  /* 절취선 양끝 홈 — 투명하게 뚫습니다(귀퉁이와 같은 투명). */
-  g.save();
-  g.globalCompositeOperation = 'destination-out';
-  for (const x of [0, W]){ g.beginPath(); g.arc(x, 절취, 홈, 0, Math.PI * 2); g.fill(); }
-  g.restore();
-
+  /* ⚠ 절취선 양끝 «홈»은 걷었습니다(b850) — 투명으로 뚫으면 인스타가 올릴 때 검게 메우고(위 머리말), 사용자가
+       「그냥 사각형으로 다 채우자 흰색으로 모퉁이랑 빈부분」을 골랐습니다. 점선만 남습니다. */
   return new Promise(r => cv.toBlob(r, 'image/png'));
 }
 
@@ -2798,8 +2798,10 @@ if (typeof window !== 'undefined') window.__drawCheck = async () => {
     if (!깨짐.size) m.push('그림이 깨지니 카드가 통째로 안 나옴');
     bad('발자국 지도가 카드에 들어가는가 · 깨져도 버티는가', m);
   } catch (e){ bad('발자국 지도가 카드에 들어가는가', ['터짐: ' + e.message]); }
-  /* ── 발자국 탑승권(b832) ── 사용자가 고른 것: 스토리 한 가지 · 여백 없음 · 둥근 귀퉁이와 절취선 홈은 투명.
-     ⚠ 투명은 PNG 라야 남습니다 — 누가 JPEG 로 바꾸면(성향 카드는 JPEG 입니다) 귀퉁이가 검게 칠해집니다. 그걸 잡습니다.
+  /* ── 발자국 탑승권(b832) ── 사용자가 고른 것: 스토리 한 가지 · 여백 없음.
+     ⚠⚠ **네모입니다(b850, 사용자: 「그냥 사각형으로 다 채우자 흰색으로 모퉁이랑 빈부분」)** — 둥근 귀퉁이·절취선 홈의
+       투명을 인스타가 올릴 때 검게 메웠습니다(drawStamps 머리말). 그래서 «비는 픽셀 없음»을 봅니다:
+       위 귀퉁이는 주황 띠, 아래 귀퉁이와 옛 홈 자리는 흰 표.
      ⚠ 정사각으로 불러도 스토리로 나와야 합니다(사용자: 「정사각형 필요없어」). */
   try {
     const m = [];
@@ -2816,21 +2818,28 @@ if (typeof window !== 'undefined') window.__drawCheck = async () => {
                                ['지도 깨짐', { ...표(나라.slice(0, 3)), land: '<path d="망가진' }]]){
       const { blob } = await cardImage(spec, 'square');
       if (!blob?.size){ m.push(`${이름}: 빈 그림`); continue; }
-      if (blob.type !== 'image/png') m.push(`${이름}: PNG 가 아님(${blob.type}) — 귀퉁이 투명이 사라짐`);
+      if (blob.type !== 'image/png') m.push(`${이름}: PNG 가 아님(${blob.type})`);
       const bmp = await createImageBitmap(blob);
       if (bmp.width !== 1080 || bmp.height !== 1920) m.push(`${이름}: ${bmp.width}×${bmp.height} — 스토리(1080×1920)여야 함`);
       const cv = document.createElement('canvas'); cv.width = bmp.width; cv.height = bmp.height;
       const g = cv.getContext('2d'); g.drawImage(bmp, 0, 0);
-      const 알파 = (x, y) => g.getImageData(Math.round(x), Math.round(y), 1, 1).data[3];
+      const 점 = (x, y) => g.getImageData(Math.round(x), Math.round(y), 1, 1).data;
       const 절취 = bmp.width / 360 * 448;
-      if (알파(1, 1) !== 0 || 알파(bmp.width - 2, bmp.height - 2) !== 0) m.push(`${이름}: 귀퉁이가 투명하지 않음`);
-      if (알파(2, 절취) !== 0 || 알파(bmp.width - 3, 절취) !== 0) m.push(`${이름}: 절취선 홈이 투명하지 않음`);
-      if (알파(bmp.width / 2, bmp.height / 2) !== 255 || 알파(bmp.width / 2, 6) !== 255) m.push(`${이름}: 표 안쪽이 비었음`);
+      /* 주황 띠인가 · 흰 표인가 — 둘 다 불투명이어야 합니다(투명이면 인스타가 검게 메움). */
+      const 주황인가 = d => d[3] === 255 && d[0] > 200 && d[1] < 140;
+      const 흰가 = d => d[3] === 255 && d[0] > 240 && d[1] > 240 && d[2] > 240;
+      for (const [곳, x, y, 맞나] of [['왼쪽 위 귀퉁이', 1, 1, 주황인가], ['오른쪽 위 귀퉁이', bmp.width - 2, 1, 주황인가],
+                                     ['왼쪽 아래 귀퉁이', 1, bmp.height - 2, 흰가], ['오른쪽 아래 귀퉁이', bmp.width - 2, bmp.height - 2, 흰가],
+                                     ['왼쪽 옛 홈 자리', 2, 절취, 흰가], ['오른쪽 옛 홈 자리', bmp.width - 3, 절취, 흰가]]){
+        const d = 점(x, y);
+        if (!맞나(d)) m.push(`${이름}: ${곳}이 ${맞나 === 주황인가 ? '주황 띠' : '흰 표'}가 아님(rgba ${[...d].join(',')}) — 네모로 꽉 채워야 함`);
+      }
+      if (점(bmp.width / 2, bmp.height / 2)[3] !== 255 || 점(bmp.width / 2, 6)[3] !== 255) m.push(`${이름}: 표 안쪽이 비었음`);
     }
-    bad('발자국 탑승권 — 스토리 한 가지 · 귀퉁이·홈 투명 · 깃발 0/29/60 · 지도 깨짐', m);
+    bad('발자국 탑승권 — 스토리 한 가지 · 네모(귀퉁이 주황 띠·흰 표, 비는 픽셀 없음) · 깃발 0/29/60 · 지도 깨짐', m);
   } catch (e){ bad('발자국 탑승권', ['터짐: ' + e.message]); }
-  /* ── 성향 카드(b833) ── 사용자: 「성향카드도 귀퉁이 둥글게」. 둥근 귀퉁이는 투명이라 **PNG** 라야 합니다 —
-     b775 처럼 JPEG 로 되돌리면 귀퉁이가 검게 칠해집니다. 그걸 잡습니다. */
+  /* ── 성향 카드(b833 둥근 귀퉁이 → b850 네모) ── 인스타가 올릴 때 투명을 검게 메워 탑승권과 같이 네모로 바꿨습니다
+     (drawP16 머리 주석). 그래서 «네 귀퉁이 불투명 · 아래는 종이색 언저리»를 봅니다. 위 귀퉁이는 그림이라 색은 안 봅니다. */
   try {
     const m = [];
     const t = PERSONA16.FMDP;
@@ -2840,15 +2849,21 @@ if (typeof window !== 'undefined') window.__drawCheck = async () => {
       worst:{ code:'HMNP', score:10, name:PERSONA16.HMNP.n, line:'' },
       picks:{ match:['체르마트'], opposite:['쑤저우'] }, mrz:null, title:'', shareLine:'' };
     const { blob } = await cardImage(spec, 'story');
-    if (blob?.type !== 'image/png') m.push(`PNG 가 아님(${blob?.type}) — 귀퉁이 투명이 사라짐`);
+    if (blob?.type !== 'image/png') m.push(`PNG 가 아님(${blob?.type})`);
     const bmp = await createImageBitmap(blob);
     const cv = document.createElement('canvas'); cv.width = bmp.width; cv.height = bmp.height;
     const g = cv.getContext('2d'); g.drawImage(bmp, 0, 0);
-    const 알파 = (x, y) => g.getImageData(Math.round(x), Math.round(y), 1, 1).data[3];
-    if ([알파(1, 1), 알파(bmp.width - 2, 1), 알파(1, bmp.height - 2), 알파(bmp.width - 2, bmp.height - 2)].some(v => v !== 0))
-      m.push('귀퉁이가 투명하지 않음');
-    if (알파(bmp.width / 2, bmp.height / 2) !== 255) m.push('카드 안쪽이 비었음');
-    bad('성향 카드 — 둥근 귀퉁이 투명 · PNG', m);
+    const 점 = (x, y) => g.getImageData(Math.round(x), Math.round(y), 1, 1).data;
+    for (const [곳, x, y] of [['왼쪽 위', 1, 1], ['오른쪽 위', bmp.width - 2, 1],
+                              ['왼쪽 아래', 1, bmp.height - 2], ['오른쪽 아래', bmp.width - 2, bmp.height - 2]]){
+      const d = 점(x, y);
+      /* 비었나만 봅니다 — 위 귀퉁이는 그림 픽셀이라 어두울 수 있습니다(명소 검열관은 밤하늘, rgb 21,19,17 — 재 봄). */
+      if (d[3] !== 255) m.push(`${곳} 귀퉁이가 비었음(알파 ${d[3]}) — 인스타가 검게 메움`);
+    }
+    const 아래 = 점(1, bmp.height - 2);
+    if (아래[0] < 200 || 아래[1] < 190) m.push(`아래 귀퉁이가 종이색 언저리가 아님(rgb ${아래[0]},${아래[1]},${아래[2]})`);
+    if (점(bmp.width / 2, bmp.height / 2)[3] !== 255) m.push('카드 안쪽이 비었음');
+    bad('성향 카드 — 네모(네 귀퉁이 불투명) · PNG', m);
   } catch (e){ bad('성향 카드 둥근 귀퉁이', ['터짐: ' + e.message]); }
 
   console.table(out);
