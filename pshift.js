@@ -24,11 +24,11 @@
  *   누르는 것이 곧 봤다는 증거입니다. 그전까지는 홈을 그릴 때마다 다시
  *   붙습니다 — 그게 「다시 열 이유」의 뜻이기도 합니다.
  */
-import { esc } from './dom.js?v=b855';
-import { sb } from './db.js?v=b855';
-import { netTimeout } from './net.js?v=b855';
-import { cities } from './cities.js?v=b855';
-import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b855';
+import { esc } from './dom.js?v=b856';
+import { sb } from './db.js?v=b856';
+import { netTimeout } from './net.js?v=b856';
+import { cities } from './cities.js?v=b856';
+import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b856';
 
 let ctx = { me: () => null, 열기: () => {} };
 export function setShiftCtx(o){ ctx = { ...ctx, ...o }; }
@@ -174,10 +174,10 @@ function 그리기(){
   팝.innerHTML = `<div class="pshcard" role="dialog" aria-modal="true" aria-label="성향이 바뀌었어요">
       <p class="pshtitle">성향이 바뀌었어요</p>
       <div class="pshpair">
-        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b855" alt="">
+        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b856" alt="">
           <figcaption><b>${esc(전)}</b><span>${esc(앞)}</span></figcaption></figure>
         <i aria-hidden="true">→</i>
-        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b855" alt="">
+        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b856" alt="">
           <figcaption><b>${esc(지금)}</b><span>${esc(뒤)}</span></figcaption></figure>
       </div>
       <p class="pshwhy">${esc(personaShiftWhy(전, 지금, 대기.규칙) || '최근에 매긴 곳들이 그렇게 말해요.')}</p>
@@ -214,7 +214,9 @@ addEventListener('keydown', e => { if (e.key === 'Escape' && 팝) 팝닫기(); }
  * checkPersonaShift 가 진짜 계산 그대로 팝업을 띄웁니다. 서버 값(profiles.persona)과 남의 기기는 안 건드립니다.
  * 지난 코드: 성향 화면이 적어 둔 바뀜 기록(t2:p16was: 「FMDP>HMDP>규칙」)의 앞 것. 없으면 지금 코드의 첫 글자만 뒤집은 것.
  * 지금 코드를 아직 모르면(기록 탭을 한 번도 안 그림) false — 부르는 쪽이 알립니다. */
-export function pshift다시(){
+/* ⚠ 이름은 한글로만(b856). 처음엔 `pshift다시` 였는데 CI 의 「못 찾는 이름」(tools/check-refs.mjs)이 영어·한글이 섞인
+     이름을 `pshift` 까지만 읽어 「import 없이 쓴다」고 잡았습니다 — 섞어 쓰지 마십시오. */
+export function 성향팝업다시(){
   const me = ctx.me();
   if (!me) return false;
   const 지금 = knownPersona(me.id) || 읽기(me.id);
