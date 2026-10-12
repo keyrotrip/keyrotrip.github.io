@@ -156,12 +156,14 @@ function 그리기(막대에서){
   }
 }
 
-/* (px, py) 자리 밑의 사진 점을 붙잡은 채 크기를 s2 로 바꿉니다. */
-function 키우기(s2, px, py, 막대에서){
+/* (점x, 점y) 자리 밑의 사진 점을 붙잡은 채 크기를 s2 로 바꿉니다.
+   ⚠ 매개변수를 px·py 라 했더니 CI(check-refs)가 map.js 가 내보내는 px·py 를 import 없이 쓴다고 잡았습니다(b852) —
+     매개변수는 못 가리는 검사라 이름을 피합니다. */
+function 키우기(s2, 점x, 점y, 막대에서){
   const o = 열린;
   const s = Math.min(o.최대, Math.max(o.최소, s2));
-  o.x = px - (px - o.x) * (s / o.s);
-  o.y = py - (py - o.y) * (s / o.s);
+  o.x = 점x - (점x - o.x) * (s / o.s);
+  o.y = 점y - (점y - o.y) * (s / o.s);
   o.s = s;
   그리기(막대에서);
 }
