@@ -21,7 +21,7 @@
  *   적으면 둘이 갈립니다).
  * ⚠ 안드로이드 크롬·엣지·삼성 인터넷처럼 설치 창을 띄울 수 있는 곳은 「앱 설치」 단추 하나로 끝납니다.
  *   그 창(beforeinstallprompt)은 모듈보다 먼저 올 수 있어 index.html 머리에서 `window.__설치창` 으로 붙잡아 둡니다. */
-import { $ } from './dom.js?v=b846';
+import { $ } from './dom.js?v=b847';
 
 /* 링크를 연 기기. 앱 안 브라우저는 따로(위 ⚠). */
 export function 기기알기(ua = navigator.userAgent || '', 터치 = navigator.maxTouchPoints || 0){
@@ -126,12 +126,45 @@ export function 설치안내닫기(뒤로온것){
   $('a2hs').classList.add('hide');
 }
 
-/* 로그인 전 첫 화면이 보인 순간(app.js). 한 줄 단추만 켭니다 — 판은 눌러야 열립니다(위 ⚠⚠, 사용자 결정). */
+/* 로그인 전 첫 화면이 보인 순간(app.js). 한 줄 단추만 켭니다 — 판은 눌러야 열립니다(위 ⚠⚠, 사용자 결정).
+   앱 안 브라우저(인스타 등)에서는 그 자리에 「다른 브라우저에서 열기 · 링크 복사」를 켭니다(b847, 아래). */
 export function 설치안내첫화면(){
   $('a2link')?.classList.toggle('hide', !안내할까());
+  $('a2copy')?.classList.toggle('hide', 설치됨() || !window.__앱안);
+}
+
+/* ── 다른 브라우저에서 열기 · 링크 복사(b847) ────────────────────────────────
+ * 사용자: 「링크 복사할 수 있는 기능 하나만 넣어주면 되는거아냐? 인스타에서 해도 되고 다른 브라우저에서 해도되고」.
+ * 인스타는 앱 안에서도 로그인이 되므로(사용자가 해 봄, b846·b847) «막는 판» 대신 고를 수 있게 둡니다 — 그대로 써도 되고,
+ * 복사해서 사파리·크롬에 붙여 넣어도 됩니다(홈 화면에 추가는 거기서만 됩니다).
+ * ⚠ 복사하는 주소는 `window.__첫주소`(index.html 첫 스크립트) — app.js 가 ?join= 같은 꼬리를 곧바로 지우므로
+ *   지금 주소(location.href)를 쓰면 초대 코드가 빠집니다.
+ * ⚠ 클립보드는 앱 안 브라우저에서 막힐 수 있어 둘째 길(숨은 글칸 + execCommand)을 두고, 그것도 안 되면 주소를 보여줍니다. */
+let 복사타이머 = 0;
+async function 링크복사(){
+  const 주소 = window.__첫주소 || location.href;
+  let 됨 = false;
+  try { await navigator.clipboard.writeText(주소); 됨 = true; } catch {}
+  if (!됨){
+    try {
+      const t = document.createElement('textarea');
+      t.value = 주소; t.setAttribute('readonly', '');
+      t.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+      document.body.appendChild(t); t.select(); t.setSelectionRange(0, 주소.length);
+      됨 = document.execCommand('copy');
+      t.remove();
+    } catch {}
+  }
+  const 글 = $('a2copygo');
+  if (!글) return;
+  if (!됨){ window.prompt('이 주소를 길게 눌러 복사하세요', 주소); return; }
+  글.textContent = '복사했어요';
+  clearTimeout(복사타이머);
+  복사타이머 = setTimeout(() => { 글.textContent = '링크 복사'; }, 2500);
 }
 
 $('a2link')?.addEventListener('click', () => 설치안내열기());
+$('a2copy')?.addEventListener('click', 링크복사);
 $('a2hs')?.addEventListener('click', async e => {
   if (e.target.closest('[data-a2close]')) return 설치안내닫기();
   if (!e.target.closest('[data-a2install]')) return;
