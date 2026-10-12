@@ -18,9 +18,9 @@
  *   이 이름을 바꾸면 세 화면이 같이 멈춥니다.
  *
  * 층: dom.js · cities.js · stars.js 만 씁니다(전부 잎). */
-import { esc } from './dom.js?v=b842';
-import { countryName, cityCountry } from './cities.js?v=b842';
-import { starHtml } from './stars.js?v=b842';
+import { esc } from './dom.js?v=b843';
+import { countryName, cityCountry } from './cities.js?v=b843';
+import { starHtml } from './stars.js?v=b843';
 /**
  * @param city  도시 한 줄(image_url · name · country · id). **사진이 있어야 합니다** —
  *              히어로는 사진이 주인공이라 없으면 빈 색 덩어리만 남습니다.
@@ -70,9 +70,9 @@ export function rateHero(city, { ask = '', id = 'ratehero', bar = true,
        여행지=그 외.
 
      ⚠ **문구가 무를 뜻하는 것보다 하는 일이 셉니다.** 이 단추는 눌리면
-       `stars:null` 줄을 남겨 **다시 안 묻습니다**(spree.js 의 누르기).
-       「다른 여행지」는 "보류" 로 읽힐 수 있지만, 되돌릴 길이 기록 탭에
-       있어서 그대로 둡니다. 문구를 또 바꿀 일이 있으면 **이 동작부터**
+       `stars:null` 줄을 남겨 **처음 보는 곳 뒤로 밉니다**(spree.js 의 누르기 · rate.js 넘긴줄, b843).
+       ⚠ 안 빠집니다 — 10-12 사용자: 「나중에 또 평가할 수도 있으니까 다시 나오는게 맞지 않나」.
+       그래서 「다른 여행지」를 "보류" 로 읽어도 틀리지 않습니다. 문구를 또 바꿀 일이 있으면 **이 동작부터**
        보십시오. */
   const 단추 = bar ? `<div class="trybar" data-city="${esc(c.id)}">
     <button class="ghost" data-rate="skip">다른 여행지 <i>›</i></button>
@@ -116,4 +116,4 @@ export function rateHero(city, { ask = '', id = 'ratehero', bar = true,
      있었습니다 — 그 셋은 rateui 를 import 하지 않기 때문입니다. 별을 쓰는
      여섯 화면이 다 닿는 아래층은 stars.js 입니다.
      이름은 여기서도 그대로 나갑니다(home·spree·try 가 여기서 가져갑니다). */
-export { starValue } from './stars.js?v=b842';
+export { starValue } from './stars.js?v=b843';

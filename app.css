@@ -1742,6 +1742,11 @@ input[type=time]::-webkit-date-and-time-value{ text-align:left; }
    `.st` 를 em 으로 짠 것이 원인입니다 — 부모 글자 크기가 바뀌는 자리에
    놓이면 조용히 같이 줄어듭니다. 누르는 곳은 px 로 못박습니다. */
 .rrow .st, #cv_stars .st{ font-size:min(var(--f-3xl), 6.6vw); }
+/* ⚠ **색도 같은 까닭으로 새고 있었습니다(b843).** `.stats span{ color:var(--ink-48) }`(0,1,1)이
+   `.st{ color:var(--hairline) }`(0,1,0)을 이겨서, 도시 페이지의 «빈» 별만 진한 회색(#6B675F)이었습니다 —
+   아직 안 매겼는데 **별 다섯 개를 준 것처럼** 보였습니다. 별을 그리는 일곱 자리를 재 보니 여기만 그랬습니다
+   (목록·보관함·여행 리뷰·나라 카드·일기 머리는 #DFDAD0). 칠한 별(`.st i`)은 i 라 안 걸립니다. */
+#cv_stars .st{ color:var(--hairline); }
 .rrow .want{ flex:none; padding:4px 2px; }
 /* 별이 차는 것과 줄이 밀려나는 것이 보여야 내가 눌렀다는 걸 압니다. */
 .st i{ transition:width var(--t-fast) var(--ease); }

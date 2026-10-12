@@ -14,18 +14,18 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b842';
-import { sb } from './db.js?v=b842';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b842';
-import { dateRange } from './calc.js?v=b842';
-import { starHtml, paintStars, starValue } from './stars.js?v=b842';
+import { $, esc, josa, tipOff } from './dom.js?v=b843';
+import { sb } from './db.js?v=b843';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b843';
+import { dateRange } from './calc.js?v=b843';
+import { starHtml, paintStars, starValue } from './stars.js?v=b843';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b842';
+         countryInfo } from './cities.js?v=b843';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음 } from './rate.js?v=b842';
-import { openCity } from './city.js?v=b842';
-import { loadCities } from './citysearch.js?v=b842';
+         removeRate, 별받음, 넘긴줄 } from './rate.js?v=b843';
+import { openCity } from './city.js?v=b843';
+import { loadCities } from './citysearch.js?v=b843';
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }
@@ -70,7 +70,8 @@ export async function loadRateData(){
   const 나 = ctx.me();
   if (!나?.id) return { error: { message: '아직 로그인 정보가 없습니다' } };
   const [mine, stats, vis] = await Promise.all([
-    sb.from('city_ratings').select('city_id,stars,want,comment,journal,journal_photo,updated_at')
+    /* been — 「넘긴 줄」을 가를 때 씁니다(rate.js 넘긴줄, b843). */
+    sb.from('city_ratings').select('city_id,stars,want,been,comment,journal,journal_photo,updated_at')
       .eq('user_id', 나.id),
     sb.rpc('city_stats'),
     sb.rpc('my_visited'),
@@ -151,7 +152,11 @@ export const tripSub = (t, days) =>
  *   「괌·나라·나트랑·나하」로 시작합니다 — 그래서 유명한 순으로
  *   안 보였던 것입니다. 정렬을 고칠 일이 아니었습니다.
  * ⚠ 도시의 나라·대륙은 **모국을 씁니다**(`cc`) — 괌은 미국,
- *   홍콩은 중국(b672 의 `cityCountry` 와 같은 규칙). */
+ *   홍콩은 중국(b672 의 `cityCountry` 와 같은 규칙).
+ * ⚠ **대륙도 모국을 따릅니다 — 다시 바꾸자고 하지 말 것(10-12).** 괌·사이판(미국령)·타히티(프랑스령)는
+ *   그래서 북아메리카·유럽에 들어가 「오세아니아」를 골라도 안 나옵니다(본국과 대륙이 다른 딸린 땅은 이 셋뿐, 재 봄).
+ *   제 땅의 대륙(오세아니아)으로 옮기는 안을 만들어 보여드렸고, 사용자가 「예전대로 두기」를 골랐습니다 —
+ *   b670(「괌은 미국으로 가야지」, city.js 의 대륙 줄)과 기록 탭 대륙 숫자에 맞추는 쪽입니다. */
 /* ⚠⚠ **b678 에 대륙을 걷었다가 b679 에 되살렸습니다.** 사용자가 「두 개가
    같은 기능한다」고 한 것은 **«단추» 두 개**를 말한 것이었는데, 저는
    대륙이라는 «갈래»를 없애라는 뜻으로 읽었습니다. 되물었어야 했습니다.
@@ -257,9 +262,18 @@ export function drawRatings(){
      **fame 은 1이 이름난 쪽입니다** — 파리·로마·도쿄가 1, 겐트·공주가 3.
      처음에 큰 값을 앞에 두었더니 목록이 겐트·골웨이·공주로 시작했습니다.
      값이 없으면 맨 뒤로 보냅니다. */
+  /* ⚠ **찾을 때는 그 글자로 «시작»하는 곳이 먼저입니다(b843).** 앱의 다른 도시 찾기(cities.js 의 search)가
+       이미 그 규칙인데 여기만 빠져 있어서, 「ㅍ」을 치면 파리·프라하보다 사이판·샌프란시스코가 먼저 나왔습니다(재 봄).
+       가르는 법은 search 와 똑같이 둡니다 — 초성이면 초성, 아니면 한글 이름이 그 글자로 시작하는가.
+     ⚠ **「다른 여행지」로 넘긴 곳은 처음 보는 곳 «뒤로»(b843, rate.js 넘긴줄).** 빼지는 않습니다 —
+       그사이 다녀왔으면 여기서 매겨야 합니다(사용자 결정). 재 보니 이 목록 첫 38곳 중 27곳이 넘긴 곳이었습니다. */
   const rank = c => (visited.has(c.id) && myRates[c.id]?.stars == null) ? 999
                   : (myRates[c.id]?.stars ?? -1);
-  list.sort((a, b) => rank(b) - rank(a)
+  const 시작 = c => (cho ? c._cho : c.name.toLowerCase()).startsWith(q) ? 1 : 0;
+  const 뒤로 = c => 넘긴줄(myRates[c.id]) ? 1 : 0;
+  list.sort((a, b) => (q ? 시작(b) - 시작(a) : 0)
+                   || rank(b) - rank(a)
+                   || 뒤로(a) - 뒤로(b)
                    || (a.fame ?? 9) - (b.fame ?? 9)
                    || a.name.localeCompare(b.name, 'ko'));
 
@@ -307,7 +321,9 @@ export function drawRatings(){
       글 = 쓴것 ? `${josa(`‘${쓴것}’`, '은', '는')} 이미 매기셨어요.`
                 : (거른이름 ? `${josa(거른이름, '은', '는')} 다 매기셨어요.`
                               : '매길 곳을 다 매기셨어요.');
-      밑 = '매긴 곳은 기록 탭의 보관함에서 볼 수 있어요.';
+      /* ⚠ 보관함은 **프로필 탭**에 있습니다(b843) — 여기 「기록 탭의 보관함」이라고 적혀 있었습니다.
+           매긴 곳은 그 안의 「방문한 도시」(data-shelf="been")에 다 있습니다. */
+      밑 = '매긴 곳은 프로필 탭 보관함의 「방문한 도시」에서 볼 수 있어요.';
     }
     $('ratelist').innerHTML =
       `<div class="empty"><div>${esc(글)}</div>` +
@@ -501,8 +517,8 @@ $('ratelist').addEventListener('click', async e => {
 
 /* ── 별점 취소 — 줄을 통째로 지웁니다(b407) ──────────────────────────
  * ⚠ **`saveRate(id, { stars: null })` 과 다릅니다.** 그건 줄을 남기고,
- *   남은 줄은 "이미 물어본 곳"이라 **다시는 안 물어봅니다**(fillQuiz).
- *   잘못 눌러서 취소한 도시가 영영 안 나오면 안 됩니다.
+ *   남은 줄은 "이미 물어본 곳"이라 **처음 보는 곳 뒤로 밀립니다**(rate.js 넘긴줄, b843).
+ *   잘못 눌러서 취소한 도시가 뒤로 밀려 한참 안 나오면 안 됩니다.
  *   가르는 이유는 rate.js 의 `removeRate` 머리말에 적어뒀습니다.
  *
  * ⚠ **♡ 나 메모가 있으면 안 지웁니다.** 그건 사용자가 따로 남긴 것이라

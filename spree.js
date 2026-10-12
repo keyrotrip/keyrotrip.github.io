@@ -20,14 +20,15 @@
  *
  * 층: dom.js · db.js · cities.js · citysearch.js · stars.js · rateui.js ·
  *     rate.js · rating.js · home.js(지문 비우기만). */
-import { $, esc } from './dom.js?v=b842';
-import { sb } from './db.js?v=b842';
-import { cities } from './cities.js?v=b842';
-import { loadCities } from './citysearch.js?v=b842';
-import { paintStars } from './stars.js?v=b842';
-import { rateHero, starValue } from './rateui.js?v=b842';
-import { saveRate, 방금확정 } from './rating.js?v=b842';
-import { resetHomeSig } from './home.js?v=b842';
+import { $, esc } from './dom.js?v=b843';
+import { sb } from './db.js?v=b843';
+import { cities } from './cities.js?v=b843';
+import { loadCities } from './citysearch.js?v=b843';
+import { paintStars } from './stars.js?v=b843';
+import { rateHero, starValue } from './rateui.js?v=b843';
+import { saveRate, 방금확정 } from './rating.js?v=b843';
+import { 넘긴줄 } from './rate.js?v=b843';
+import { resetHomeSig } from './home.js?v=b843';
 
 /* ⚠ showApp 은 **기본값에도 둡니다.** 없으면 위 돌아가기() 가 조용히
    아무 일도 안 하는데, 그게 b423~b425 동안 그대로 나가 있었습니다. */
@@ -44,8 +45,12 @@ let 주머니 = [], 지금 = null, 센것 = 0, 도는중 = false;
 let 건드림 = false;
 
 /* ── 물어볼 도시 ─────────────────────────────────────────────────────
- * ⚠ **이미 답한 곳은 서버에 물어서 뺍니다.** 별점이든 ♡ 든 「안 가봤어요」든
- *   줄이 있으면 다시 안 묻습니다(홈의 fillQuiz 와 같은 규칙).
+ * ⚠ **이미 답한 곳(별·♡)은 서버에 물어서 뺍니다.**
+ * ⚠⚠ **「다른 여행지」로 넘긴 곳은 안 빼고 «맨 뒤로»입니다(b843, rate.js 넘긴줄).** ⚠⚠
+ *   10-12 사용자: 「나중에 또 평가할 수도 있으니까 다시 나오는게 맞지 않나? 다시는 안나오면 문제가 있지」.
+ *   b755 뒤로는 넘긴 곳이 처음 보는 곳과 섞여 유명한 순으로 다시 «앞»에 왔습니다 — 재 보니 열 때마다
+ *   첫 묶음 38곳 중 27곳이 이미 넘긴 곳이었습니다(사용자 계정, 넘긴 35곳 전부). 빼면 다녀온 뒤 매길 길이
+ *   막히고, 섞으면 같은 곳만 계속 넘기게 되어 «처음 보는 곳 먼저, 넘긴 곳은 그 뒤» 입니다.
  * ⚠ **이름난 곳부터.** 처음 쭉 매기는 사람에게 생소한 곳을 먼저 주면 넘기다
  *   지칩니다. 유명도 안에서만 섞어 열 때마다 순서가 달라지게 합니다. */
 /* ⚠⚠ **못 받은 것과 「다 봤다」는 다릅니다(b716, b698 점검 다섯째).** ⚠⚠
@@ -57,8 +62,9 @@ let 못받음 = false;
 async function 채우기(){
   못받음 = false;
   await loadCities();
+  /* been·comment·journal·journal_photo 는 「넘긴 줄」을 가르는 데 씁니다(rate.js 넘긴줄 — 평가 탭 목록과 한 규칙). */
   const r = await sb.from('city_ratings')
-    .select('city_id,stars,want').eq('user_id', ctx.me().id);
+    .select('city_id,stars,want,been,comment,journal,journal_photo').eq('user_id', ctx.me().id);
   if (r.error || !(cities || []).length){ 못받음 = true; 주머니 = []; return; }
   /* ⚠⚠ **«줄이 있다»와 «답했다»는 다릅니다(b755).** ⚠⚠
      여태는 `city_ratings` 에 줄만 있으면 걸러냈습니다. 그러면 별점도 없고
@@ -69,11 +75,15 @@ async function 채우기(){
        걷었지만, **이 가름은 그것과 상관없이 맞습니다** — 되돌리지 마십시오. */
   const 답한것 = new Set((r.data || [])
     .filter(x => x.stars != null || x.want).map(x => x.city_id));
+  const 넘긴것 = new Set((r.data || []).filter(넘긴줄).map(x => x.city_id));
   주머니 = (cities || []).filter(c => c.image_url && !답한것.has(c.id));
-  주머니.sort((a, b) => (a.fame ?? 9) - (b.fame ?? 9));
+  /* 처음 보는 곳 → 넘긴 곳(위 ⚠⚠), 그 안에서 이름난 순. 섞기도 같은 칸 안에서만 합니다 —
+     칸이 다른 둘을 바꾸면 넘긴 곳이 다시 앞으로 옵니다. */
+  const 칸 = c => (넘긴것.has(c.id) ? 100 : 0) + (c.fame ?? 9);
+  주머니.sort((a, b) => 칸(a) - 칸(b));
   for (let i = 주머니.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
-    if ((주머니[i].fame ?? 9) === (주머니[j].fame ?? 9))
+    if (칸(주머니[i]) === 칸(주머니[j]))
       [주머니[i], 주머니[j]] = [주머니[j], 주머니[i]];
   }
 }
@@ -213,7 +223,7 @@ $('spreeclose')?.addEventListener('click', () => closeSpree());
 /* ── 손가락으로 넘기기 (b643, 사용자 요청 「틴더처럼」) ────────────────
  * 옆으로 밀면 카드가 손가락을 따라가다 날아가고 다음 도시가 옵니다.
  * 뜻은 **「다른 여행지」 단추와 똑같습니다** — `stars:null` 을 남겨
- * 다시 안 묻게 합니다. 두 길이 다른 일을 하면 어느 쪽을 썼는지에 따라
+ * 다음부터는 처음 보는 곳 뒤로 갑니다(b843). 두 길이 다른 일을 하면 어느 쪽을 썼는지에 따라
  * 기록이 갈립니다.
  * ⚠ **단추는 그대로 둡니다**(사용자 지시). 스와이프는 «더한» 길입니다 —
  *   미는 것을 모르는 사람에게 화면이 막다른 곳이 되면 안 됩니다.
@@ -322,8 +332,8 @@ $('spreebox')?.addEventListener('click', async e => {
   }
   const b = e.target.closest('[data-rate]');
   if (!b || !지금) return;
-  /* 「안 가봤어요」는 **별점 없는 줄**을 남깁니다 — 다시 안 묻기 위한 것입니다.
-     홈과 같은 규칙입니다(home.js 의 herobar 주석). */
+  /* 「다른 여행지」는 **별점 없는 줄**을 남깁니다 — 다음부터 처음 보는 곳 «뒤로» 보내기 위한 것입니다
+     (b843 — 빼지는 않습니다, 위 「물어볼 도시」 ⚠⚠). */
   saveRate(지금.id, b.dataset.rate === 'want' ? { want: true } : { stars: null }, true);
   건드림 = true;
   다음();
