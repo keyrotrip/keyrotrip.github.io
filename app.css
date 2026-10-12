@@ -4577,6 +4577,13 @@ ol.phl{ list-style:none; margin:12px 0 4px; padding:0; }
            color:var(--ink-48); margin-right:2px; }
 /* 무엇이 바뀌었는지 한 줄(성향 v2 · card.js personaShiftWhy). */
 .pwast small{ font-size:calc(12px * var(--ts)); color:var(--ink-48); word-break:keep-all; line-height:1.45; }
+/* 닫기(b855, 사용자: 「닫기 버튼도 만들자 계속 있으면 보기 싫잖아」) — 기록 탭 칩의 ×와 같은 모양
+   (보이는 동그라미 26px · 닿는 자리 44px). 오른쪽 위에 붙입니다. */
+.pwasx{ position:relative; flex:none; align-self:flex-start; margin-left:auto;
+        width:26px; height:26px; padding:0; display:grid; place-items:center;
+        border:0; border-radius:50%; background:var(--hairline); color:var(--ink-48);
+        font-size:17px; line-height:1; cursor:pointer; }
+.pwasx::before{ content:""; position:absolute; inset:-9px; }
 
 /* ── 성향 v2(2026-09-30) ── 다시 간 도시 카드 · 그 시트(visits.js) ──
    ⚠ 시트 뼈대는 기존 `.sheet` 그대로(보관함·평가 탭과 같은 규칙) — 여기는 안쪽만.

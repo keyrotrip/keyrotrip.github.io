@@ -19,27 +19,27 @@
  *     rec·rate 는 b395 에서 늘었습니다 — 「어울리는 곳 · 도전해볼 곳」을
  *     뽑느라 추천 계산과 다녀온 곳이 필요해졌습니다. city.js 는 b399 에서
  *     다시 뺐습니다 — 추천이 카드 그림 안으로 들어가 누를 줄이 없어졌습니다. */
-import { $, esc, backLabel, toTop, coverDeck } from './dom.js?v=b854';
-import { sb } from './db.js?v=b854';
-import { cities, countryName, continentOf } from './cities.js?v=b854';
+import { $, esc, backLabel, toTop, coverDeck } from './dom.js?v=b855';
+import { sb } from './db.js?v=b855';
+import { cities, countryName, continentOf } from './cities.js?v=b855';
 /* 닮은 도시로 다음 갈 곳을 고릅니다. **AI 를 안 씁니다** — 오프라인에서도
    돌아야 하고 같은 자료에는 늘 같은 답이 나와야 합니다(rec.js 맨 위 참고). */
-import { similarPicks } from './rec.js?v=b854';
+import { similarPicks } from './rec.js?v=b855';
 /* 친구와 궁합. **받는 쪽만 남았습니다(b551)** — 보내는 단추를 걷으면서
    shareMate 를 뗐습니다. mate.js 에는 그대로 있으니 되살리려면 가져다
    쓰면 됩니다(b408 의 「유입이 유입을 만드는 고리」, 그 머리말 참고). */
-import { mateCode, mateHtml } from './mate.js?v=b854';
-import { visited } from './rate.js?v=b854';
-import { open16 } from './p16.js?v=b854';
+import { mateCode, mateHtml } from './mate.js?v=b855';
+import { visited } from './rate.js?v=b855';
+import { open16 } from './p16.js?v=b855';
 import { personaStats, personaAxes, personaRank, personaMates, personaMrz,
          PERSONA16, AXIS_WORD, AXIS_NAME, axisSpectrum, personaWhyHtml, personaShiftWhy,
-         PERSONA_VER, shareCard } from './card.js?v=b854';
+         PERSONA_VER, shareCard } from './card.js?v=b855';
 /* 성향 v2(2026-09-30): 지난번 코드(흔들림 막기)와 올리기는 pshift.js 한 곳 — 홈 알림과 같은 기준이어야
    두 화면이 다른 유형을 붙잡지 않습니다. 다시 간 도시 시트는 visits.js. */
-import { prevPersona, savePersona } from './pshift.js?v=b854';
+import { prevPersona, savePersona } from './pshift.js?v=b855';
 /* 성향 칸 더보기(b839) — 나를 만든 도시 · 성향 변천사 · 친구 중 여행 메이트. 자리는 아래 틀에, 그리는 것은 pmore.js. */
-import { 성향더보기 } from './pmore.js?v=b854';
-import { openVisits } from './visits.js?v=b854';
+import { 성향더보기 } from './pmore.js?v=b855';
+import { openVisits } from './visits.js?v=b855';
 
 let ctx = { me: () => null, loadCities: async () => {}, showApp: () => {},
             /* 성향 보러 가기(b822) — 칸 고르기·맨 위로까지 app.js 가 합니다. 기본값은 예전과 같은 «탭만 열기». */
@@ -232,20 +232,26 @@ async function drawPersona(s, ax, rates){
       localStorage.setItem(열쇠, code);
     }
     localStorage.setItem(판열쇠, String(PERSONA_VER));
-    const [앞, 뒤, 규칙] = (localStorage.getItem(기록열쇠) || '').split('>');
+    const 기록 = localStorage.getItem(기록열쇠) || '';
+    const [앞, 뒤, 규칙] = 기록.split('>');
     if (!앞 || 뒤 !== code || !PERSONA16[앞]) return '';
+    /* ⚠ **닫으면 그 바뀜은 다시 안 보입니다(b855, 사용자: 「이거 닫기 버튼도 만들자 계속 있으면 보기 싫잖아」).**
+         닫은 «기록 그대로»를 적어 둡니다(t2:p16wasoff:) — 성향이 또 바뀌면 기록이 달라져서 새 바뀜은 다시 뜹니다.
+         기록(t2:p16was:)은 안 지웁니다 — 관리자 시험(pshift.js pshift다시)이 지난 코드를 거기서 읽습니다. */
+    if (localStorage.getItem('t2:p16wasoff:' + uid) === 기록) return '';
     /* ⚠ **그림은 «예전 것» 한 장뿐입니다(b749, 사용자 지적).** 둘을 이어
        붙이면 오른쪽 것이 **바로 위 히어로와 같은 그림**이라 한 화면에 같은
        그림이 두 번 나옵니다 — 사용자: 「그림 둘로 이어붙이면 레이아웃이
        이상하지 않겠어?」. 지금 성향은 위에 크게 떠 있으므로, 여기서 새로
        말할 것은 「예전엔 이랬다」 하나입니다. */
     return `<div class="pwas">
-      <img class="pwasim" src="./persona/t/${esc(앞)}.jpg?v=b854"
+      <img class="pwasim" src="./persona/t/${esc(앞)}.jpg?v=b855"
            alt="" loading="lazy" decoding="async">
       <span class="pwast"><b>성향이 바뀌었어요</b>
         <i>예전엔 <em>${esc(앞)}</em> ${esc(PERSONA16[앞]?.n || 앞)}</i>
         <!-- 무엇이 바뀌었는지 한 줄(v2, 명세 11장) — 홈 알림(pshift)과 같은 말(card.js personaShiftWhy). -->
         ${personaShiftWhy(앞, code, 규칙 === '규칙') ? `<small class="pwasw">${esc(personaShiftWhy(앞, code, 규칙 === '규칙'))}</small>` : ''}</span>
+      <button type="button" class="pwasx" aria-label="이 기록 닫기" data-rec="${esc(기록)}">×</button>
     </div>`;
   } catch (e){ console.warn('바뀜 배지', e); self.reportError?.(e); return ''; } })();
 
@@ -361,12 +367,12 @@ async function drawPersona(s, ax, rates){
              깔아 둡니다 — 원본이 붙기 전까지 그 자리를 채웁니다.
            ⚠ 원본 webp 를 여기 깔면 안 됩니다. 같은 그림을 두 번 받습니다. -->
         <div class="psizer"
-             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b854')"></div>
+             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b855')"></div>
         <!-- ⚠ 원본(webp, 장당 약 490KB)이 아니라 **중간 크기**(m/, 77KB)
              입니다(b744). 이 자리는 폭 356 이라 720px 이면 2배까지 충분합니다.
              원본은 공유 카드 그림(card.js)에서만 씁니다 — 거기는 1080 폭
              캔버스에 그리므로 큰 것이 필요합니다. -->
-        <img src="./persona/m/${esc(code)}.jpg?v=b854" alt=""
+        <img src="./persona/m/${esc(code)}.jpg?v=b855" alt=""
              onerror="this.closest('.phero').classList.add('noart')">
         <div class="pscrim"></div>
         <!-- ⚠⚠ **공유 아이콘은 히어로 «안»에 있어야 합니다(b741).** ⚠⚠
@@ -485,13 +491,13 @@ async function drawPersona(s, ax, rates){
              있었습니다 — 유형은 «그림으로» 기억됩니다.
            ⚠ 작은 것(t/, 23KB)입니다. 칸이 160px 이라 360px 이면 넉넉합니다. -->
         <div class="mate good">
-          <img class="mateimg" src="./persona/t/${esc(mate.best)}.jpg?v=b854"
+          <img class="mateimg" src="./persona/t/${esc(mate.best)}.jpg?v=b855"
                alt="" loading="lazy" decoding="async">
           <span class="ml">환상의 메이트${임시 ? '' : ` · ${mate.bestScore}%`}</span>
           <b>${esc(PERSONA16[mate.best]?.n || mate.best)}</b>
           <span class="mc">${esc(mate.best)}</span></div>
         <div class="mate bad">
-          <img class="mateimg" src="./persona/t/${esc(mate.worst)}.jpg?v=b854"
+          <img class="mateimg" src="./persona/t/${esc(mate.worst)}.jpg?v=b855"
                alt="" loading="lazy" decoding="async">
           <span class="ml">극과 극 메이트${임시 ? '' : ` · ${mate.worstScore}%`}</span>
           <b>${esc(PERSONA16[mate.worst]?.n || mate.worst)}</b>
@@ -617,6 +623,12 @@ async function drawPersona(s, ax, rates){
      내 코드가 흔들리는 것과 상관이 없습니다. 다만 궁합과 「나와 다른 점」은
      내 코드를 쓰므로, 흔들리는 동안에는 p16.js 가 그 둘을 뗍니다. */
   $('p16go').onclick = () => open16(code);
+  /* 「예전엔 ○○」 줄의 닫기(b855) — 위 바뀜배지 주석. 그 자리에서 걷고, 닫은 기록을 적어 다음에도 안 그립니다. */
+  $('personabox').querySelector('.pwasx')?.addEventListener('click', e => {
+    const uid = ctx.me()?.id;
+    try { if (uid) localStorage.setItem('t2:p16wasoff:' + uid, e.currentTarget.dataset.rec || ''); } catch {}
+    e.currentTarget.closest('.pwas')?.remove();
+  });
   if (임시) $('pgo').onclick = () => { closePersona(); ctx.showApp('rate'); };
   else $('p_img').onclick = () => shareCard(spec, `기로-${code}`);
   /* ⚠⚠ **위 `else` 는 바로 위 `if (임시)` 의 짝입니다 — 둘 사이에 아무 줄도 넣지 마십시오(b842).** ⚠⚠

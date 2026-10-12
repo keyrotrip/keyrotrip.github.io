@@ -24,11 +24,11 @@
  *   누르는 것이 곧 봤다는 증거입니다. 그전까지는 홈을 그릴 때마다 다시
  *   붙습니다 — 그게 「다시 열 이유」의 뜻이기도 합니다.
  */
-import { esc } from './dom.js?v=b854';
-import { sb } from './db.js?v=b854';
-import { netTimeout } from './net.js?v=b854';
-import { cities } from './cities.js?v=b854';
-import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b854';
+import { esc } from './dom.js?v=b855';
+import { sb } from './db.js?v=b855';
+import { netTimeout } from './net.js?v=b855';
+import { cities } from './cities.js?v=b855';
+import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b855';
 
 let ctx = { me: () => null, 열기: () => {} };
 export function setShiftCtx(o){ ctx = { ...ctx, ...o }; }
@@ -174,10 +174,10 @@ function 그리기(){
   팝.innerHTML = `<div class="pshcard" role="dialog" aria-modal="true" aria-label="성향이 바뀌었어요">
       <p class="pshtitle">성향이 바뀌었어요</p>
       <div class="pshpair">
-        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b854" alt="">
+        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b855" alt="">
           <figcaption><b>${esc(전)}</b><span>${esc(앞)}</span></figcaption></figure>
         <i aria-hidden="true">→</i>
-        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b854" alt="">
+        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b855" alt="">
           <figcaption><b>${esc(지금)}</b><span>${esc(뒤)}</span></figcaption></figure>
       </div>
       <p class="pshwhy">${esc(personaShiftWhy(전, 지금, 대기.규칙) || '최근에 매긴 곳들이 그렇게 말해요.')}</p>
@@ -206,3 +206,25 @@ function 팝닫기(다음, 뒤로온것){
 }
 window.addEventListener('popstate', () => { if (팝) 팝닫기(null, true); });
 addEventListener('keydown', e => { if (e.key === 'Escape' && 팝) 팝닫기(); });
+
+/* ── 관리자 시험: 팝업 다시 보기(b855) ─────────────────────────────────────────
+ * 사용자(10-13): 「관리자 계정만 다시 뜨게 해줘봐 난 확인해봐야지」. 관리자 화면 「문제」 칸의 단추만 부릅니다
+ * (그 화면은 관리자에게만 열립니다 — app.js 가 is_admin 으로 아이콘을 켬, 서버 함수도 따로 막음).
+ * **이 기기에 적힌 «본 코드»만** 지난 코드로 되돌리고 계산 판도 한 칸 내립니다 — 바로 뒤에 기록 탭이 그려지면
+ * checkPersonaShift 가 진짜 계산 그대로 팝업을 띄웁니다. 서버 값(profiles.persona)과 남의 기기는 안 건드립니다.
+ * 지난 코드: 성향 화면이 적어 둔 바뀜 기록(t2:p16was: 「FMDP>HMDP>규칙」)의 앞 것. 없으면 지금 코드의 첫 글자만 뒤집은 것.
+ * 지금 코드를 아직 모르면(기록 탭을 한 번도 안 그림) false — 부르는 쪽이 알립니다. */
+export function pshift다시(){
+  const me = ctx.me();
+  if (!me) return false;
+  const 지금 = knownPersona(me.id) || 읽기(me.id);
+  if (!PERSONA16[지금]) return false;
+  let 전 = '';
+  try { 전 = (localStorage.getItem('t2:p16was:' + me.id) || '').split('>')[0]; } catch {}
+  if (!PERSONA16[전] || 전 === 지금) 전 = (지금[0] === 'F' ? 'H' : 'F') + 지금.slice(1);
+  if (팝){ 팝.remove(); 팝 = null; 닫은뒤 = null; }
+  대기 = null;
+  쓰기(me.id, 전);
+  try { localStorage.setItem(판KEY(me.id), String(PERSONA_VER - 1)); } catch {}
+  return true;
+}
