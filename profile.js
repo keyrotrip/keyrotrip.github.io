@@ -15,11 +15,11 @@
  * 하나가 틀리게 됩니다. 이유는 저쪽 주석에도 적혀 있습니다.
  *
  * 층: dom.js · db.js · net.js 만 씁니다. */
-import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b850';
-import { sb } from './db.js?v=b850';
-import { fail, NOROW } from './net.js?v=b850';
+import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b851';
+import { sb } from './db.js?v=b851';
+import { fail, NOROW } from './net.js?v=b851';
 /* 글자 크기를 바꾸면 탭바도 자랍니다 — 아래 여백을 다시 재게 합니다(b503). */
-import { fitTabBar } from './ui.js?v=b850';
+import { fitTabBar } from './ui.js?v=b851';
 
 let ctx = { me: () => null };
 export function setProfileCtx(o){ ctx = { ...ctx, ...o }; }
@@ -86,7 +86,12 @@ export function setMyName(v){
   const 키 = s => String(s || '').normalize('NFKC')
     .replace(/[\s­ᅟᅠ᠎​-‏⁠ㅤ﻿ﾠ]+/g, '').toLowerCase();
   const 메일앞 = (ctx.me()?.email || '').split('@')[0];
-  $('tip_name')?.classList.toggle('hide', !myName || !메일앞 || 키(myName) !== 키(메일앞) || tipOff('name'));
+  /* ⚠ b851: 새 가입 기본 이름 「여행자 1234」(db/120 — 메일 아이디 대신 서버가 넣는 이름)도 «아직 안 정한 이름»으로 봅니다.
+       안 그러면 db/120 뒤로 가입한 사람은 이 안내를 한 번도 못 봅니다(10-12 사용자: 「이것도 같이 고치자」).
+       규칙은 서버가 만드는 모양 그대로: 「여행자 」+숫자 넷(겹치면 여섯) — 키로 보면 빈칸이 빠져 「여행자1234」. */
+  const 기본이름 = /^여행자\d{4,6}$/.test(키(myName));
+  const 메일이름 = !!메일앞 && 키(myName) === 키(메일앞);
+  $('tip_name')?.classList.toggle('hide', !myName || !(메일이름 || 기본이름) || tipOff('name'));
 }
 /* 로그인·계정 바꿈 — 앞사람 이름을 들고 있지 않게(app.js 가 메일 앞부분을 그리기 전에 부릅니다). */
 export function resetMyName(){
