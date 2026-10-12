@@ -9,17 +9,18 @@
  * `trip.js` 처럼 **내보내되 고치는 길은 함수로** 냅니다 — 밖에서 `=` 로
  * 직접 넣으면 import 한 값은 안 바뀌고 이쪽 안쪽만 어긋납니다.
  *
- * `shrink`(사진 줄이기)도 여기 있습니다. 후기 사진 쪽에도 비슷한 것이
- * 있지만(`fitImage`) **일부러 둘로 둡니다** — 이쪽은 얼굴이라 가운데를
- * 정사각으로 잘라내고, 저쪽은 풍경이라 비를 지킵니다. 합치면 둘 중
- * 하나가 틀리게 됩니다. 이유는 저쪽 주석에도 적혀 있습니다.
+ * ⚠ 사진 줄이기(`shrink` — 가운데를 정사각으로 잘라냄)는 **b852 에 걷었습니다.** 이제 사진을
+ *   고르면 자르기 판(crop.js)이 떠서 보일 부분을 사람이 고릅니다(사용자: 「내가 원하는 부분만
+ *   고르는 기능」). 처음 모습은 예전과 같은 가운데 정사각입니다. 다른 파일 주석의 「프로필의
+ *   shrink」는 그 옛 함수 이야기입니다 — 후기·일기 사진은 여전히 비를 지키는 `fitImage` 입니다.
  *
- * 층: dom.js · db.js · net.js 만 씁니다. */
-import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b851';
-import { sb } from './db.js?v=b851';
-import { fail, NOROW } from './net.js?v=b851';
+ * 층: dom.js · db.js · net.js · crop.js 만 씁니다. */
+import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b852';
+import { sb } from './db.js?v=b852';
+import { fail, NOROW } from './net.js?v=b852';
 /* 글자 크기를 바꾸면 탭바도 자랍니다 — 아래 여백을 다시 재게 합니다(b503). */
-import { fitTabBar } from './ui.js?v=b851';
+import { fitTabBar } from './ui.js?v=b852';
+import { openCrop } from './crop.js?v=b852';
 
 let ctx = { me: () => null };
 export function setProfileCtx(o){ ctx = { ...ctx, ...o }; }
@@ -29,28 +30,6 @@ export function setProfileCtx(o){ ctx = { ...ctx, ...o }; }
    한 번 채웁니다. */
 export let myAvatar = null;
 export function setMyAvatar(v){ myAvatar = v ?? null; }
-
-/* ── 프로필 사진 ────────────────────────────────────────────────────
- * 폰 사진은 5MB 가 넘기도 합니다. 그대로 올리면 통을 낭비하고 목록도 느려집니다.
- * 256px 정사각으로 줄여서 올립니다 — 88px 로 그리는 자리라 그 이상은 필요 없습니다. */
-export function shrink(file, size = 256){
-  return new Promise((ok, no) => {
-    const img = new Image();
-    img.onload = () => {
-      /* 가운데를 정사각으로 잘라냅니다. 안 그러면 세로 사진이 찌그러집니다. */
-      const s = Math.min(img.width, img.height);
-      const cv = document.createElement('canvas');
-      cv.width = cv.height = size;
-      cv.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2,
-                                    s, s, 0, 0, size, size);
-      cv.toBlob(b => b ? ok(b) : no(new Error('사진을 바꾸지 못했어요.')),
-                'image/jpeg', 0.85);
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = () => no(new Error('사진을 읽지 못했어요.'));
-    img.src = URL.createObjectURL(file);
-  });
-}
 
 /* ── 프로필 변경 화면(b791) ───────────────────────────────────────────
  * 사용자: 「프로필 수정에서 닉네임이랑, 사진 바꾸고, 소개까지 넣자」(왓챠 사진).
@@ -162,7 +141,9 @@ $('ed_nclear')?.addEventListener('click', () => {
   $('n_name').focus();
 });
 
-/* 사진을 고르면 줄여서 미리보기만 합니다(올리는 것은 「확인」에서). */
+/* 사진을 고르면 자르기 판에서 보일 부분을 고르고(b852), 미리보기만 합니다(올리는 것은 「확인」에서).
+   폰 사진은 5MB 가 넘기도 해서 256px 정사각으로 줄여 올립니다 — 88px 로 그리는 자리라 그 이상은
+   필요 없습니다. 자르기를 취소하면(null) 사진은 그대로입니다. */
 $('avatarfile')?.addEventListener('change', async e => {
   const f = e.target.files?.[0];
   e.target.value = '';                     /* 같은 파일을 또 골라도 걸리게 */
@@ -170,7 +151,8 @@ $('avatarfile')?.addEventListener('change', async e => {
   $('ederr').classList.add('hide');
   if (!/^image\//.test(f.type)) return fail('사진 파일만 올릴 수 있어요.', 'ed');
   try {
-    const blob = await shrink(f);
+    const blob = await openCrop(f, 256);
+    if (!blob) return;
     사진버리기();
     새사진 = { blob, url: URL.createObjectURL(blob) };
     $('ed_avatar').src = 새사진.url;

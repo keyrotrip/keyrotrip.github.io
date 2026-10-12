@@ -907,10 +907,21 @@ input:focus, select:focus{ border-color:var(--primary); background:var(--canvas)
    굳어 있었고, 글자 크기를 "작게"(0.9)로 내리면 둘레는 11.7px 인데 거기만
    16px 이라 혼자 커 보였습니다. 셋을 같이 다룹니다. */
 input, select{ padding:9px var(--s-sm); }
-input:focus, select:focus, textarea:focus{ font-size:max(16px, var(--f-lg)); }
-@media (pointer:fine){          /* 마우스만 있는 화면은 확대 자체가 없습니다 */
-  input:focus, select:focus, textarea:focus{ font-size:var(--f-lg); }
-}
+/* ⚠⚠ **바닥값은 이 한 줄로 끝나지 않습니다(b852).** 칸마다 글자 크기를 «따로» 정하면
+     (`.frq input` 처럼 뒤에 오거나, `#cv_journal` 처럼 id 라 자릿수가 크거나) 그 규칙이
+     이 줄을 이겨서 누를 때도 작은 채로 남고, 아이폰이 화면을 확대합니다.
+     친구 찾기(13px) · 프로필 이름·소개(「작게」에서 15.3px) · 도시 일기(15px) ·
+     일행 권한 고르기(12px, 인라인) 넷이 그랬습니다(사용자 화면 두 장, 10-12).
+   그래서 바닥을 `--in-floor` 하나로 둡니다 — 손가락 화면 16px, 마우스 화면 0.
+   **칸 글자 크기를 따로 정할 때는 누를 때 크기를 `max(var(--in-floor), 그 크기)` 로
+   쓰십시오.** 다 됐는지는 콘솔의 `__zoomCheck()` 가 봅니다(selfcheck.js). */
+:root{ --in-floor:16px; }
+@media (pointer:fine){ :root{ --in-floor:0px; } }   /* 마우스만 있는 화면은 확대 자체가 없습니다 */
+input:focus, select:focus, textarea:focus{ font-size:max(var(--in-floor), var(--f-lg)); }
+/* 일행 권한 고르기 · 일행 별명 칸(member.js)은 작게 둡니다. 전에는 인라인 12px 이라 누를 때도 12px 였습니다(b852).
+   ⚠ 별명 칸은 id 라 자릿수가 공통 `input:focus` 보다 커서, 누를 때 규칙을 따로 둡니다. */
+select[data-mrole], #nickin{ font-size:calc(12px * var(--ts)); }
+select[data-mrole]:focus, #nickin:focus{ font-size:max(var(--in-floor), calc(12px * var(--ts))); }
 /* ── 오프라인 알림줄 ──
    연결이 끊겼거나 못 보낸 저장이 있을 때만 나옵니다. 빨강이 아닌 이유는
    이게 고장이 아니라 상태이기 때문입니다 — 여행지에서는 자주 있는 일입니다. */
@@ -1265,6 +1276,8 @@ body.kbup .assheet.wiz .wizfoot{ display:none; }
 /* 다 담기 옆의 날짜 고르개. 폭을 안 묶으면 select 가 줄을 통째로 먹습니다. */
 .takeall select{ width:auto; flex:none; padding:7px 10px;
                  font-size:var(--f-md); }
+/* 누를 때 16px 바닥(b852) — 위 규칙이 공통 `select:focus` 와 자릿수가 같고 뒤에 와서 13px 로 눌렸습니다. */
+.takeall select:focus{ font-size:max(var(--in-floor), var(--f-md)); }
 
 /* 홈에서 방금 별점을 준 줄. 사라지지 않고 남아 있어서 다시 눌러 고칠 수 있습니다.
    남은 줄과 구분은 되어야 하니 아주 옅게만 깔아둡니다. */
@@ -2536,6 +2549,39 @@ stroke-linecap='round' stroke-linejoin='round'/></svg>");
 .rvbar .t span{ display:block; font-size:var(--f-xs); color:#a2762a;
                 margin-top:1px; word-break:keep-all }
 .rvbar .go{ flex:none; font-size:var(--f-sm); font-weight:600; color:var(--warn-2) }
+
+/* ── 평가 탭 「빠르게 매기기」(b852) ─────────────────────────────────────
+ * 사용자: 「이탈이 많이 되네 … 좀 더 크게 잘 보이게」 · 「도시가 너무 많아서 다들 매기는데 부담」.
+ * 얇은 줄(.rvbar)이던 것을 «사진 카드»로 올립니다 — 시안 셋 중 사용자가 고른 B안, 「사각 검은 테두리는 빼자」.
+ * 왼쪽에 부채처럼 편 사진 석 장(누르면 처음 물어볼 곳들 — rating.js 부채()), 큰 제목, 검은 「시작」 네모.
+ * ⚠ 상자(테두리·칠)는 없습니다. 무게는 사진과 검은 「시작」이 집니다.
+ * ⚠ 「시작」은 네모입니다(b612 — 누를 것은 알약이 아니라 네모 칸). */
+#spreego{ display:flex; align-items:center; gap:12px; width:100%;
+          margin:0; padding:12px 0; text-align:left;
+          background:none; color:var(--ink); border:0; }
+#spreego .fan{ position:relative; flex:none; width:70px; height:62px; }
+#spreego .fan.hide{ display:none; }
+#spreego .fan img{ position:absolute; top:5px; width:40px; height:52px; object-fit:cover;
+                   border-radius:4px; border:2px solid #fff; background:var(--pearl);
+                   box-shadow:0 2px 6px rgba(0,0,0,.28); }
+#spreego .fan img:nth-child(1){ left:0; transform:rotate(-11deg); }
+#spreego .fan img:nth-child(2){ left:14px; z-index:1; }
+#spreego .fan img:nth-child(3){ left:28px; transform:rotate(11deg); z-index:2; }
+#spreego .t{ flex:1; min-width:0; }
+#spreego .t b{ display:block; font-size:var(--f-2xl); font-weight:700; line-height:1.25;
+               letter-spacing:-.01em; word-break:keep-all; }
+#spreego .t span{ display:block; margin-top:4px; font-size:var(--f-md);
+                  color:var(--ink-48); word-break:keep-all; }
+#spreego .go{ flex:none; padding:10px 18px; background:var(--primary); color:var(--on-dark);
+              font-size:var(--f-md); font-weight:700; }
+/* 지구본에서도 매길 수 있다는 한 줄(b852) — 위 단추보다 한 단 낮게, 칠 없이 줄로. */
+#globego{ display:flex; align-items:center; gap:8px; width:100%;
+          margin:0 0 var(--s-md); padding:12px 2px; text-align:left;
+          background:none; border:0; border-bottom:1px solid var(--line);
+          color:var(--ink-80); font-size:var(--f-md); }
+#globego svg{ flex:none; color:var(--ink-48); }
+#globego .t{ flex:1; min-width:0; word-break:keep-all; }
+#globego .go{ flex:none; color:var(--ink-48); font-size:var(--f-lg); }
 
 /* 새 여행으로 가는 줄. **홈에서 새 여행을 만들 길은 늘 있어야 합니다** —
    그 길이 사라져서 한 번 고친 자리고, b377 에서 제가 또 없앴다가 b378 에
@@ -5787,7 +5833,10 @@ body.pvon{ overflow:hidden; }
   letter-spacing:0; word-break:keep-all;
 }
 /* 누르면 선만 진해집니다. 상자가 없으니 바꿀 것도 선뿐입니다. */
-#cv_journal:focus{ outline:none; background:transparent; border-color:var(--ink); }
+/* ⚠ 글자 바닥(b852): 위 `#cv_journal` 이 id 라 공통 `textarea:focus` 의 16px 를 이겼습니다 —
+     누를 때 15px 라 아이폰이 확대했습니다. 여기서 다시 올립니다. */
+#cv_journal:focus{ outline:none; background:transparent; border-color:var(--ink);
+                   font-size:max(var(--in-floor), var(--f-lg)); }
 
 /* ── 일기장 ── 한 장씩 넘깁니다(b538) ──────────────────────────────────
  * 넘기기는 브라우저 몫입니다(scroll-snap) — 홈의 대륙 카드와 같은 수법.
@@ -6146,7 +6195,8 @@ body:has(#whoview:not(.hide)) .tabbar{ display:none; }
 .frq svg{ flex:none; }
 .frq input{ flex:1; min-width:0; border:0; background:transparent; padding:11px 0;
             font-size:var(--f-md); color:var(--ink); -webkit-appearance:none; appearance:none; }
-.frq input:focus{ outline:none; box-shadow:none; }
+/* 누를 때는 16px 바닥(b852) — 안 그러면 아이폰이 화면을 확대합니다(위 `--in-floor`). */
+.frq input:focus{ outline:none; box-shadow:none; font-size:max(var(--in-floor), var(--f-md)); }
 .frq:focus-within{ outline:2px solid var(--primary-focus); outline-offset:0; }
 #fr_found:not(:empty){ margin-top:6px; }
 /* 탭 — 밑줄, 숫자는 옆에 */
@@ -6358,14 +6408,56 @@ body:has(#whoview:not(.hide)) .tabbar{ display:none; }
 .edlabel{ font-size:var(--f-sm); color:var(--dim); margin:10px 0 0; }
 .edfield{ display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--line); }
 .edfield:focus-within{ border-bottom-color:var(--ink); }
+/* 글자 크기에 16px 바닥(b852) — 「작게」(0.9)면 15.3px 라 누를 때 아이폰이 확대했습니다.
+   평소에도 같은 값이라 누를 때 글자가 안 커집니다(15.3 → 16, 「작게」에서만). */
 .edfield input, .edfield input:focus{ flex:1; min-width:0; border:0; background:none; box-shadow:none;
-                                     padding:10px 0; font-size:var(--f-xl); border-radius:0; }
+                                     padding:10px 0; font-size:max(var(--in-floor), var(--f-xl));
+                                     border-radius:0; }
 .edx{ color:var(--ink-48); padding:4px; min-height:0; flex:none; }
 .edmeta{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
          font-size:var(--f-sm); color:var(--dim); font-variant-numeric:tabular-nums; }
 .edmeta .n-hint{ margin:6px 0 0; }
 .edmeta > span:last-child{ margin-top:6px; flex:none; }
 .ednote{ margin-top:18px; line-height:1.5; }
+
+/* ── 프로필 사진 자르기(b852, crop.js) ─────────────────────────────────
+ * 아이폰 「이동 및 크기 조절」과 같은 꼴 — 검은 판, 동그라미 밖은 어둡게, 위에 취소 · 선택.
+ * ⚠ 동그라미 밖 어둠은 테(.crring)의 큰 그림자입니다. 무대(.crstage)가 overflow:hidden 이라
+ *   위아래 줄까지는 안 덮습니다.
+ * ⚠ z-index 1450 — 사진 크게 보기(1400)보다 위. 프로필 변경 판 위에 뜹니다.
+ * ⚠ touch-action:none 은 판 전체에 겁니다 — 무대 밖(위아래 줄)에서 두 손가락을 대도
+ *   화면이 확대되면 안 됩니다. */
+#cropview{ position:fixed; inset:0; z-index:1450; display:flex; flex-direction:column;
+           background:#000; color:var(--on-dark); touch-action:none;
+           -webkit-user-select:none; user-select:none; }
+#cropview.hide{ display:none; }
+body.cron{ overflow:hidden; }
+.crtop{ flex:none; display:flex; align-items:center; justify-content:space-between; gap:10px;
+        padding:calc(6px + var(--sat)) 6px 6px; }
+.crtop b{ font-size:var(--f-lg); font-weight:600; }
+.crtop button{ min-width:64px; padding:12px; border:0; background:none;
+               color:var(--on-dark); font-size:var(--f-lg); }
+.crtop .crok{ font-weight:700; color:var(--brand); }    /* 검은 바탕의 주황 글자는 5.2:1 */
+.crstage{ position:relative; flex:1; min-height:0; overflow:hidden; cursor:grab; }
+.crstage:active{ cursor:grabbing; }
+.crimg{ position:absolute; left:0; top:0; transform-origin:0 0;
+        max-width:none; max-height:none; pointer-events:none; }
+.crring{ position:absolute; box-sizing:border-box; border-radius:50%; pointer-events:none;
+         border:1.5px solid rgba(255,255,255,.8);
+         box-shadow:0 0 0 9999px rgba(0,0,0,.62); }
+.crfoot{ flex:none; padding:10px 24px calc(18px + var(--sab)); text-align:center; }
+.crhint{ margin:0 0 8px; font-size:var(--f-sm); color:rgba(255,255,255,.7); }
+.crhint .crm{ display:none; }
+@media (pointer:fine){ .crhint .crt{ display:none; } .crhint .crm{ display:inline; } }
+/* 막대 — 공통 입력칸 옷(상자 · 바탕 · 누를 때 밝은 바탕)을 다 벗깁니다. */
+.crzoom, .crzoom:focus{ -webkit-appearance:none; appearance:none; display:block;
+        width:100%; max-width:320px; height:30px; margin:0 auto; padding:0;
+        border:0; background:transparent; }
+.crzoom::-webkit-slider-runnable-track{ height:2px; background:rgba(255,255,255,.35); }
+.crzoom::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:22px; height:22px;
+        margin-top:-10px; border:0; border-radius:50%; background:#fff; }
+.crzoom::-moz-range-track{ height:2px; background:rgba(255,255,255,.35); }
+.crzoom::-moz-range-thumb{ width:22px; height:22px; border:0; border-radius:50%; background:#fff; }
 /* 남의 프로필 머리의 소개(people.js) */
 .whobio{ margin:0; color:var(--ink-80); font-size:var(--f-lg); text-align:left;
          overflow-wrap:anywhere; }

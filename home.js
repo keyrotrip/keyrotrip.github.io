@@ -33,42 +33,42 @@
  * 층: 아래층 여럿과 이미 떼어낸 조각들(citysearch · rating · map ·
  *     report · globe)을 씁니다. 그쪽은 이 파일을 안 부르므로 고리가
  *     생기지 않습니다 — 저쪽이 이 화면을 다시 그릴 때는 ctx 를 씁니다. */
-import { $, esc, toast } from './dom.js?v=b851';
-import { sb } from './db.js?v=b851';
-import { fail, netTimeout, netIsDown, drawOffbar } from './net.js?v=b851';
-import { hm, todayYmd } from './calc.js?v=b851';
-import { starHtml, paintStars } from './stars.js?v=b851';
+import { $, esc, toast } from './dom.js?v=b852';
+import { sb } from './db.js?v=b852';
+import { fail, netTimeout, netIsDown, drawOffbar } from './net.js?v=b852';
+import { hm, todayYmd } from './calc.js?v=b852';
+import { starHtml, paintStars } from './stars.js?v=b852';
 /* 평가 히어로는 세 화면이 같은 것을 씁니다 — rateui.js 머리말 참고(b409). */
-import { starValue } from './rateui.js?v=b851';
-import { cities, countryName, cityCountry } from './cities.js?v=b851';
-import { UN_CODES } from './un.js?v=b851';
-import { myRates, cityStat, visited } from './rate.js?v=b851';
-import { plans } from './trip.js?v=b851';
-import { loadCities } from './citysearch.js?v=b851';
+import { starValue } from './rateui.js?v=b852';
+import { cities, countryName, cityCountry } from './cities.js?v=b852';
+import { UN_CODES } from './un.js?v=b852';
+import { myRates, cityStat, visited } from './rate.js?v=b852';
+import { plans } from './trip.js?v=b852';
+import { loadCities } from './citysearch.js?v=b852';
 /* 지구본에서 나라를 누르면 뜨는 카드가 도시 화면으로 보냅니다(b555). */
-import { openCity } from './city.js?v=b851';
-import { saveRate, refreshVisited, loadRateData } from './rating.js?v=b851';
+import { openCity } from './city.js?v=b852';
+import { saveRate, refreshVisited, loadRateData } from './rating.js?v=b852';
 /* CONT 는 대륙별 분모(b451) — 지도 화면과 **같은 표**를 씁니다.
    여기서 새로 적으면 두 화면의 분모가 갈라집니다. */
-import { openMap, UN_COUNTRIES, CONT, CONT_VIEW, mapBackTo } from './map.js?v=b851';
+import { openMap, UN_COUNTRIES, CONT, CONT_VIEW, mapBackTo } from './map.js?v=b852';
 /* ⚠ **`renderAiCard`·`aiPrompt` 를 b398 에서 뗐습니다.** 홈에서 AI 일정
    권유를 걷어냈기 때문입니다(메인은 평가, 일정은 서브). 둘은 report.js 에
    그대로 살아 있으니 일정 쪽에서 쓸 자리가 생기면 거기서 가져다 쓰십시오. */
-import { drawReport } from './report.js?v=b851';
+import { drawReport } from './report.js?v=b852';
 /* 성향은 **card.js 가 정합니다.** 여기서 다시 세지 않습니다 — 두 군데서 세면
    홈에 뜬 유형과 성향 화면의 유형이 언젠가 갈라집니다. */
 /* PERSONA_BG 만 씁니다 — 카드 배경색입니다. personaAxes·personaRank·PERSONA16 은
    b457 에 홈에서 성향을 빼면서 같이 걷었습니다(분석 탭이 씁니다). */
-import { PERSONA_BG } from './card.js?v=b851';
+import { PERSONA_BG } from './card.js?v=b852';
 /* 성향이 바뀌면 홈 맨 위에 한 번 알립니다(b526) — 「다시 열 이유」. */
-import { checkPersonaShift } from './pshift.js?v=b851';
+import { checkPersonaShift } from './pshift.js?v=b852';
 /* 일기장은 제 화면을 엽니다. 「기록 탭에서 왔다」를 적어둬야 닫을 때
    프로필이 아니라 여기로 돌아옵니다(map.js 의 「나온 자리로」와 같은 규칙). */
 /* 손가락으로 돌려 보는 지구본. **성향 탭에 있던 것을 여기로 옮겼습니다(b542)** —
    이 탭이 곧 「내가 어디를 갔나」입니다. */
-import { mountGlobe } from './globe.js?v=b851';
+import { mountGlobe } from './globe.js?v=b852';
 /* 홈 화면에 추가 안내(b844) — 로그인 뒤에도 브라우저로 쓰는 폰에 칩 하나. install.js 머리말 참고. */
-import { 안내할까, 기기알기, 설치안내열기, 폰그림 } from './install.js?v=b851';
+import { 안내할까, 기기알기, 설치안내열기, 폰그림 } from './install.js?v=b852';
 /* 나라 지도 화면(b682). 지구본에서 나라를 누르면 여기로 갑니다. */
 /* ⚠ `ctrymap.js`(나라 페이지)는 b707 에 없앴습니다 — 지구본이 직접 도시까지
    보여줍니다. 파일도 지웠습니다. */
@@ -138,7 +138,12 @@ export function 시트닫기(뒤로온것){
  * 한가운데 · 1배)로. 몸통(`처음화면`)은 홈을 그리는 곳의 넘김 카드 블록이
  * 채웁니다 — 카드와 지구본이 거기 삽니다. 홈이 아직 안 그려졌으면 빈 함수입니다. */
 let 처음화면 = () => {};
-export function 기록처음으로(){ 시트닫기(); 처음화면(); }
+/* 「처음으로」를 막 했나(b852 리뷰). 평가 탭의 「지구본」 줄은 기록 탭을 열면서(showApp) 바로 처음으로 돌립니다.
+   그런데 그사이 별점이 바뀌었으면 홈이 다시 그려지고, 다시 그리는 쪽이 도시 목록을 기다린 «뒤»에 옛 지구본의
+   자리를 붙잡아(아래 지구자리) 새 지구본에 앉혀서 처음으로가 지워졌습니다. 1초 안에 다시 그리면 자리를 안 붙잡습니다.
+   ⚠ 그 밖의 다시 그리기는 예전처럼 붙잡습니다 — 별점 매긴 뒤 지구본이 처음으로 튀던 것을 막은 자리입니다(b715). */
+let 처음으로친때 = 0;
+export function 기록처음으로(){ 처음으로친때 = Date.now(); 시트닫기(); 처음화면(); }
 
 /* ⚠ 별을 글자로 찍던 `별글` 을 걷었습니다(b559). 반 칸 기호(U+2BE8)가
    아이폰에서 **두부(네모)** 로 나왔습니다 — 폰트에 없는 글자입니다.
@@ -675,7 +680,7 @@ async function buildHome(){
   /* ⚠⚠ **옛 지구본을 먼저 끝냅니다(b690).** 아래에서 통째로 지우면 캔버스는
      사라지지만 globe.js 가 문서에 걸어 둔 처리기와 관찰자는 남습니다.
      별점을 매길 때마다 홈이 다시 그려지므로 쓸수록 하나씩 쌓였습니다. */
-  try { 지구자리 = 지구?.상태?.() || 지구자리; } catch {}
+  try { 지구자리 = Date.now() - 처음으로친때 < 1000 ? null : (지구?.상태?.() || 지구자리); } catch {}
   지구?.끝?.(); 지구 = null;
   $('home').innerHTML = '';
   /* ⚠ **기다리지 않습니다.** 인사는 있으면 좋은 것이지 홈이 뜨는 조건이
@@ -709,28 +714,6 @@ async function buildHome(){
 
   await renderFoot(통);
 
-  /* ── 평가로 가는 길 하나 ─────────────────────────────────────────────
-   * ⚠ **이 탭에서 별을 누르는 자리는 이제 없습니다(b542).** 전에는 맨 위
-   *   히어로에서 바로 눌렀는데, 그러면 평가가 세 탭(기록·평가·성향)에
-   *   흩어집니다. 여기는 **보는 탭**이고 매기는 것은 평가 탭입니다.
-   * ⚠ 그래도 **가는 길은 있어야 합니다.** 지도가 안 칠해진 사람에게
-   *   「어떻게 칠하나」를 말해 주는 것이 이 줄입니다 — 지도 바로 밑이
-   *   제자리입니다.
-   * ⚠ 「새 여행」 띠가 있던 자리입니다. 생김새(`.tripbar`)를 그대로
-   *   물려받습니다 — 이 화면에서 **유일하게 무엇을 하러 가는 줄**이라,
-   *   보기만 하는 줄들(`.fprow`)과 옷이 달라야 합니다. */
-  const 매기러 = document.createElement('div');
-  매기러.className = 'tripbar';
-  매기러.innerHTML = `<span class="ic" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
-           stroke="currentColor" stroke-width="1.8"
-           stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1
-                 5.8-.8z"/>
-      </svg></span>
-    <span class="t"><b>평가를 남기면 지도가 칠해져요</b></span>
-    <span class="go">평가하기 ›</span>`;
-  매기러.onclick = () => ctx.showApp('rate');
   /* ── 보관함 ── 프로필에서 왔습니다(b550, 사용자 결정) ────────────────
    * 내가 매긴 곳 · 한줄평 남긴 곳 · 가보고 싶은 곳 · 여행 배지.
    * ⚠ 넷 다 **도시 평가로 쌓인 것**이라 이 탭 이야기입니다. 프로필은
@@ -739,33 +722,35 @@ async function buildHome(){
    *   곧 이 탭이 하는 일이라 이름표가 군더더기입니다.
    * ⚠ 화면을 새로 안 만들고 **통째로 옮겨** 옵니다 — 두 벌로 그리면
    *   숫자가 갈립니다. 마크업은 index.html 의 프로필 자리에 있습니다. */
-  /* ⚠ **카드 «안»입니다(b544, 사용자 요청).** 밖에 따로 세웠더니 지도와
-     떨어진 별개의 권유처럼 보였습니다. 「평가를 남기면 지도가 칠해져요」는
-     **바로 위 지도 이야기**라 같은 카드에 있어야 말이 이어집니다.
-     b419 에 홈의 덩어리를 다섯에서 둘로 줄인 것과 같은 이유입니다 —
-     옷이 여러 번 바뀌면 무엇이 한 덩어리인지 알려주는 것이 없습니다. */
-  /* ⚠ **띠는 카드 «밖», 그것도 맨 위입니다(b552, 사용자 결정).** 카드 안
-     맨 아래(b544)에서 옮겼습니다 — 이 화면에서 «하러 가는 곳»은 이것
-     하나뿐인데, 지구본과 숫자와 보관함을 다 지나야 보였습니다.
-     맨 위에 있으면 안 굴려도 보입니다.
-   ⚠ 카드 안에 두면 안 됩니다 — 아래 한 판은 전부 «보는 것»이고 이 띠만
-     «하는 것»입니다. 옷이 달라야 그 차이가 읽힙니다(b438 과 같은 이유). */
-  /* ⚠ **가입 직후인 사람에게만 보입니다(b704, 사용자 결정).** 한 곳이라도
-     매긴 사람에게 「평가를 남기면 지도가 칠해져요」는 잔소리입니다.
-     0곳인 사람에게는 이것이 유일한 안내라 그때만 남깁니다.
-   ⚠⚠ **여기서 «세지» 않습니다(b705).** 이 자리는 `myRates` 가 아직 안
-     실린 때라 76곳 매긴 사람에게도 0 으로 보입니다(실측으로 걸렸습니다).
-     「아직 모름」과 「진짜 0」이 같은 값이라 가릴 수가 없습니다.
-     → **숨겨서 붙여 두고**, 발자국이 오면 그때 `loadFootprint` 가 켭니다.
-       못 받아오면 숨은 채로 남습니다 — 잘못 띄우는 것보다 낫습니다. */
-  /* ⚠⚠ **처음 열면 안 뜨고, 다른 탭에 갔다 와야 떴습니다(b813, 사용자 신고).** ⚠⚠
-     app.js 가 `loadHome()` 과 `loadFootprint()` 를 **같이** 출발시킵니다. 처음 열 때는 홈 그리기가
-     느려서(지구본·도시 목록) 발자국이 먼저 도착했고, 그때는 켤 칩이 아직 없어 그냥 지나갔습니다 —
-     그 뒤에 붙은 칩은 숨은 채로 남았습니다. 탭을 오가면 홈이 빨라져 차례가 뒤집혀 떴습니다.
-     → 붙일 때 **이미 아는 수가 있으면 바로 정합니다**(`매긴수` — 모르면 null 이라 b705 처럼 숨김). */
-  if (!껐나('rate')){
-    매기러.classList.toggle('hide', 매긴수() !== 0);
-    칩놓기(매기러, () => 끄기('rate'), 'rate');
+  /* ── 「지구본에서 도시를 칠할 수 있어요」(b852) ── 칩 맨 위 ─────────────────
+     사용자(10-12): 「기록탭 첫화면에서도 지구본에서도 확대하면 별점을 매길 수 있다는걸 안내하자」 →
+     시안을 보고 「평가를 남기면 도시가 칠해져요를 없애고 지구본에서 도시를 칠할 수 있어요 하고 확대되도록」.
+     지구본을 키우면(3.2배부터) 도시가 떠오르고, 누르면 별 카드가 뜹니다(b707·b715·b774) — 그걸 모릅니다.
+     칩을 누르면 «해 보여 줍니다»: 일본 쪽으로 다가가 도시 이름이 다 보이는 배율(4.6)까지 키웁니다.
+     해 봤으면 다 안 것이라 그때도 칩을 걷습니다(×와 같은 «아주 끄기»).
+   ⚠ **걷은 것: 「평가를 남기면 지도가 칠해져요 · 평가하기 ›」(b552~b813).** 0곳인 사람에게만 보이던
+     평가 탭으로 가는 칩입니다. 이 칩이 그 자리(맨 위)와 일(지도를 칠하는 법)을 물려받습니다 —
+     가는 곳이 평가 탭이 아니라 «바로 이 지구본»입니다. 그래서 0곳인지 셀 일(`매긴수` · 발자국 수)도 같이 걷었습니다.
+     모두에게 보이고(매긴 사람도 지구본에서 매기는 것은 모릅니다) 한 번 쓰거나 닫으면 다시 안 뜹니다. */
+  if (!껐나('globe')){
+    const 안내 = document.createElement('div');
+    안내.className = 'tripbar';
+    안내.innerHTML = `<span class="ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M10.5 7.8v5.4M7.8 10.5h5.4"/></svg></span>
+      <span class="t"><b>지구본에서 도시를 칠할 수 있어요</b></span>
+      <span class="go">보기 ›</span>`;
+    /* ⚠ 지구본이 아직 없으면(홈을 다시 그리는 사이 — 발자국을 받는 동안 1~2초) 아무 일도 안 하고 칩을 남깁니다.
+         그때 걷으면 보여 주지도 못하고 칩만 영영 사라집니다(b852 리뷰). */
+    안내.onclick = () => {
+      if (!지구?.다가가기) return;
+      지구.다가가기(136, 35.6, 4.6);
+      끄기('globe');
+      안내.remove();
+    };
+    /* 맨 앞에 둡니다 — 홈을 다시 그리면 칩이 다시 붙는데, 뒤에 붙이면 「다음 여행」 칩 아래로 내려갑니다. */
+    칩놓기(안내, () => 끄기('globe'), 'globe', true);
   }
 
   /* ── 홈 화면에 추가(b844, 사용자가 고른 「기록 탭에 칩 하나」) ──
@@ -941,7 +926,8 @@ const 끄기여행 = id => { try {
     localStorage.setItem('t2:chipoff:trip', String(id) + '|' + todayYmd());
   } catch {} };
 
-function 칩놓기(el, 끌때, 이름표){
+/* `맨앞` — 칩 묶음의 맨 위에 둡니다(b852 「지구본에서 도시를 칠할 수 있어요」). 없으면 뒤에 붙입니다. */
+function 칩놓기(el, 끌때, 이름표, 맨앞){
   el.classList.add('gchip');
   if (이름표) el.dataset.chip = 이름표;
   /* ⚠ **`stopPropagation` 이 꼭 있어야 합니다.** 칩 자체가 누르면 열리는
@@ -961,7 +947,7 @@ function 칩놓기(el, 끌때, 이름표){
   }
   /* 같은 이름표가 이미 있으면 갈아 끼웁니다(위 주석). */
   if (이름표) 통.querySelector(`[data-chip="${이름표}"]`)?.remove();
-  통.appendChild(el);
+  if (맨앞) 통.prepend(el); else 통.appendChild(el);
 }
 
 /* ⚠ **인사·평가재촉은 이제 여기서 안 옮깁니다(b704).** 지구본 «안»에
@@ -1633,25 +1619,17 @@ async function renderFoot(통){
  * 왓챠의 "696 평가 · 27 코멘트" 줄을 여행판으로 옮긴 것입니다.
  * 대륙별로 쪼개면 어디가 비었는지 보이고, 진행률은 채우고 싶게 만듭니다. */
 
-/* 별 준 도시 수 — **모르면 null**(b813, 위 매기러 주석). 칩을 붙일 때와 발자국이 올 때 **둘 다 이것 하나로** 정합니다.
-   · 「0곳」은 서버(발자국)만 말할 수 있습니다 — 이 기기의 myRates 는 아직 덜 받았을 수 있습니다.
-   · 「1곳 이상」은 이 기기만으로도 압니다 — 방금 매긴 것은 applyRate 가 바로 myRates 에 넣습니다. 그래서 둘 중 큰 쪽.
-   ⚠ 발자국 수는 받으러 나갈 때 비웁니다(null) — 다른 기기에서 매겼으면 옛 0 으로 칩을 켜게 됩니다. */
-let 발자국별 = null;
-const 매긴수 = () => {
-  const 이기기 = Object.values(myRates).filter(r => r?.stars != null).length;
-  return 발자국별 == null ? (이기기 || null) : Math.max(이기기, 발자국별);
-};
+/* ⚠ 「별 준 도시 수」(`매긴수` · 발자국 수)를 걷었습니다(b852) — 그것을 쓰던 「평가를 남기면 지도가 칠해져요」
+     칩이 「지구본에서 도시를 칠할 수 있어요」로 바뀌었고, 새 칩은 0곳인지 안 봅니다(위 칩 주석).
+     되살리려거든 b813 의 덫(홈과 발자국이 같이 출발 — 붙일 때도 아는 수로 정할 것)을 다시 읽으십시오. */
 
 export async function loadFootprint(){
   /* 발자국 숫자는 서버가 셉니다. 오프라인이면 그대로 둡니다 —
      0 으로 덮으면 다녀온 곳이 사라진 것처럼 보입니다. */
   if (netIsDown()) return;
-  발자국별 = null;
   const { data, error } = await sb.rpc('my_footprint');
   if (error || !data) return;
   const f = data;
-  발자국별 = Number(f.rated) || 0;
   /* ⚠⚠ **`#s_country`·`#s_rated`·`#s_prog`·`#s_cont` 는 없어졌습니다(b542).** ⚠⚠
      프로필 머리의 숫자 줄과 진행 막대를 걷었습니다 — 기록 탭이 첫 화면에서
      같은 것을 더 크게 말합니다. **여기서 `$('s_country').textContent` 를
@@ -1682,9 +1660,6 @@ export async function loadFootprint(){
      ⚠ 옆의 `s_comment`·`s_diary` 는 이미 `if (el)` 로 받치고 있었습니다 —
        **같은 함수 안에서 규칙이 반쪽만 지켜지고 있었습니다.** */
   { const el = $('s_been2'); if (el) el.textContent = f.cities; }
-  /* 평가 재촉 칩은 «진짜 0곳»일 때만 켭니다(b705 — 위 매기러 주석). 붙일 때와 같은 `매긴수`(b813). */
-  { const el = document.querySelector('.gchips > [data-chip="rate"]');
-    if (el) el.classList.toggle('hide', 매긴수() !== 0); }
   /* ⚠ **맛집 · 관광지 · 후기 수를 안 셉니다(b549).** 보관함에서 그 세 줄을
      걷었습니다(index.html 의 그 자리에 왜 그런지 적어뒀습니다). 칸이
      없어졌으므로 여기서 채우려 들면 **null 에 쓰다 던지고, 그 아래

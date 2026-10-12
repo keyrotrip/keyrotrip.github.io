@@ -112,6 +112,26 @@ export function removeRate(cityId){
 export const 넘긴줄 = r => !!r && r.stars == null && !r.want && !r.been
   && !(r.comment || '').trim() && !(r.journal || '').trim() && !r.journal_photo;
 
+/* ── 이름난 관광지 차례(b852) ───────────────────────────────────────────
+ * 사용자(10-12): 「평가 탭 스크롤 내리면서 매길 때 무조건 제일 유명한 관광지들이 위로 오게해줘」.
+ * fame 은 세 칸뿐이고 1칸만 76곳이라, 그 안을 가나다로 놓으면 강릉·경주·괌·광주·교토·나트랑·대구·대전 …
+ * 이 맨 위였습니다(재 봄). pop_rank 는 나라마다 한 곳(16곳)이라 오사카·후쿠오카가 없습니다.
+ * 그래서 차례를 따로 둡니다 — **해외 먼저**(성향은 해외 10곳으로 확정되므로), 그다음 국내 관광지.
+ * 근거: 인천공항 노선 여객(간사이 › 나리타 › 후쿠오카 › 방콕 › 다낭 — 2023 업계 집계), 기존 pop_rank,
+ *   그리고 누구나 아는 곳. **판단이 섞인 표입니다** — 고치려면 이 표만 손보면 됩니다(목록·부채가 같이 따라감).
+ * 여기 없는 곳은 이 뒤에 예전처럼(fame → pop_rank → 가나다) 옵니다. */
+const 인기표 = [
+  'osaka', 'tokyo', 'fukuoka', 'bangkok', 'danang', 'taipei', 'hongkong', 'paris', 'singapore', 'cebu',
+  'kyoto', 'okinawa', 'sapporo', 'nhatrang', 'guam', 'newyork', 'london', 'rome', 'barcelona', 'shanghai',
+  'hanoi', 'hochiminh', 'macau', 'bali', 'saipan', 'phuket', 'boracay', 'kualalumpur', 'chiangmai', 'honolulu',
+  'losangeles', 'lasvegas', 'sanfrancisco', 'sydney', 'prague', 'venice', 'florence', 'istanbul', 'beijing', 'nagoya',
+  /* 국내 */
+  'jeju', 'busan', 'seoul', 'gangneung', 'gyeongju', 'yeosu', 'jeonju', 'sokcho', 'seogwipo', 'tongyeong',
+];
+const 인기자리 = new Map(인기표.map((id, i) => [id, i]));
+/* 작을수록 위. 표에 없으면 999. */
+export const 인기 = c => 인기자리.get(c?.id) ?? 999;
+
 /* 도시 하나의 평균. 없으면 지웁니다 — 남겨두면 옛 평균이 계속 보입니다. */
 export function putCityStat(cityId, row){
   if (row) cityStat[cityId] = row; else delete cityStat[cityId];

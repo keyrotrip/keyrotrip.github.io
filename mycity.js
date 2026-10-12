@@ -11,11 +11,11 @@
  *   것만 씁니다. ★4.5 가 ★5 를 이기는 식으로 별점과 어긋나는 순위도 안 만듭니다 — 같은 별점끼리만 겨룹니다.
  * ⚠ **국내도 셉니다**(사용자). 성향(card.js)은 국내를 빼지만, 여기는 «내가 매긴 도시» 이야기입니다.
  * 층: dom · db · cities · calc · city(도시 화면). anal.js 가 부릅니다(drawMyCities). persona.js 는 모릅니다. */
-import { $, esc, toast, josa, flagOf, flagOk } from './dom.js?v=b851';
-import { sb } from './db.js?v=b851';
-import { cities, countryName, countryInfo } from './cities.js?v=b851';
-import { distKm, SEOUL } from './calc.js?v=b851';
-import { openCity } from './city.js?v=b851';
+import { $, esc, toast, josa, flagOf, flagOk } from './dom.js?v=b852';
+import { sb } from './db.js?v=b852';
+import { cities, countryName, countryInfo } from './cities.js?v=b852';
+import { distKm, SEOUL } from './calc.js?v=b852';
+import { openCity } from './city.js?v=b852';
 
 const 국내 = 'KR';
 const 셋말 = n => ['', '한', '두', '세', '네', '다섯'][n] || String(n);
@@ -47,10 +47,59 @@ function 줄들(rows){
   }).filter(Boolean);
 }
 
-/* 사진 칸 — 동점이면 나눠서 셋까지. 누르면 그 도시 화면. 사진이 없으면 이름 첫 글자(city.js 와 같은 수법). */
+/* ── 사진은 «다 받은 뒤에» 깝니다(b852) ─────────────────────────────────────
+ * 사용자 신고(10-13, 사진): 「최애 도시」 대구 칸에 사진 «맨 윗줄만»(하늘·탑 끝) 그려지고 나머지가 빈 칸.
+ * 사진 파일은 멀쩡했습니다(960×641, 재 봄) — **받다가 멈춘 것**입니다. 배경 그림은 받는 만큼 위에서부터 그려서,
+ * 멈추면 반쪽이 남습니다. 사진 서버가 `Cache-Control: no-cache`(CDN 도 MISS)라 볼 때마다 다시 묻고,
+ * 이 칸은 카드 수십 장의 사진을 한꺼번에 받기 시작합니다.
+ * → ① 화면 가까이 온 «줄»만 받고(IntersectionObserver) ② 다 받아 풀어 둔(decode) 뒤에 깔고
+ *   ③ 8초 안에 안 오면 주소 끝을 바꿔 한 번 더 받습니다(멈춘 연결을 피함 — 먼저 온 쪽을 깝니다).
+ *   그때까지는 이름 첫 글자 칸입니다. 끝내 못 받아도 반쪽 사진 대신 그 칸이 남습니다.
+ * ⚠ 사진 한 장이 아니라 «줄»(.awrow · .awph)을 지켜봅니다 — 옆으로 넘기는 줄 안의 다음 장은 줄에 가려져
+ *   「안 보임」으로 잡혀서, 장마다 보면 넘길 때마다 빈 칸이 잠깐 보입니다. 줄이 가까워지면 그 줄을 다 받습니다.
+ * ⚠ 칸을 그린 «뒤»에 `사진깔기(그 칸을 담은 요소)` 를 불러야 합니다 — 아래 세 곳(어워즈 · 시상 · 묻기). */
+let 사진눈 = null;
+function 사진깔기(root){
+  const 줄 = [...(root?.querySelectorAll('.awrow, .awph') || [])].filter(b => b.querySelector('i[data-bg]'));
+  if (!줄.length) return;
+  const 다받기 = b => b.querySelectorAll('i[data-bg]').forEach(사진받기);
+  if (!사진눈 && 'IntersectionObserver' in window)
+    사진눈 = new IntersectionObserver(es => {
+      for (const e of es) if (e.isIntersecting){ 사진눈.unobserve(e.target); 다받기(e.target); }
+    }, { rootMargin: '300px 0px' });
+  줄.forEach(b => 사진눈 ? 사진눈.observe(b) : 다받기(b));
+}
+function 사진받기(el){
+  const 주소 = el.dataset.bg;
+  if (!주소) return;
+  let 끝 = false;
+  const 깔기 = src => {
+    if (끝) return;
+    끝 = true;
+    el.removeAttribute('data-bg');
+    el.textContent = '';
+    el.style.backgroundImage = `url("${src.replace(/"/g, '%22')}")`;
+  };
+  /* onload = 다 받았다는 뜻이라 반쪽은 이미 없습니다. decode 는 깔 때 버벅임을 줄이려는 것뿐이라,
+     늦으면(가려진 창 등) 1.5초 뒤에는 그냥 깝니다. */
+  const 받기 = src => {
+    const im = new Image();
+    im.decoding = 'async';
+    im.onload = () => Promise.race([
+      (im.decode ? im.decode() : Promise.resolve()).catch(() => {}),
+      new Promise(r => setTimeout(r, 1500)),
+    ]).then(() => 깔기(src));
+    im.src = src;
+  };
+  받기(주소);
+  setTimeout(() => { if (!끝) 받기(주소 + (주소.includes('?') ? '&' : '?') + 'r=' + Date.now()); }, 8000);
+}
+
+/* 사진 칸 — 동점이면 나눠서 셋까지. 누르면 그 도시 화면. 사진이 없으면 이름 첫 글자(city.js 와 같은 수법).
+   사진이 있어도 «다 받기 전»까지는 이름 첫 글자입니다(위 사진깔기). */
 const 사진칸 = (xs, 딱지) => `<div class="awph">${xs.map(x =>
   `<i data-city="${esc(x.id)}" role="button" tabindex="0" aria-label="${esc(x.name)} 보기"${x.img
-    ? ` style="background-image:url('${esc(x.img)}')"` : ''}>${x.img ? '' : esc(x.name.slice(0, 1))}</i>`).join('')}${
+    ? ` data-bg="${esc(x.img)}"` : ''}>${esc(x.name.slice(0, 1))}</i>`).join('')}${
   딱지 ? `<b>${esc(딱지)}</b>` : ''}</div>`;
 
 /* 사진 줄 — **도시마다 한 장씩, 옆으로 넘겨 봅니다**(b813, 사용자: 「한곳에 다 넣지말고 옆으로 스크롤 하면서 보게해줘」).
@@ -61,7 +110,7 @@ const 사진칸 = (xs, 딱지) => `<div class="awph">${xs.map(x =>
 const 사진줄 = (xs, 딱지) => `<div class="awrow${xs.length > 1 ? ' many' : ''}">${xs.map((x, i) => {
   const 글 = typeof 딱지 === 'function' ? 딱지(x, i) : 딱지;
   return `<div class="awslide" data-city="${esc(x.id)}" role="button" tabindex="0" aria-label="${esc(x.name)} 보기">
-    <i${x.img ? ` style="background-image:url('${esc(x.img)}')"` : ''}>${x.img ? '' : esc(x.name.slice(0, 1))}</i>
+    <i${x.img ? ` data-bg="${esc(x.img)}"` : ''}>${esc(x.name.slice(0, 1))}</i>
     ${글 ? `<b>${esc(글)}</b>` : ''}<span>${esc(x.name)}</span></div>`;
 }).join('')}</div>`;
 
@@ -176,6 +225,7 @@ function 어워즈(목록){
       ${사진줄(보일)}
       <div class="aws"><em>★${별글(a.xs[0].stars)}</em>${a.말 ? ` · ${esc(a.말)}` : ''}${더 ? ` · 외 ${더}곳` : ''}</div></div>`;
   }).join('')}</div>`);
+  사진깔기(몸);
   return el;
 }
 
@@ -429,6 +479,7 @@ async function 최애(목록, uid){
   const 시상 = (셋, 다시) => {
     몸.innerHTML = 사진줄(셋, (x, i) => `${i + 1}위 · ★${별글(x.stars)}`) +
       (다시 ? `<button class="p16open" data-fv="again">다시 고르기 ›</button>` : '');
+    사진깔기(몸);
     몸.querySelector('[data-fv="again"]')?.addEventListener('click', () => 시작(''));
   };
 
@@ -451,6 +502,7 @@ async function 최애(목록, uid){
           <div class="fvc" data-pick="b" role="button" tabindex="0" aria-label="${esc(b.name)} 고르기">${사진칸([b])}<div class="awn">${esc(b.name)}</div></div>
         </div>
         <div class="memo" style="text-align:center">어디가 더 좋았어요? · ${번}번째</div>`;
+      사진깔기(몸);
       몸.querySelectorAll('[data-pick]').forEach(p => p.addEventListener('click', () => res(p.dataset.pick === 'a' ? a : b)));
     });
     const 셋 = await 가르기(자리, 묻기);

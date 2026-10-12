@@ -20,15 +20,15 @@
  *
  * 층: dom.js · db.js · cities.js · citysearch.js · stars.js · rateui.js ·
  *     rate.js · rating.js · home.js(지문 비우기만). */
-import { $, esc } from './dom.js?v=b851';
-import { sb } from './db.js?v=b851';
-import { cities } from './cities.js?v=b851';
-import { loadCities } from './citysearch.js?v=b851';
-import { paintStars } from './stars.js?v=b851';
-import { rateHero, starValue } from './rateui.js?v=b851';
-import { saveRate, 방금확정 } from './rating.js?v=b851';
-import { 넘긴줄 } from './rate.js?v=b851';
-import { resetHomeSig } from './home.js?v=b851';
+import { $, esc } from './dom.js?v=b852';
+import { sb } from './db.js?v=b852';
+import { cities } from './cities.js?v=b852';
+import { loadCities } from './citysearch.js?v=b852';
+import { paintStars } from './stars.js?v=b852';
+import { rateHero, starValue } from './rateui.js?v=b852';
+import { saveRate, 방금확정 } from './rating.js?v=b852';
+import { 넘긴줄, 인기 } from './rate.js?v=b852';
+import { resetHomeSig } from './home.js?v=b852';
 
 /* ⚠ showApp 은 **기본값에도 둡니다.** 없으면 위 돌아가기() 가 조용히
    아무 일도 안 하는데, 그게 b423~b425 동안 그대로 나가 있었습니다. */
@@ -78,12 +78,16 @@ async function 채우기(){
   const 넘긴것 = new Set((r.data || []).filter(넘긴줄).map(x => x.city_id));
   주머니 = (cities || []).filter(c => c.image_url && !답한것.has(c.id));
   /* 처음 보는 곳 → 넘긴 곳(위 ⚠⚠), 그 안에서 이름난 순. 섞기도 같은 칸 안에서만 합니다 —
-     칸이 다른 둘을 바꾸면 넘긴 곳이 다시 앞으로 옵니다. */
-  const 칸 = c => (넘긴것.has(c.id) ? 100 : 0) + (c.fame ?? 9);
-  주머니.sort((a, b) => 칸(a) - 칸(b));
+     칸이 다른 둘을 바꾸면 넘긴 곳이 다시 앞으로 옵니다.
+   ⚠ **이름난 관광지 표(rate.js 인기)에 있는 곳은 그 차례 그대로 맨 앞입니다(b852, 사용자: 「같은 순서로」).**
+     평가 탭 목록과 「빠르게 매기기」 옆 사진 석 장이 같은 차례라, 여기만 섞으면 사진(오사카·도쿄·후쿠오카)과
+     첫 장(대전·광주일 수도)이 갈렸습니다. 표에 없는 곳만 예전처럼 fame 칸 안에서 섞습니다. */
+  const 칸 = c => (넘긴것.has(c.id) ? 100 : 0) + (인기(c) < 999 ? 0 : (c.fame ?? 9));
+  주머니.sort((a, b) => 칸(a) - 칸(b) || 인기(a) - 인기(b));
   for (let i = 주머니.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
-    if (칸(주머니[i]) === 칸(주머니[j]))
+    const a = 주머니[i], b = 주머니[j];
+    if (칸(a) === 칸(b) && 인기(a) === 999 && 인기(b) === 999)
       [주머니[i], 주머니[j]] = [주머니[j], 주머니[i]];
   }
 }

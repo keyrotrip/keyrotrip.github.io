@@ -14,18 +14,18 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b851';
-import { sb } from './db.js?v=b851';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b851';
-import { dateRange } from './calc.js?v=b851';
-import { starHtml, paintStars, starValue } from './stars.js?v=b851';
+import { $, esc, josa, tipOff } from './dom.js?v=b852';
+import { sb } from './db.js?v=b852';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b852';
+import { dateRange } from './calc.js?v=b852';
+import { starHtml, paintStars, starValue } from './stars.js?v=b852';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b851';
+         countryInfo } from './cities.js?v=b852';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음, 넘긴줄 } from './rate.js?v=b851';
-import { openCity } from './city.js?v=b851';
-import { loadCities } from './citysearch.js?v=b851';
+         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b852';
+import { openCity } from './city.js?v=b852';
+import { loadCities } from './citysearch.js?v=b852';
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }
@@ -271,10 +271,15 @@ export function drawRatings(){
                   : (myRates[c.id]?.stars ?? -1);
   const 시작 = c => (cho ? c._cho : c.name.toLowerCase()).startsWith(q) ? 1 : 0;
   const 뒤로 = c => 넘긴줄(myRates[c.id]) ? 1 : 0;
+  /* ⚠ **이름난 관광지 먼저(b852, rate.js 인기).** 사용자: 「무조건 제일 유명한 관광지들이 위로」 —
+       fame 1칸(76곳) 안을 가나다로 두었더니 강릉·경주·광주·대구·대전이 맨 위였습니다.
+       표에 없는 곳은 그 뒤에 fame → pop_rank → 가나다. */
   list.sort((a, b) => (q ? 시작(b) - 시작(a) : 0)
                    || rank(b) - rank(a)
                    || 뒤로(a) - 뒤로(b)
+                   || 인기(a) - 인기(b)
                    || (a.fame ?? 9) - (b.fame ?? 9)
+                   || (a.pop_rank ?? 999) - (b.pop_rank ?? 999)
                    || a.name.localeCompare(b.name, 'ko'));
 
   $('r_head').textContent = '도시';
@@ -330,6 +335,7 @@ export function drawRatings(){
       (밑 ? `<div class="memo" style="margin-top:6px">${esc(밑)}</div>` : '') +
       `</div>`;
     lastRateHtml = '';
+    부채();      /* 목록이 비어도 부채는 다시 셉니다 — 안 그러면 방금 매긴 곳이 사진에 남습니다(b852 리뷰) */
     return;
   }
 
@@ -382,6 +388,29 @@ export function drawRatings(){
     }, { rootMargin:'400px' });
     rateObs.observe(more);
   }
+  부채();
+}
+
+/* ── 「빠르게 매기기」의 부채 사진 셋(b852) ─────────────────────────────
+ * 누르면 처음 물어볼 곳들을 미리 보여 줍니다. 고르는 줄은 넘기며 매기기(spree.js 채우기)와 같습니다 —
+ * 아직 답 안 한 곳(별·♡ 없음) 중 사진 있는 곳, 처음 보는 곳 → 넘긴 곳, 그 안에서 이름난 순.
+ * (저쪽은 같은 칸 안에서 섞으므로 첫 장이 꼭 같지는 않습니다 — 같은 무리입니다.)
+ * ⚠ 이름난 곳(fame 1)이 76곳이라 그 안의 차례는 목록과 같은 «이름난 관광지 차례»(rate.js 인기 — 오사카·
+ *   도쿄·후쿠오카…)로 정합니다. 가나다로 두면 강릉·경주·괌이 나왔습니다(재 봄). 섞으면 다시 그릴 때마다 바뀌어 깜빡입니다.
+ * ⚠ 셋이 그대로면 손대지 않습니다 — 목록처럼, 다시 그리면 사진이 깜빡입니다(위 lastRateHtml). */
+function 부채(){
+  const el = $('spreefan'); if (!el) return;
+  const 답함 = c => myRates[c.id]?.stars != null || !!myRates[c.id]?.want;
+  /* 칸은 spree.js 채우기와 똑같이 — 표(인기)에 있는 곳은 fame 과 상관없이 맨 앞 칸입니다. */
+  const 칸 = c => (넘긴줄(myRates[c.id]) ? 100 : 0) + (인기(c) < 999 ? 0 : (c.fame ?? 9));
+  const 셋 = (cities || []).filter(c => c.image_url && !답함(c))
+    .sort((a, b) => 칸(a) - 칸(b) || 인기(a) - 인기(b) || (a.pop_rank ?? 999) - (b.pop_rank ?? 999)
+                    || a.name.localeCompare(b.name, 'ko')).slice(0, 3);
+  const 열쇠 = 셋.map(c => c.id).join(',');
+  if (el.dataset.k === 열쇠) return;
+  el.dataset.k = 열쇠;
+  el.innerHTML = 셋.map(c => `<img src="${esc(c.image_url)}" alt="" decoding="async">`).join('');
+  el.classList.toggle('hide', 셋.length < 3);
 }
 
 /* ⚠⚠ **여기 있던 「직접 넣기」 처리기를 걷었습니다(b670).**

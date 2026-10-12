@@ -1,10 +1,11 @@
-/* ── 콘솔에서 돌리는 자체 점검 셋 ─────────────────────────────────────
+/* ── 콘솔에서 돌리는 자체 점검 넷 ─────────────────────────────────────
  * 화면에서는 **틀려도 그럴듯해 보이는 것들**을 기계에 물어봅니다.
  *   `__designCheck()`  글자 크기·굵기 규칙이 뒤집혔나
  *   `__recCheck()`     추천 점수식이 지어낸 사람에게도 말이 되나
  *   `__mapCheck()`     '지도에서 보기' 주소가 엉뚱한 곳으로 가나
+ *   `__zoomCheck()`    입력칸을 누르면 아이폰이 화면을 확대하나(b852)
  *
- * 셋 다 `window` 에 답니다. 크롬 콘솔에서 이름만 치면 돕니다.
+ * 넷 다 `window` 에 답니다. 크롬 콘솔에서 이름만 치면 돕니다.
  *
  * ── app.js 에서 떼어낸 스무 번째 조각입니다(b345) ────────────────────
  * **딸린 것이 0 입니다.** 앱 상태를 하나도 안 봅니다 — 지어낸 값과
@@ -20,10 +21,10 @@
  * 사연은 각 머리말에 그대로 남겨뒀습니다.
  *
  * 층: 아래층만 씁니다(rec.js · calc.js · planmap.js · cities.js). */
-import { recommend, scoreCity, tasteOf, similarPicks } from './rec.js?v=b851';
-import { cityFameP } from './calc.js?v=b851';
-import { mapLinks, memoMapUrl } from './planmap.js?v=b851';
-import { search } from './cities.js?v=b851';
+import { recommend, scoreCity, tasteOf, similarPicks } from './rec.js?v=b852';
+import { cityFameP } from './calc.js?v=b852';
+import { mapLinks, memoMapUrl } from './planmap.js?v=b852';
+import { search } from './cities.js?v=b852';
 
 /* ── 디자인 규칙 검사 ────────────────────────────────────────────────
  * **같은 뒤집힘을 세 번 만났습니다** — 홈(b268) · 일정/지출(b270) ·
@@ -61,7 +62,8 @@ window.__designCheck = () => {
     const big = fs >= 21 && fw >= 700;
     /* `.dd`(D-1 숫자)와 `.ht`(그 아래 여행 이름)는 히어로입니다 — 사진 위에
        크게 얹는 자리라 카드 제목 규격을 안 따릅니다. 빼고 봅니다. */
-    const 제목 = /^H[12]$/.test(tag) || e.closest('h1,h2')
+    /* 평가 탭 「빠르게 매기기」 단추 제목(#spreego, b852)도 일부러 큽니다 — 그 탭의 첫 단추(사용자가 고른 시안 B). */
+    const 제목 = /^H[12]$/.test(tag) || e.closest('h1,h2,#spreego')
                  || e.classList.contains('dd') || e.classList.contains('ht');
     if (big && !제목) say('①제목처럼 큼', tag === 'B'
       ? 'b 에 크기를 안 적어 본문 기본값을 받았습니다 → 17/600'
@@ -305,5 +307,56 @@ window.__mapCheck = () => {
   console.table(T.map(x => ({ 검사:x.name, 결과:x.ok ? 'OK' : '틀림' })));
   bad.forEach(x => console.error(`✗ ${x.name}\n  나온 것: ${x.got}\n  나와야: ${x.want}`));
   return { 전체:T.length, 틀림:bad.length };
+};
+
+/* ── 누르면 화면이 확대되나(b852) ─────────────────────────────────────
+ * 아이폰은 글자가 16px 보다 작은 칸을 누르면 화면을 확대하고, 판이 옆으로 밀린 채 남습니다
+ * (사용자 화면 두 장, 10-12 — 친구 찾기 · 프로필 이름). 공통 바닥(app.css 의 `--in-floor`)이
+ * 있어도 칸마다 크기를 따로 정한 규칙이 그것을 이기면 소용없고, **눈으로는 못 잡습니다** —
+ * 피시에서는 안 생기고, 「작게」로 보는 사람에게만 생기는 칸도 있었습니다.
+ * 그래서 `:focus` 규칙을 클래스(.__f)로 베껴 «누른 것처럼» 만들고, 글자 크기 넷(0.9~1.3)에서
+ * 다 잽니다. 숨은 판의 칸도 잽니다(진짜로 누르지 않으므로).
+ * ⚠ JS 가 그때그때 만드는 칸(일행 권한 고르기·후기 칸…)은 그 화면을 연 뒤에 돌려야 잡힙니다. */
+window.__zoomCheck = () => {
+  const 훑기 = (list, 담는것, 할일) => {
+    for (let i = list.length - 1; i >= 0; i--){        /* 뒤에서부터 — 끼우거나 빼도 앞 번호는 그대로 */
+      const r = list[i];
+      if (r instanceof CSSStyleRule) 할일(r, i, 담는것);
+      else if (r.cssRules) 훑기(r.cssRules, r, 할일);   /* @media 속 */
+    }
+  };
+  const 시트마다 = 할일 => { for (const s of document.styleSheets){
+    let rs; try { rs = s.cssRules; } catch { continue; }  /* 남의 서버 글꼴 CSS 는 못 읽습니다 */
+    훑기(rs, s, 할일); } };
+  시트마다((r, i, 담는것) => {
+    if (!/:focus/.test(r.selectorText)) return;
+    const 베낌 = r.selectorText.replace(/:focus-within/g, '.__fw').replace(/:focus(-visible)?/g, '.__f');
+    try { 담는것.insertRule(`${베낌}{${r.style.cssText}}`, i + 1); } catch {}
+  });
+  const root = document.documentElement, 옛배율 = root.style.getPropertyValue('--ts');
+  root.style.setProperty('--in-floor', '16px');        /* 피시에서 돌려도 폰처럼 잽니다 */
+  const 뺄것 = /^(file|checkbox|radio|hidden|range|color|button|submit|reset|image)$/;
+  const 칸들 = [...document.querySelectorAll('input, select, textarea')].filter(e => !뺄것.test(e.type));
+  const out = [];
+  for (const ts of ['0.9', '1', '1.15', '1.3']){
+    root.style.setProperty('--ts', ts);
+    for (const e of 칸들){
+      const 위 = [];
+      for (let a = e; a; a = a.parentElement){ a.classList.add('__fw'); 위.push(a); }
+      e.classList.add('__f');
+      const px = parseFloat(getComputedStyle(e).fontSize);
+      e.classList.remove('__f'); 위.forEach(a => a.classList.remove('__fw'));
+      if (px < 16) out.push({ 자리:e.id ? '#' + e.id : e.outerHTML.slice(0, 60), 배율:ts, 크기:px });
+    }
+  }
+  root.style.removeProperty('--in-floor');
+  if (옛배율) root.style.setProperty('--ts', 옛배율); else root.style.removeProperty('--ts');
+  시트마다((r, i, 담는것) => { if (r.selectorText.includes('.__f')) 담는것.deleteRule(i); });
+  if (out.length) console.table(out);
+  /* ⚠ CI(tools/check-app.mjs)는 `{틀림, 항목:[{항목}]}` 꼴만 셉니다 — 글자로 돌려주면 늘 ✓ 로 읽혔습니다(b852 리뷰). */
+  return { 틀림: out.length, 칸: 칸들.length,
+           항목: out.map(o => ({ 항목: `${o.자리} ×${o.배율} ${o.크기}px` })),
+           말: out.length ? `✗ ${out.length}건 — 누르면 아이폰이 화면을 확대합니다`
+                          : `✓ 칸 ${칸들.length}개 — 누를 때 다 16px 이상` };
 };
 

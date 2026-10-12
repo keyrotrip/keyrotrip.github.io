@@ -15,12 +15,12 @@
  * 하나입니다 — 일행 목록도, 정산 송금 줄도 같은 것을 씁니다.
  *
  * 층: dom.js · db.js · net.js · calc.js · trip.js · ui.js 만 씁니다. */
-import { $, esc, toast, copyText, avatarImg } from './dom.js?v=b851';
-import { sb } from './db.js?v=b851';
-import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b851';
-import { dateRange } from './calc.js?v=b851';
-import { trip, members, setMembers, nameOf } from './trip.js?v=b851';
-import { arm } from './ui.js?v=b851';
+import { $, esc, toast, copyText, avatarImg } from './dom.js?v=b852';
+import { sb } from './db.js?v=b852';
+import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b852';
+import { dateRange } from './calc.js?v=b852';
+import { trip, members, setMembers, nameOf } from './trip.js?v=b852';
+import { arm } from './ui.js?v=b852';
 
 /* app.js 만 아는 것 셋. **`me` 는 값이 아니라 함수로 받습니다** —
    로그인할 때마다 바뀌는데 값으로 받으면 처음 것을 붙들고 있습니다. */
@@ -94,8 +94,7 @@ export async function loadMembers(){
                      : `<span class="badge">${esc(ROLE_KO[m.role] || m.role)}</span>`;
     /* 소유자만 남의 권한을 바꾸거나 내보냅니다. 자기 자신은 못 건드립니다. */
     const admin = (owner && !self && !gone)
-      ? `<select data-mrole="${esc(m.user_id)}" style="width:auto; padding:4px 8px;
-                 font-size:calc(12px * var(--ts))">
+      ? `<select data-mrole="${esc(m.user_id)}" style="width:auto; padding:4px 8px">
            <option value="editor"${m.role === 'editor' ? ' selected' : ''}>편집자</option>
            <option value="viewer"${m.role === 'viewer' ? ' selected' : ''}>보기만</option>
          </select>
@@ -242,8 +241,7 @@ $('members').addEventListener('click', async e => {
   if (b.dataset.mact === 'nick'){
     b.outerHTML =
       `<input id="nickin" value="${esc(b.dataset.nick)}" maxlength="20"
-              placeholder="비우면 계정 이름" style="width:auto; max-width:160px;
-              padding:4px 10px; font-size:calc(12px * var(--ts))">
+              placeholder="비우면 계정 이름" style="width:auto; max-width:160px; padding:4px 10px">
        <button class="ghost" data-mact="nicksave">저장</button>`;
     $('nickin').focus();
     return;
