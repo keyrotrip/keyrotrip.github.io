@@ -5591,24 +5591,36 @@ body.pvon{ overflow:hidden; }
 /* ⚠ **`.gswitch`(3D/2D 단추)와 `.flatbox`(평면 칸)를 여기서 지웠습니다
    (b759).** 왜인지는 이 구역 머리말에 적어 뒀습니다. */
 
-/* ── 성향이 바뀌었어요(b526) ───────────────────────────────────────────
- * 락인에서 마지막까지 빠져 있던 「다시 열 이유」입니다. 앱을 열었을 때
- * 홈 맨 위에 한 번 뜹니다(푸시는 일행 기능이 실제로 쓰인 뒤입니다).
- * ⚠ 히어로보다 위에 서므로 **조용해야 합니다.** 앱 파랑 테두리 한 줄로
- *   「새 소식」임을 말하고, 색을 더 쓰지 않습니다 — 여기서 요란하면
- *   정작 첫 화면의 할 일(별 누르기)을 덮습니다.
- * ⚠ 옛 코드는 흐리게, 새 코드는 파랗게. 화살표만 보고도 방향이 읽힙니다. */
-.pshift{ border:1px solid var(--primary); }
-.psh-t{ font-size:var(--f-lg); font-weight:700; margin-bottom:10px; }
-.psh-row{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }
-.psh-row span{ display:flex; flex-direction:column; gap:1px; min-width:0; }
-.psh-row b{ font-size:var(--f-2xl); font-weight:700; letter-spacing:.5px; }
-.psh-row span span{ font-size:var(--f-sm); color:var(--ink-48); }
-.psh-old b{ color:var(--ink-48); }
-.psh-new b{ color:var(--primary); }
-.psh-ar{ flex:none; font-style:normal; color:var(--ink-48); font-size:var(--f-xl); }
-.psh-btns{ display:flex; gap:8px; margin-top:12px; }
-.psh-btns .primary{ flex:1; }
+/* ── 성향이 바뀌었어요 — 지구본 위 카드 팝업(b854, 시안 B 「예전 → 지금」) ─────────────────
+ * 락인에서 마지막까지 빠져 있던 「다시 열 이유」입니다(b526). 기록 탭을 열었을 때 한 번 뜹니다.
+ * ⚠ b526~b853 은 홈 «맨 위에 끼우는 카드»였습니다. 기록 탭이 지구본 한 화면(b757)이 되고 카드 좌우 여백이
+ *   걷힌(b593) 뒤로 떠 있는 로고 밑에 깔리고 글자가 화면 끝에 붙었습니다(사용자 사진, 10-13) → 팝업.
+ * ⚠ 예전 그림은 흐리게(회색), 지금 것은 주황 코드 — 화살표만 보고도 방향이 읽힙니다.
+ * ⚠ z-index 1300 — 칩(900) · 나라 시트(1200) 위, 사진 크게 보기(1400) · 사진 자르기(1450) 아래.
+ * ⚠ 둥근 모서리는 «떠 있는 것»이라서입니다(숫자 카드·칩과 같은 무리). 종이 위 구역(.card)은 그대로 각집니다. */
+.pshpop{ position:fixed; inset:0; z-index:1300; display:flex; align-items:center; justify-content:center;
+         padding:24px; background:rgba(27,24,18,.38); }
+.pshcard{ width:100%; max-width:340px; max-height:calc(100% - 20px); overflow:auto;
+          padding:22px 20px 20px; border-radius:20px; background:var(--canvas);
+          box-shadow:0 18px 50px rgba(20,16,10,.28); }
+.pshtitle{ margin:0; font-size:var(--f-xl); font-weight:700; color:var(--ink); }
+.pshpair{ display:flex; align-items:flex-start; gap:10px; margin-top:14px; }
+.pshpair figure{ flex:1; min-width:0; margin:0; }
+.pshpair img{ display:block; width:100%; aspect-ratio:3 / 2; object-fit:cover; border-radius:12px;
+              background:var(--line); }
+.pshpair figcaption{ display:flex; flex-direction:column; gap:1px; margin-top:7px; }
+.pshpair b{ font-size:var(--f-md); font-weight:700; letter-spacing:.04em; color:var(--ink); }
+.pshpair figcaption span{ font-size:var(--f-sm); color:var(--ink-80); word-break:keep-all; }
+.pshpair .old img{ filter:grayscale(.85); opacity:.6; }
+.pshpair .old b, .pshpair .old figcaption span{ color:var(--ink-48); }
+.pshpair .new b{ color:var(--brand); }
+/* 화살표는 «그림» 높이 가운데에 — 이름 줄(figcaption)만큼 위로 올립니다. */
+.pshpair > i{ flex:none; align-self:center; margin-top:-34px; font-style:normal;
+              font-size:var(--f-xl); color:var(--ink-48); }
+.pshwhy{ margin:12px 0 0; font-size:var(--f-md); line-height:1.5; color:var(--ink-80); word-break:keep-all; }
+.pshbtns{ display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+.pshbtns button{ width:100%; padding:13px; font-weight:700; }
+.pshbtns .pshx{ padding:8px; border:0; background:none; color:var(--ink-48); font-weight:600; }
 
 
 /* ── 언제 다녀왔나 고르개(b536) ────────────────────────────────────────

@@ -24,11 +24,11 @@
  *   누르는 것이 곧 봤다는 증거입니다. 그전까지는 홈을 그릴 때마다 다시
  *   붙습니다 — 그게 「다시 열 이유」의 뜻이기도 합니다.
  */
-import { $, esc } from './dom.js?v=b853';
-import { sb } from './db.js?v=b853';
-import { netTimeout } from './net.js?v=b853';
-import { cities } from './cities.js?v=b853';
-import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b853';
+import { esc } from './dom.js?v=b854';
+import { sb } from './db.js?v=b854';
+import { netTimeout } from './net.js?v=b854';
+import { cities } from './cities.js?v=b854';
+import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b854';
 
 let ctx = { me: () => null, 열기: () => {} };
 export function setShiftCtx(o){ ctx = { ...ctx, ...o }; }
@@ -59,7 +59,11 @@ let 대기 = null;
 /* 로그아웃하면 화면에 남은 알림만 버립니다. **적어둔 코드는 안 지웁니다** —
    계정 id 로 갈라 두어서 서로 안 섞이고, 다시 들어왔을 때 견줄 기준이
    남아 있는 편이 맞습니다. */
-export function clearPcode(){ 대기 = null; }
+export function clearPcode(){
+  대기 = null;
+  /* 팝업이 떠 있었으면 같이 치웁니다(b854) — 로그아웃한 화면에 남의 성향이 떠 있으면 안 됩니다. «봤다»로 안 적습니다. */
+  if (팝){ 팝.remove(); 팝 = null; 닫은뒤 = null; }
+}
 
 /* ── 팔로워에게 보일 성향(b789) ───────────────────────────────────────
  * 다른 사람 화면(people.js)은 내 별점을 다 받지 않고(별점을 숨길 수도
@@ -151,27 +155,54 @@ function 치움(){
   대기 = null;
 }
 
+/* ── 그리기 — 지구본 위 «카드 팝업»(b854, 시안 B 「예전 → 지금」) ───────────────────────────
+ * 사용자(10-13, 사진): 기록 탭 맨 위에 끼우던 카드(b526)가 «로고 밑에 깔리고» 글자가 화면 끝에 붙었습니다 —
+ * 「레이아웃 다 깨져있는데?」 → 「저렇게 뜨지 말고 카드 팝업처럼 … 지구본 위로」 → 시안 둘 중 B.
+ * 기록 탭이 «지구본 한 화면»(b757)이 된 뒤로 맨 위는 떠 있는 로고 자리이고, 카드에 좌우 여백도 없어졌습니다(b593).
+ * ⚠ **기록 탭에 있을 때만 띄웁니다.** 다른 탭에서 홈이 다시 그려지며 불려도 대기만 남기고 — 기록 탭에서 다시
+ *   그릴 때(checkPersonaShift → 그리기) 뜹니다.
+ * ⚠ **뒤로가기 = 닫기.** 열 때 기록을 하나 쌓고, 단추로 닫을 때는 뒤로가기를 대신 누릅니다(install.js 와 같은 수법).
+ *   「뭐가 달라졌는지 보기」는 닫힌 «뒤에» 성향 화면을 엽니다 — 순서가 뒤집히면 성향 화면이 쌓은 기록을 우리가 되돌립니다.
+ * ⚠ 「봤다」(치움)는 예전 그대로입니다(b528) — 닫기 · 보기 · 바깥 누르기 · 뒤로가기 · Esc 모두 봤다. */
+let 팝 = null, 닫은뒤 = null;
 function 그리기(){
-  const 홈 = $('home');
-  if (!홈 || !대기 || 홈.querySelector('.pshift')) return;
+  if (!대기 || 팝 || document.body.dataset.tab !== 'home') return;
   const { 전, 지금 } = 대기;
   const 앞 = PERSONA16[전]?.n || '', 뒤 = PERSONA16[지금]?.n || '';
-
-  const 칸 = document.createElement('div');
-  칸.className = 'card pshift';
-  칸.innerHTML = `
-    <div class="psh-t">성향이 바뀌었어요</div>
-    <div class="psh-row">
-      <span class="psh-old"><b>${esc(전)}</b><span>${esc(앞)}</span></span>
-      <i class="psh-ar">→</i>
-      <span class="psh-new"><b>${esc(지금)}</b><span>${esc(뒤)}</span></span>
-    </div>
-    <div class="memo">${esc(personaShiftWhy(전, 지금, 대기.규칙) || '최근에 매긴 곳들이 그렇게 말해요.')}</div>
-    <div class="psh-btns">
-      <button class="primary psh-go">뭐가 달라졌는지 보기</button>
-      <button class="small psh-x">닫기</button>
+  팝 = document.createElement('div');
+  팝.className = 'pshpop';
+  팝.innerHTML = `<div class="pshcard" role="dialog" aria-modal="true" aria-label="성향이 바뀌었어요">
+      <p class="pshtitle">성향이 바뀌었어요</p>
+      <div class="pshpair">
+        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b854" alt="">
+          <figcaption><b>${esc(전)}</b><span>${esc(앞)}</span></figcaption></figure>
+        <i aria-hidden="true">→</i>
+        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b854" alt="">
+          <figcaption><b>${esc(지금)}</b><span>${esc(뒤)}</span></figcaption></figure>
+      </div>
+      <p class="pshwhy">${esc(personaShiftWhy(전, 지금, 대기.규칙) || '최근에 매긴 곳들이 그렇게 말해요.')}</p>
+      <div class="pshbtns">
+        <button type="button" class="primary psh-go">뭐가 달라졌는지 보기</button>
+        <button type="button" class="pshx">닫기</button>
+      </div>
     </div>`;
-  칸.querySelector('.psh-x').onclick = () => { 칸.remove(); 치움(); };
-  칸.querySelector('.psh-go').onclick = () => { 칸.remove(); 치움(); ctx.열기(); };
-  홈.prepend(칸);
+  팝.querySelector('.pshx').onclick = () => 팝닫기();
+  팝.querySelector('.psh-go').onclick = () => 팝닫기(() => ctx.열기());
+  /* 카드 «바깥»(어둡게 깐 자리)을 누르면 닫기 — 카드 안을 누른 것은 아닙니다. */
+  팝.addEventListener('click', e => { if (e.target === 팝) 팝닫기(); });
+  document.body.appendChild(팝);
+  if (history.state?.t2 !== 'pshift') history.pushState({ t2:'pshift' }, '');
+  팝.querySelector('.psh-go').focus({ preventScroll:true });
 }
+/* 닫기. 단추에서 부르면 뒤로가기를 거치고(아래 popstate 가 진짜로 닫음), 뒤로가기에서 부르면 바로 닫습니다.
+   `다음` 은 닫힌 뒤에 할 일(성향 화면 열기). */
+function 팝닫기(다음, 뒤로온것){
+  if (!팝) return;
+  if (!뒤로온것 && history.state?.t2 === 'pshift'){ 닫은뒤 = 다음 || null; history.back(); return; }
+  팝.remove(); 팝 = null;
+  치움();
+  const f = 닫은뒤 || 다음; 닫은뒤 = null;
+  f?.();
+}
+window.addEventListener('popstate', () => { if (팝) 팝닫기(null, true); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && 팝) 팝닫기(); });
