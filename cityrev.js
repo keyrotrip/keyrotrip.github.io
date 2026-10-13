@@ -12,11 +12,11 @@
  *   bottom:0 은 아이폰 홈 화면 앱에서 키보드 뒤로 갑니다([[ios-keyboard-sheet]]).
  * ⚠ 좋아요·답글 단추는 도시 화면 줄에도 있습니다 — 누르기는 document 에 한 번 답니다(아래).
  */
-import { $, esc, toast, avatarImg } from './dom.js?v=b867';
-import { sb } from './db.js?v=b867';
-import { netTimeout } from './net.js?v=b867';
-import { cities, cityCountry } from './cities.js?v=b867';
-import { arm } from './ui.js?v=b867';
+import { $, esc, toast, avatarImg } from './dom.js?v=b868';
+import { sb } from './db.js?v=b868';
+import { netTimeout } from './net.js?v=b868';
+import { cities, cityCountry } from './cities.js?v=b868';
+import { arm } from './ui.js?v=b868';
 
 let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {}, redrawFoods: () => {} };
 export function setCityRevCtx(o){ ctx = { ...ctx, ...o }; }

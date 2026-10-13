@@ -13,17 +13,17 @@
  * 자료를 건드리므로 여기로 가져오면 안 됩니다.
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
-import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b867';
-import { sb } from './db.js?v=b867';
-import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b867';
-import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b867';
-import { starHtml, starValue } from './stars.js?v=b867';
-import { localTime } from './calc.js?v=b867';
-import { fail, netIsDown } from './net.js?v=b867';
+import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b868';
+import { sb } from './db.js?v=b868';
+import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b868';
+import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b868';
+import { starHtml, starValue } from './stars.js?v=b868';
+import { localTime } from './calc.js?v=b868';
+import { fail, netIsDown } from './net.js?v=b868';
 /* 후기 줄·후기 화면(b858). cityrev.js 는 이 파일을 안 읽습니다(도시 열기는 ctx 로) — 고리 없음. */
-import { revRowsHtml } from './cityrev.js?v=b867';
+import { revRowsHtml } from './cityrev.js?v=b868';
 /* 「○○ 맛집 추천」 칸(b861, db/124) — cmtask.js 는 이 파일을 안 읽습니다(고리 없음). */
-import { foodsHtml } from './cmtask.js?v=b867';
+import { foodsHtml } from './cmtask.js?v=b868';
 
 /* 지금 열려 있는 도시. **app.js 에 있던 것을 여기로 옮겼습니다(b329)** —
    여닫는 것은 이 파일이 하는데 변수만 저쪽에 있어서, 떼어낸 뒤
@@ -235,8 +235,8 @@ export async function openCity(id, 옵션 = {}){
   }
   $('cv_avg').textContent  = s?.n_rated ? Number(s.avg_stars).toFixed(1) : '–';
   /* 후기 수(b858) — 누르면 아래 후기 칸으로 내려갑니다. */
-  $('cv_avgn').innerHTML = esc(s?.n_rated ? `${s.n_rated}명이 매김` : '아직 아무도 안 매김') +
-    (s?.n_comment ? ` · <button type="button" class="ghost cvrvn" data-crvjump>한줄평 ${s.n_comment}</button>` : '');
+  /* b868: 「· 한줄평 N」 걷음(사용자: 「바로 밑에 있잖아」) — 아래 한줄평 칸 제목이 같은 수를 말합니다 */
+  $('cv_avgn').textContent = s?.n_rated ? `${s.n_rated}명이 매김` : '아직 아무도 안 매김';
   $('cv_stars').innerHTML  = starHtml(r.stars);
   $('cv_want').classList.toggle('on', !!r.want);
   $('cv_note').value = r.comment || '';

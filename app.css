@@ -6993,3 +6993,26 @@ body.kbup .tabbar{ display:none; }
 #cv_comments .crvsec > .crvrow:first-child{ padding-top:4px; }
 .cmbtn.cvwrite{ border-style:solid; border-color:var(--line); background:var(--canvas); }
 .fdsec .fdadd + .crvrow, .fdsec .fdadd + .secempty{ margin-top:6px; }
+/* 「평균 별점」 이름(b868, 왓챠처럼 숫자 위) */
+.cvavglab{ font-size:calc(12px * var(--ts)); color:var(--ink-48); margin-bottom:2px; }
+/* 칸 사이 굵은 띠(b868 B안) — 화면 양옆까지(카드는 옆 여백이 바깥 판에 있어 50vw 로 뺌) */
+.cvband{ height:10px; background:var(--sunk, #EAE5DA); border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+         margin:var(--s-md) calc(50% - 50vw) 0; }
+.cvbandend{ margin-top:var(--s-lg); }
+#cityview .card:has(> #cv_foods){ border-bottom:0; padding-bottom:0; }
+.cvsechd{ margin-top:var(--s-md); }
+.fdsec{ margin-top:0; }
+/* 도시 화면 맛집 쓰는 줄 — 펼치면 그 줄이 칸 두 개(b868) · 펼친 동안 원래 줄은 숨김 */
+.fdadd[data-open="food"] .cmbtns{ display:none; }
+.fdadd .cmform:not(:empty){ margin-top:0; }
+.cvwritebox{ border:1px solid var(--ink); background:var(--canvas); }
+.cvwritebox .cmfield{ border:0; border-bottom:1px solid var(--line); background:transparent; padding:12px; }
+.cvwritebox .cmfield:focus{ border-color:var(--line); }
+.cvwritebox .cmrow{ justify-content:flex-end; gap:18px; padding:4px 12px; }
+.cvwritebox .cmsave{ background:none; color:var(--ink); padding:8px 0; font-size:calc(14px * var(--ts)); }
+.cvwritebox .cmsave:disabled{ color:var(--ink-48); opacity:1; }
+.cvwritebox .cmclose{ padding:8px 0; font-size:calc(14px * var(--ts)); }
+.cmfoodbox{ display:flex; flex-direction:column; gap:8px; }
+.fdrec .num:empty{ display:none; }
+.cvband{ background:color-mix(in srgb, var(--ink) 7%, var(--canvas)); border-color:color-mix(in srgb, var(--ink) 10%, var(--canvas)); }
+#cv_friends .frsum{ border-bottom:0; }

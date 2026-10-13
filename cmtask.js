@@ -8,11 +8,11 @@
  * 저장: 한줄평은 saveRate(rating.js — ctx 로 받음, 고리 막기) · 맛집은 food_add(db/124).
  * 누르기는 document 에 한 번 — 지구본 카드 · 평가 탭 줄 · 도시 화면 어디에 붙어도 같은 처리.
  */
-import { esc, toast, avatarImg } from './dom.js?v=b867';
-import { sb } from './db.js?v=b867';
-import { netTimeout } from './net.js?v=b867';
+import { esc, toast, avatarImg } from './dom.js?v=b868';
+import { sb } from './db.js?v=b868';
+import { netTimeout } from './net.js?v=b868';
 /* 「내 추천 지우기」를 한 번 더 눌러 정하는 장치. ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b867';
+import { arm } from './ui.js?v=b868';
 
 /* ⚠ 기다리는 시간(검토에서 찾음): netTimeout 기본 2.5초는 «오프라인» 판정까지 켭니다 — 느린 폰 망에서 저장은 됐는데
    「timeout」 오류 + 20초 오프라인 띠가 떴습니다. 쓰기는 10초, 읽기는 8초. 오류 글은 한국어로. */
@@ -62,12 +62,15 @@ export function 묻기Html(id, 이름, 한줄, 얇게 = false){
 }
 
 /* 칸 — 맛집(가게 이름 + 한줄평) / 한줄평 */
-function 칸Html(k, 이름){
-  if (k === 'food') return `<div class="cmq">${esc(이름)} 맛집 한 곳 추천한다면?<small>별점 없이 장소만 남기면 돼요 · 다음에 갈 사람에게 큰 도움이 돼요</small></div>
+/* b868(사용자: 「이게 넌 직관적이라고 생각해?」) — 설명 글(<small>)을 걷고, 맛집 둘째 칸은 「한줄평」 대신 「어땠는지 한 마디」(도시 한줄평과 말이 겹쳤음).
+   도시 화면 「추천하고 싶은 맛집이 있나요?」 줄(짧게)은 질문 글 없이 그 줄이 칸 두 개로 펼쳐집니다(.cvwritebox). */
+function 칸Html(k, 이름, 짧게 = false){
+  if (k === 'food') return `${짧게 ? '' : `<div class="cmq">${esc(이름)} 맛집 한 곳 추천한다면?</div>`}
+    <div class="${짧게 ? 'cvwritebox' : 'cmfoodbox'}">
     <input type="search" enterkeyhint="done" class="cmfield" data-f="name" name="fdshop" maxlength="40" autocomplete="off" autocapitalize="off" placeholder="추천 장소" aria-label="추천 장소">
-    <input type="search" enterkeyhint="done" class="cmfield" data-f="note" maxlength="60" autocomplete="off" placeholder="한줄평" aria-label="가게 한줄평">
-    <div class="cmrow"><button type="button" class="ghost cmclose" data-cmclose>닫기</button><button type="button" class="cmsave" data-cmsave="food" disabled>등록</button></div>`;
-  return `<div class="cmq">${esc(이름)}, 한 줄로 남긴다면?<small>다음에 갈 사람에게 큰 도움이 돼요</small></div>
+    <input type="search" enterkeyhint="done" class="cmfield" data-f="note" maxlength="60" autocomplete="off" placeholder="어땠는지 한 마디 (안 써도 돼요)" aria-label="어땠는지 한 마디">
+    <div class="cmrow"><button type="button" class="ghost cmclose" data-cmclose>${짧게 ? '취소' : '닫기'}</button><button type="button" class="cmsave" data-cmsave="food" disabled>등록</button></div></div>`;
+  return `<div class="cmq">${esc(이름)}, 한 줄로 남긴다면?</div>
     <input type="search" enterkeyhint="done" class="cmfield" data-f="cmt" maxlength="200" autocomplete="off" placeholder="한줄평" aria-label="${esc(이름)} 한줄평">
     <div class="cmrow"><button type="button" class="ghost cmclose" data-cmclose>닫기</button><button type="button" class="cmsave" data-cmsave="cmt" disabled>등록</button></div>`;
 }
@@ -90,7 +93,7 @@ function 열기(판, k){
   const 같은 = 판.dataset.open === k;
   판.dataset.open = 같은 ? '' : k;
   판.querySelectorAll('[data-cmopen]').forEach(b => b.classList.toggle('on', !같은 && b.dataset.cmopen === k));
-  칸.innerHTML = 같은 ? '' : 칸Html(k, 판.dataset.name);
+  칸.innerHTML = 같은 ? '' : 칸Html(k, 판.dataset.name, 판.classList.contains('fdadd'));
   접기(판, !같은 && k === 'food');
   /* ⚠ 누른 그 자리에서 바로 커서를 넣습니다(b862, 사용자: 「키보드 활성화하면 오류 생겨 한번생기고 다시 누르면 정상」).
      setTimeout 으로 미루면 아이폰은 «누름» 밖의 focus 로 보고 키보드를 반쯤만 다룹니다 — 화면이 한 번 밀린 채 남았습니다.
@@ -172,7 +175,7 @@ export async function foodsHtml(id, 이름){
     return `<div class="crvrow fdrow2">
       <div class="fdname"><span class="fdi" aria-hidden="true">${포크}</span><b>${esc(f.name)}</b>
         <button type="button" class="fdrec${눌림 ? ' on' : ''}" data-fdrec="${esc(f.name)}" data-city="${esc(id)}"
-        aria-pressed="${눌림 ? 'true' : 'false'}"${!나 || 내글 ? ' disabled' : ''}>${엄지(눌림)}<span>추천 ${f.n}</span></button></div>
+        aria-pressed="${눌림 ? 'true' : 'false'}"${!나 || 내글 ? ' disabled' : ''}>${엄지(눌림)}<span class="num">${f.n > 1 ? f.n - 1 : ''}</span></button></div>
       ${f.note ? `${f.note_uid ? `<button class="ghost crvwho" data-person="${esc(f.note_uid)}">${avatarImg(f.note_avatar, f.note_uid, f.note_by,
           'width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none', 'thumb')}<b>${esc(f.note_by || '여행자')}</b></button>`
         : `<div class="crvwho"><b>${esc(f.note_by || '여행자')}</b></div>`}
