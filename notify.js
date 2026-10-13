@@ -14,11 +14,11 @@
  * 밖으로 나가는 길은 `loadNotifPrefs` 하나입니다.
  *
  * 층: dom.js · db.js · net.js 만 씁니다. */
-import { $, esc, toast } from './dom.js?v=b858';
-import { sb } from './db.js?v=b858';
-import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b858';
+import { $, esc, toast } from './dom.js?v=b859';
+import { sb } from './db.js?v=b859';
+import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b859';
 /* 「읽은 알림 지우기」를 한 번 더 눌러 정하는 장치(b799). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm, disarm } from './ui.js?v=b858';
+import { arm, disarm } from './ui.js?v=b859';
 
 let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {} };
 export function setNotifyCtx(o){ ctx = { ...ctx, ...o }; }
@@ -275,6 +275,8 @@ export async function loadNotifs(본것){
   /* 프로필 안의 종에도 같은 점을 찍습니다(b760) — 하단바 점만 보고
      프로필에 들어오면 「어디에 왔다는 거지」가 됩니다. */
   $('belldot')?.classList.toggle('hide', !unread);
+  /* 기록 탭 ♡ 의 점에도(b859, activity.js) — 사건으로(그 파일을 읽으면 고리) */
+  window.dispatchEvent(new CustomEvent('t2:heartdot', { detail: { 알림: !!unread } }));
   if (본것 && unread) 읽음처리();
 
   if (error || !data?.length){

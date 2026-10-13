@@ -6201,15 +6201,17 @@ body:has(#cmappane:not(.hide)) .tabbar{ display:none; }
  * ⚠ 하단바는 나라 지도(위 줄)와 같은 수로 숨깁니다 — 덮는 층 위에 떠 있으면
  *   층 아래쪽을 가리고, 눌러도 층이 안 닫혀 엉뚱한 탭이 뒤에서 바뀝니다. */
 body:has(#friendview:not(.hide)) .tabbar,
+body:has(#actview:not(.hide)) .tabbar,
 body:has(#whoview:not(.hide)) .tabbar{ display:none; }
-#friendview:not(.hide), #whoview:not(.hide){
+#friendview:not(.hide), #actview:not(.hide), #whoview:not(.hide){
   position:fixed; inset:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain; background:var(--bg);
   padding:calc(var(--sat) + var(--edge) + 6px) 12px calc(28px + env(safe-area-inset-bottom));
 }
-#friendview{ z-index:1140; }
+#friendview{ z-index:1142; }   /* b859: ♡ 알림(#actview) 위 — 알림의 「팔로우 요청 ›」이 이 판을 엽니다 */
+#actview{ z-index:1138; }
 #whoview{ z-index:1150; }
-#friendview > *, #whoview > *, #whobody > *{ max-width:480px; margin-left:auto; margin-right:auto; }
+#friendview > *, #actview > *, #whoview > *, #whobody > *{ max-width:480px; margin-left:auto; margin-right:auto; }
 /* 첫 판·들어간 판(b799)은 #whobody 안의 한 겹 더 안쪽입니다 — 카드 사이 간격을 거기에도. */
 #friendview > .card, #whobody > .card, #whosum > .card, #whosub > .card{ margin-top:10px; }
 .frhead{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
@@ -6242,7 +6244,7 @@ body:has(#whoview:not(.hide)) .tabbar{ display:none; }
 .frqbtn{ width:100%; border:0; font:inherit; font-size:var(--f-md); text-align:left; padding:11px 12px; }
 .frqbtn:active{ transform:none; opacity:.7; }
 #fr_srow, #fr_found{ display:none; }
-#friendview.frs > .frhead, #friendview.frs > #fr_qbtn, #friendview.frs > .frtabs,
+#friendview.frs > #fr_filterbox, #friendview.frs > .frhead, #friendview.frs > #fr_qbtn, #friendview.frs > .frtabs,
 #friendview.frs > #fr_list{ display:none; }
 #friendview.frs > #fr_srow{ display:flex; align-items:center; gap:10px; }
 #friendview.frs > #fr_found{ display:block; }
@@ -6254,7 +6256,7 @@ body:has(#whoview:not(.hide)) .tabbar{ display:none; }
 .frqcancel{ flex:none; padding:8px 2px; font-size:var(--f-md); color:var(--ink); font-weight:400; }
 .frshint{ padding:18px 2px; font-size:var(--f-sm); color:var(--ink-48); }
 /* 탭 — 밑줄, 숫자는 옆에 */
-.frtabs{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); margin-top:12px;
+.frtabs{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); margin-top:12px;
          border-bottom:1px solid var(--line); }
 .frtabs button{ position:relative; border:0; background:none; padding:12px 0 10px;
                 font-size:var(--f-md); color:var(--ink-48);
@@ -6791,3 +6793,58 @@ body.cron{ overflow:hidden; }
 .a2foot{ margin-top:16px; display:flex; }
 /* 로그인 전(하단바 없음)에는 판을 바닥까지 — .shwrap 의 아래 여백은 하단바 몫입니다. */
 body:not(.hastab) #a2hs .shwrap{ padding-bottom:calc(var(--sab) + 10px); }
+
+/* ── 팔로워 | 팔로잉 · ♡ 알림(b859, 인스타처럼 — friends.js · activity.js) ───────────────────────── */
+.frhead.fr2{ display:grid; grid-template-columns:44px 1fr 44px; align-items:center; }
+.frhead.fr2 h2{ text-align:center; font-size:var(--f-lg); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.frhead.fr2 > button{ padding:6px; color:var(--ink); justify-content:center; }
+#friendview.frsub > .frtabs{ display:none; }
+.frfilter{ border-radius:10px; margin-top:12px; }
+.frfilter input{ flex:1; min-width:0; border:0; background:transparent; padding:10px 0; color:var(--ink);
+                 font-size:var(--f-md); -webkit-appearance:none; appearance:none; }
+.frfilter input:focus{ outline:none; box-shadow:none; font-size:max(var(--in-floor), var(--f-md)); }
+.frfilter:focus-within{ outline:0; }
+/* 묶음 줄 — 「팔로우 요청 · ○○님 외 N명 ›」 · 「맞팔로우하지 않는 사람 ›」 · ♡ 맨 위 요청 줄 */
+.frgroup, .actreq{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 0; border:0; border-bottom:1px solid var(--line);
+                   background:none; text-align:left; font:inherit; color:var(--ink); min-height:0; cursor:pointer; }
+.frgroup:active, .actreq:active{ transform:none; opacity:.7; }
+.frgroup .t, .actreq .t{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.frgroup .t b, .actreq .t b{ font-size:var(--f-md); }
+.frgroup .t span, .actreq .t span{ font-size:var(--f-sm); color:var(--ink-48); }
+.actblue{ width:8px; height:8px; border-radius:50%; background:#3b6cf2; flex:none; }
+.actgo{ flex:none; font-size:22px; color:var(--ink-48); line-height:1; }
+/* 사진 — 한 장 또는 두 장 겹침(인스타처럼) */
+.actav{ position:relative; width:44px; height:44px; flex:none; }
+.actav > .thumb, .actav > img{ position:absolute; left:0; top:0; }
+.actav.two > :nth-child(1){ left:0; top:0; }
+.actav.two > :nth-child(2){ left:auto; right:0; top:auto; bottom:0; box-shadow:0 0 0 2px var(--bg); }
+.actbadge{ position:absolute; right:-3px; bottom:-3px; width:18px; height:18px; border-radius:50%; border:2px solid var(--bg);
+           display:flex; align-items:center; justify-content:center; font-style:normal; font-size:9px; color:#fff; z-index:1; }
+.actbadge.lk{ background:#e0245e; } .actbadge.rp{ background:#3b8a8a; }
+.acttrip{ width:44px; height:44px; border-radius:50%; background:var(--pearl); display:flex; align-items:center; justify-content:center; font-size:18px; }
+.frsort{ display:flex; align-items:center; justify-content:space-between; width:100%; padding:14px 0 6px; border:0; background:none;
+         font:inherit; font-size:var(--f-sm); color:var(--ink-48); min-height:0; cursor:pointer; }
+.frsort b{ color:var(--ink); margin-left:4px; margin-right:auto; }
+.frsort:active{ transform:none; opacity:.7; }
+.frx{ flex:none; border:0; background:none; padding:4px 2px 4px 6px; font-size:20px; line-height:1; color:var(--ink-48); min-height:0; cursor:pointer; }
+.frx:active{ transform:none; opacity:.6; }
+/* ♡ 알림 줄 */
+.actsec{ margin:16px 0 2px; font-size:var(--f-md); font-weight:800; color:var(--ink); }
+.actrow{ display:flex; align-items:center; gap:12px; padding:9px 0; cursor:pointer; }
+.actrow .t{ flex:1; min-width:0; font-size:var(--f-sm); line-height:1.45; color:var(--ink); }
+.actrow .t em{ font-style:normal; color:var(--ink-48); }
+.actrow.new .t{ font-weight:500; }
+.actthumb{ width:44px; height:44px; flex:none; background:var(--pearl); overflow:hidden; display:flex; align-items:center;
+           justify-content:center; color:var(--ink-48); font-weight:700; }
+.actthumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+/* 친구 소식 줄(friends.js 소식줄) 사진 귀퉁이 표시 ★ · ✎ */
+.actfeed{ position:relative; }
+.actfeed::after{ content:attr(data-badge); position:absolute; left:28px; top:calc(50% + 6px); width:18px; height:18px; border-radius:50%;
+                 background:#f5a623; color:#fff; font-size:9px; display:flex; align-items:center; justify-content:center;
+                 border:2px solid var(--bg); pointer-events:none; }
+#actview .frsec{ display:none; }
+/* 기록 탭 오른쪽 위 아이콘 셋(b859, 시안 A-3) — 지도(자세히) · 공유 · ♡ */
+.gacts .gicon{ display:flex; padding:8px 7px; color:var(--ink); }
+.gheart{ position:relative; }
+#heartdot{ position:absolute; right:4px; top:5px; width:8px; height:8px; border-radius:50%; background:#e0245e;
+           box-shadow:0 0 0 2px var(--bg); }

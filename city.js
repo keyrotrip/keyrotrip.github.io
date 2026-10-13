@@ -13,15 +13,15 @@
  * 자료를 건드리므로 여기로 가져오면 안 됩니다.
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
-import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b858';
-import { sb } from './db.js?v=b858';
-import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b858';
-import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b858';
-import { starHtml, starValue, starsRo } from './stars.js?v=b858';
-import { localTime } from './calc.js?v=b858';
-import { fail, netIsDown } from './net.js?v=b858';
+import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b859';
+import { sb } from './db.js?v=b859';
+import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b859';
+import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b859';
+import { starHtml, starValue, starsRo } from './stars.js?v=b859';
+import { localTime } from './calc.js?v=b859';
+import { fail, netIsDown } from './net.js?v=b859';
 /* 후기 줄·후기 화면(b858). cityrev.js 는 이 파일을 안 읽습니다(도시 열기는 ctx 로) — 고리 없음. */
-import { revRowsHtml } from './cityrev.js?v=b858';
+import { revRowsHtml } from './cityrev.js?v=b859';
 
 /* 지금 열려 있는 도시. **app.js 에 있던 것을 여기로 옮겼습니다(b329)** —
    여닫는 것은 이 파일이 하는데 변수만 저쪽에 있어서, 떼어낸 뒤
@@ -55,7 +55,7 @@ const 덱밖판 = ['personapane', 'shelfpane', 'mappane', 'ctrypane', 'cmappane'
    도시를 그 «위»에 열려면 가렸다가 닫을 때 되살려야 합니다.
    ⚠ 위 열 개와 다릅니다 — 덱 밖으로 꺼낸 판이 아니라 **덱 위에 뜬 판**입니다.
      그래서 이것만 가렸었다면 닫을 때 덱도 같이 되살립니다(closeCity). */
-const 덮개 = ['friendview', 'whoview'];
+const 덮개 = ['friendview', 'whoview', 'actview'];   /* actview — ♡ 알림(b859) */
 
 /* ── 도시 겹(b789) ────────────────────────────────────────────────────
  * 도시를 열면서 «내가» 가린 판을 적어 두고 닫을 때 그대로 되돌립니다 —

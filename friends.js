@@ -25,14 +25,14 @@
  * ⚠ 줄 전체를 단추 하나로 만들지 않습니다 — 오른쪽 사진·단추가 따로 눌려야 해서 «사람 단추 + 옆 단추»
  *   형제로 둡니다(단추 안에 단추는 안 됩니다). 그래서 누르기 처리는 도시·단추를 사람보다 «먼저» 봅니다.
  */
-import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b858';
-import { sb } from './db.js?v=b858';
-import { netTimeout } from './net.js?v=b858';
-import { cities, countryName } from './cities.js?v=b858';
+import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b859';
+import { sb } from './db.js?v=b859';
+import { netTimeout } from './net.js?v=b859';
+import { cities, countryName } from './cities.js?v=b859';
 /* 소식의 도시 사진을 누르면 여는 화면(b789). city.js 는 이 파일을 안 읽으므로 고리가 없습니다. */
-import { openCity } from './city.js?v=b858';
+import { openCity } from './city.js?v=b859';
 /* 「팔로잉」·「삭제」를 한 번 더 눌러 정하는 장치(b800). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b858';
+import { arm } from './ui.js?v=b859';
 
 let ctx = { me: () => null, openPerson: () => {} };
 export function setFriendsCtx(o){ ctx = { ...ctx, ...o }; }
@@ -46,28 +46,66 @@ let 끝눈 = null;            /* 맨 아래 「불러오는 중」 줄을 지켜
 
 export const isFriendsOpen = () => !!$('friendview') && !$('friendview').classList.contains('hide');
 
+/* ── 팔로워 | 팔로잉(b859, 인스타처럼) ─────────────────────────────────────
+ * 사용자(10-13): 「소식탭 / 팔로워 / 팔로잉도 인스타처럼」 → 「그냥 인스타처럼 알아서 만들어줘」.
+ *   탭은 「N 팔로워 | N 팔로잉」 둘. 「소식」은 ♡ 알림(activity.js)으로, 「요청」은 팔로워 탭 맨 위 한 줄로 갔습니다.
+ *   팔로워 탭 맨 위: 「팔로우 요청 · ○○님 외 N명 ›」 · 「내가 맞팔로우하지 않는 사람 · ○○님 외 N명 ›」(들어간 판 — 「sub」),
+ *   그 아래 「정렬 기준 기본 ⇅」(기본 = 최근 순 · 이름 순), 그리고 목록. 목록 위 검색칸은 «이 목록 안에서» 거르기.
+ *   새 사람 찾기는 오른쪽 위 사람+(#fr_qbtn → 찾기 화면) 또는 프로필 「친구 찾기」.
+ * ⚠ 들어간 판(requests · notback)은 history 한 칸(frsub). 그 판으로 «바로» 열렸으면(♡ 알림의 「팔로우 요청 ›」) 닫을 때
+ *   친구 화면까지 통째로 닫습니다 — 그 사람은 목록을 거쳐 오지 않았습니다(바로찾기와 같은 생각). */
+const 들어간판 = { requests: '팔로우 요청', notback: '맞팔로우하지 않는 사람' };
+let 정렬 = '기본', 바로판 = false, 내이름 = '';
+function 머리글(){
+  const 판 = $('friendview'), 속 = !!들어간판[탭];
+  판?.classList.toggle('frsub', 속);
+  if ($('fr_title')) $('fr_title').textContent = 속 ? 들어간판[탭] : (내이름 || '친구');
+}
+function 판열기(kind){
+  탭 = kind;
+  history.pushState({ t2:'frsub' }, '');
+  $('friendview').scrollTop = 0;
+  머리글(); 그리기();
+}
+
 export async function openFriends(t, 옵션 = {}){
   if (!ctx.me()) return;
-  탭 = t || 'feed';
+  /* 옛 이름(feed — 소식 탭)으로 부르는 곳(people.js 등)은 팔로워로 */
+  탭 = !t || t === 'feed' ? 'followers' : t;
+  바로판 = !!들어간판[탭];
   const 판 = $('friendview');
   판.classList.remove('hide');
   판.scrollTop = 0;
   if (history.state?.t2 !== 'friend') history.pushState({ t2:'friend' }, '');
   찾기비우기();
   판.classList.remove('frs');
+  if ($('fr_filter')) $('fr_filter').value = '';
+  머리글();
   탭칠하기();
   loadSocialCounts();       /* 탭 옆 숫자(b800) — 기다리지 않습니다 */
   /* 프로필의 「친구 찾기」(b791) — 찾기 칸에 커서를 둡니다. ⚠ 아래 await «전»에
      해야 아이폰이 키보드를 올립니다(누른 그 순간 안이어야 합니다). */
+  /* 프로필의 「친구 찾기」로 왔으면 찾기 화면만 쓰고, 닫으면 프로필로 바로 돌아갑니다(b859, 사용자: 「친구 추가 버튼 누르고
+     끄면 다시 프로필 탭이 나와야하는거아냐?」). 그래서 찾기 칸을 위한 history 칸을 따로 안 쌓습니다. */
+  바로찾기 = !!옵션.찾기;
   if (옵션.찾기) 찾기열기();
   await 그리기();
 }
 
 export function closeFriends(fromPop){
   /* 찾기 화면(b858)이 열려 있으면 그것만 닫습니다 — 뒤로가기도 「취소」처럼 친구 화면으로. */
-  if (찾기중()) return 찾기닫기(fromPop);
+  /* ⚠ 단, 프로필 「친구 찾기」로 바로 들어왔으면(바로찾기) 친구 화면까지 통째로 닫습니다 — 그 사람은 친구 목록을 안 봤습니다. */
+  if (찾기중() && !바로찾기) return 찾기닫기(fromPop);
+  /* 들어간 판(요청 · 맞팔로우 안 한 사람)이면 목록으로 한 겹만 — 단 그 판으로 바로 열렸으면 통째로 닫습니다. */
+  if (들어간판[탭] && !바로판){
+    if (!fromPop && history.state?.t2 === 'frsub'){ history.back(); return; }
+    탭 = 'followers'; 머리글(); 그리기();
+    return;
+  }
   if (!fromPop && history.state?.t2 === 'friend'){ history.back(); return; }
   $('friendview')?.classList.add('hide');
+  $('friendview')?.classList.remove('frs', 'frsub');
+  바로찾기 = false; 바로판 = false;
   차례++;
   loadSocialCounts();         /* 요청에 답했으면 점이 바뀌었습니다 */
 }
@@ -80,6 +118,8 @@ export async function loadSocialCounts(){
   const h = r && !r.error ? r.data : null;
   $('friendrow')?.classList.toggle('hide', !h);
   if (!h) return;
+  내이름 = h.name || 내이름;
+  if (!들어간판[탭] && $('fr_title')) $('fr_title').textContent = 내이름 || '친구';
   $('fr_followers').textContent = h.followers ?? 0;
   $('fr_following').textContent = h.following ?? 0;
   /* 친구 화면 탭 옆 숫자(b800, 인스타처럼) — 같은 수를 두 곳에 씁니다. */
@@ -96,7 +136,8 @@ export async function loadSocialCounts(){
   }
   const 요청 = (h.requests || 0) > 0;
   $('frdot')?.classList.toggle('hide', !요청);
-  $('frreqdot')?.classList.toggle('hide', !요청);
+  /* ♡(기록 탭) 빨간 점에도 알립니다(b859) — activity.js 를 읽으면 고리라 사건으로 */
+  window.dispatchEvent(new CustomEvent('t2:heartdot', { detail: { 요청 } }));
 }
 
 /* 링크로 들어온 사람(?p=코드) — app.js 가 로그인 뒤에 부릅니다 */
@@ -119,7 +160,7 @@ function 탭칠하기(){
    `둘째` 는 **이미 esc 한 HTML** 로 받습니다(시간·별 같은 꾸밈이 들어가서). */
 function 사람줄(p, 오른쪽 = '', 둘째 = ''){
   const 이름 = p.name || '여행자';
-  return `<div class="frline">
+  return `<div class="frline" data-name="${esc(이름)}">
     <button class="ghost frwho" data-person="${esc(p.user_id)}">
       ${avatarImg(p.avatar_url, p.user_id, 이름,
                   'width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none', 'thumb')}
@@ -138,42 +179,71 @@ async function 그리기(){
   /* ── 팔로잉 · 팔로워(b800) ── 목록 셋을 한 번에 받아 견줍니다: 「서로 팔로우해요」 · 「맞팔로우」 ·
      「요청됨」은 서버가 줄마다 안 알려줘서, 내가 팔로우하는 사람(following)·보낸 요청(sent)과
      맞춰 봅니다. 세 번 부르지만 셋 다 가벼운 목록입니다. */
-  if (탭 === 'following' || 탭 === 'followers'){
-    const [a, b, s] = await Promise.all([
+  if (탭 === 'following' || 탭 === 'followers' || 탭 === 'notback'){
+    const [a, b, s, q] = await Promise.all([
       netTimeout(sb.rpc('follow_people', { p_kind: 'following' })),
       netTimeout(sb.rpc('follow_people', { p_kind: 'followers' })),
       netTimeout(sb.rpc('follow_people', { p_kind: 'sent' })),
+      netTimeout(sb.rpc('follow_people', { p_kind: 'requests' })),
     ]);
     if (이번 !== 차례) return;
     const 틀림 = [a, b, s].find(x => !x || x.error);
     if (틀림) return 실패(틀림?.error);
-    const 팔로잉 = a.data || [], 팔로워 = b.data || [], 보냄 = s.data || [];
+    const 정렬하기 = l => 정렬 === '이름' ? [...l].sort((x, y) => (x.name || '').localeCompare(y.name || '', 'ko')) : l;
+    const 팔로잉 = 정렬하기(a.data || []), 팔로워 = 정렬하기(b.data || []), 보냄 = s.data || [], 받은 = q?.data || [];
     const 내가 = new Set(팔로잉.map(p => p.user_id));
     const 나를 = new Set(팔로워.map(p => p.user_id));
     const 요청중 = new Set(보냄.map(p => p.user_id));
     const 단추 = (fa, id, 글, 진하게) =>
       `<button class="frbtn${진하게 ? ' ac' : ''}" data-fa="${fa}" data-id="${esc(id)}">${글}</button>`;
+    /* × — 팔로워에서 빼기(인스타처럼 오른쪽 끝). 한 번 더 눌러 정합니다(아래 한번더말). */
+    const 빼기 = id => `<button class="frx" data-fa="remove" data-id="${esc(id)}" aria-label="팔로워에서 빼기">×</button>`;
+    /* 「팔로우 요청 ›」·「맞팔로우하지 않는 사람 ›」 — 사진 둘 겹침 + 이름 외 N명 */
+    const 묶음줄 = (목록, 제목, 판, 점) => {
+      const [x, y] = 목록;
+      return `<button type="button" class="frgroup" data-frsub="${판}">
+        <span class="actav two">${avatarImg(x.avatar_url, x.user_id, x.name, 'width:32px;height:32px;border-radius:50%;object-fit:cover', 'thumb')}${
+          y ? avatarImg(y.avatar_url, y.user_id, y.name, 'width:32px;height:32px;border-radius:50%;object-fit:cover', 'thumb') : ''}</span>
+        <span class="t"><b>${제목}</b><span>${esc(x.name || '여행자')}님${목록.length > 1 ? ` 외 ${목록.length - 1}명` : ''}</span></span>
+        ${점 ? '<i class="actblue" aria-hidden="true"></i>' : ''}<span class="actgo" aria-hidden="true">›</span></button>`;
+    };
+    const 정렬줄 = `<button type="button" class="frsort" data-frsort>정렬 기준 <b>${정렬 === '이름' ? '이름 순' : '기본'}</b>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5"/></svg></button>`;
+    const 팔로워줄 = p => {
+      const 맞 = 내가.has(p.user_id);
+      const 앞 = 맞 ? 단추('unfollow', p.user_id, '팔로잉')
+               : 요청중.has(p.user_id) ? 단추('cancel', p.user_id, '요청됨')
+               : 단추('followback', p.user_id, '맞팔로우', true);
+      return 사람줄(p, 앞 + 빼기(p.user_id), 맞 ? '서로 팔로우해요' : '나를 팔로우해요');
+    };
 
     if (탭 === 'following'){
       칸.innerHTML = (팔로잉.length || 보냄.length)
-        ? 팔로잉.map(p => 사람줄(p, 단추('unfollow', p.user_id, '팔로잉'),
+        ? (팔로잉.length > 1 ? 정렬줄 : '') +
+          팔로잉.map(p => 사람줄(p, 단추('unfollow', p.user_id, '팔로잉'),
                                 나를.has(p.user_id) ? '서로 팔로우해요' : '')).join('') +
           (보냄.length ? `<div class="frsec">보낸 요청</div>` + 보냄.map(p =>
             사람줄(p, 단추('cancel', p.user_id, '요청 취소'), '승인을 기다려요')).join('') : '')
         : 빈칸('아직 팔로우한 사람이 없어요.',
-               '도시 화면 한줄평의 이름을 누르거나, 위에서 이름으로 찾거나, 친구에게 링크를 받아 보세요.');
+               '오른쪽 위 사람+ 로 이름을 찾거나, 도시 화면 한줄평의 이름을 누르거나, 친구에게 링크를 받아 보세요.');
+      걸러내기();
       return;
     }
-    /* 팔로워 — 내가 아직 안 한 사람에겐 「맞팔로우」(요청해 둔 사람은 「요청됨」, 누르면 거둡니다). */
-    칸.innerHTML = 팔로워.length
-      ? 팔로워.map(p => {
-          const 맞 = 내가.has(p.user_id);
-          const 앞 = 맞 ? '' : 요청중.has(p.user_id) ? 단추('cancel', p.user_id, '요청됨')
-                                                    : 단추('followback', p.user_id, '맞팔로우', true);
-          return 사람줄(p, 앞 + 단추('remove', p.user_id, '삭제'),
-                        맞 ? '서로 팔로우해요' : '나를 팔로우해요');
-        }).join('')
-      : 빈칸('아직 나를 팔로우한 사람이 없어요.', '프로필의 「프로필 공유」로 친구에게 링크를 보내 보세요.');
+    const 안한 = 팔로워.filter(p => !내가.has(p.user_id) && !요청중.has(p.user_id));
+    if (탭 === 'notback'){
+      칸.innerHTML = 안한.length ? 안한.map(팔로워줄).join('')
+        : 빈칸('모두 맞팔로우했어요.', '');
+      걸러내기();
+      return;
+    }
+    /* 팔로워 — 맨 위 묶음 줄 둘, 정렬, 목록 */
+    칸.innerHTML = (받은.length ? 묶음줄(받은, '팔로우 요청', 'requests', true) : '') +
+      (안한.length && 팔로워.length > 1 ? `<div class="frsec">카테고리</div>` + 묶음줄(안한, '내가 맞팔로우하지 않는 사람', 'notback', false) : '') +
+      (팔로워.length
+        ? (팔로워.length > 1 ? 정렬줄 : '') + 팔로워.map(팔로워줄).join('')
+        : 빈칸('아직 나를 팔로우한 사람이 없어요.', '프로필의 「프로필 공유」로 친구에게 링크를 보내 보세요.'));
+    걸러내기();
     return;
   }
 
@@ -193,6 +263,18 @@ async function 그리기(){
     : 빈칸('받은 요청이 없어요.', '');
 }
 
+/* 목록 안에서 이름 거르기(b859, 인스타 팔로워 화면의 검색칸) — 띄어쓰기·대소문자 무시, 이름 어디든 들어 있으면.
+   서버에 안 묻습니다 — 이미 받은 목록을 숨기기만(새 사람 찾기는 사람+ 단추의 찾기 화면). */
+const 키 = s => String(s || '').replace(/\s+/g, '').toLowerCase();
+function 걸러내기(){
+  const q = 키($('fr_filter')?.value);
+  const 줄들 = document.querySelectorAll('#fr_list .frline[data-name]');
+  줄들.forEach(l => l.classList.toggle('hide', !!q && !키(l.dataset.name).includes(q)));
+  /* 거르는 동안엔 묶음 줄·정렬 줄·머리는 숨깁니다 — 사람만 남게 */
+  document.querySelectorAll('#fr_list .frgroup, #fr_list .frsort, #fr_list .frsec').forEach(x => x.classList.toggle('hide', !!q));
+}
+$('fr_filter')?.addEventListener('input', 걸러내기);
+
 function 빈칸(말, 도움){
   return emptyDo(말, '', '', 도움);   /* 빈 화면은 emptyDo 하나로(b363 규칙) */
 }
@@ -201,7 +283,7 @@ function 실패(err){
 }
 
 /* ── 소식 ──────────────────────────────────────────────────────────── */
-function 언제(at){
+export function 언제(at){
   const t = Date.parse(at);
   const s = (Date.now() - t) / 1000;
   if (s < 60) return '방금';
@@ -212,7 +294,7 @@ function 언제(at){
   const d = new Date(t);
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
-function 묶기(rows){
+export function 묶기(rows){
   const out = [];
   for (const r of rows){
     const g = out[out.length - 1];
@@ -233,7 +315,7 @@ const 도시 = id => (cities || []).find(c => c.id === id);
  * ⚠ 누르면: 왼쪽(사진·글)은 그 사람, 오른쪽 사진은 그 도시(도시 화면이 이 판을 가리고 뜹니다 — city.js 의 겹).
  * ⚠ 별은 칩처럼 크게 안 씁니다 — 둘째 줄 안의 작은 글자(.frst)입니다. */
 const 별글 = v => v != null ? `<i class="frst">★${Number(v).toFixed(1).replace(/\.0$/, '')}</i>` : '';
-function 소식줄(g){
+export function 소식줄(g){
   const 이름 = g.name || '여행자';
   let 말, 둘째 = '', 대표;
   if (g.kind === 'comment'){
@@ -270,7 +352,7 @@ function 소식줄(g){
   </div>`;
 }
 /* 시간 머리(인스타 알림처럼) — 오늘 · 이번 주(7일) · 이번 달(30일) · 이전 활동. */
-function 구간(at){
+export function 구간(at){
   const t = new Date(Date.parse(at)), 지금 = new Date();
   if (t.toDateString() === 지금.toDateString()) return '오늘';
   const 일 = (지금 - t) / 864e5;
@@ -354,6 +436,10 @@ $('friendview')?.addEventListener('click', async e => {
 
   const t = e.target.closest('#fr_tabs [data-fr]');
   if (t){ 탭 = t.dataset.fr; 탭칠하기(); 그리기(); return; }
+  /* 묶음 줄(요청 · 맞팔로우 안 한 사람) → 들어간 판 · 정렬 바꾸기(b859) */
+  const 속 = e.target.closest('[data-frsub]');
+  if (속) return 판열기(속.dataset.frsub);
+  if (e.target.closest('[data-frsort]')){ 정렬 = 정렬 === '이름' ? '기본' : '이름'; return 그리기(); }
 
   if (e.target.closest('#friendback')) return closeFriends();
 });
@@ -365,6 +451,7 @@ $('friendview')?.addEventListener('click', async e => {
  * ⚠ 서버는 «앞글자가 같으면» 20명까지(db/121). 늦게 온 답이 새 답을 덮지 않게 차례(찾기차례)를 셉니다.
  * ⚠ 열 때 focus 는 «누른 그 순간» 안에서 — 아이폰이 키보드를 올리는 조건입니다(await 앞). */
 let 찾기차례 = 0, 찾기틈 = null;
+let 바로찾기 = false;      /* 프로필 「친구 찾기」로 바로 들어왔나(b859) */
 const 찾기중 = () => $('friendview')?.classList.contains('frs') === true;
 function 찾기비우기(){
   clearTimeout(찾기틈); 찾기차례++;
@@ -378,10 +465,11 @@ function 찾기열기(){
   찾기비우기();
   $('friendview').classList.add('frs');
   $('friendview').scrollTop = 0;
-  history.pushState({ t2:'frsearch' }, '');
+  if (!바로찾기) history.pushState({ t2:'frsearch' }, '');
   $('fr_q').focus();
 }
 function 찾기닫기(fromPop){
+  if (바로찾기) return closeFriends(fromPop);    /* 「취소」 — 프로필로 */
   if (!fromPop && history.state?.t2 === 'frsearch'){ history.back(); return; }
   $('fr_q')?.blur();
   찾기비우기();
