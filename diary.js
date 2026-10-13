@@ -21,11 +21,11 @@
  *   `visited_on` 칸은 b536 에 만들었다가 화면을 걷어서 지금 비어 있습니다.
  *   나중에 다녀온 날짜를 다시 받게 되면 그때 이 순서를 바꾸십시오.
  */
-import { $, esc, toTop, coverDeck, backLabel, emptyDo } from './dom.js?v=b861';
-import { sb } from './db.js?v=b861';
-import { cities, countryName, cityCountry, search } from './cities.js?v=b861';
-import { starsRo } from './stars.js?v=b861';
-import { openPhotos } from './photoview.js?v=b861';
+import { $, esc, toTop, coverDeck, backLabel, emptyDo } from './dom.js?v=b862';
+import { sb } from './db.js?v=b862';
+import { cities, countryName, cityCountry, search } from './cities.js?v=b862';
+import { starsRo } from './stars.js?v=b862';
+import { openPhotos } from './photoview.js?v=b862';
 
 let ctx = { me: () => null, loadCities: async () => {}, openCity: () => {} };
 export function setDiaryCtx(o){ ctx = { ...ctx, ...o }; }
@@ -314,8 +314,8 @@ $('diaryback')?.addEventListener('click', () => closeDiary());
 $('diarypane')?.addEventListener('click', e => {
   const b = e.target.closest('[data-dgedit]');
   if (!b) return;
-  closeDiary();
-  ctx.openCity(b.dataset.dgedit);
+  /* b862 — 일기장을 닫지 않고 그 위에 「일기 쓰기 화면」을 엽니다. 뒤로 가면 일기장으로 돌아옵니다(city.js 덱밖판). */
+  ctx.openCity(b.dataset.dgedit, { 일기: true });
 });
 
 /* ══ 「＋ 새 일기」 ── 도시를 고르는 칸(b759) ════════════════════════════
@@ -390,8 +390,7 @@ $('dghits')?.addEventListener('click', async e => {
   if (!b) return;
   const id = b.dataset.dgpick;
   고르개(false);
-  closeDiary();
-  await ctx.openCity(id);
+  await ctx.openCity(id, { 일기: true });   /* b862 — 일기장 위에 일기 쓰기 화면(닫으면 일기장으로) */
   /* ⚠⚠ **일기 칸에 바로 손이 가게 합니다.** 안 그러면 도시 화면 «맨 위»에
      떨어져서 「일기 쓰러 왔는데 또 찾아야」가 됩니다 — 이 기능이 없애려던
      번거로움이 그대로 남습니다.
@@ -405,3 +404,6 @@ $('dghits')?.addEventListener('click', async e => {
     칸.focus({ preventScroll:true });
   }, 60);
 });
+
+/* 일기 쓰기 화면(city.js, b862)에서 돌아왔을 때 — 방금 쓴 글로 다시 폅니다. history 가 이미 'diary' 라 새로 쌓지 않습니다. */
+addEventListener('t2:diaryagain', () => { 고를거리 = null; openDiary(); });

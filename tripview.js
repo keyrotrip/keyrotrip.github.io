@@ -17,42 +17,42 @@
  * 여행 → 도시 → 지도처럼 쌓인 것을 한 번에 걷어내야 목록이 제대로 보입니다.
  *
  * 층: 아래층과 이미 떼어낸 조각 여럿을 씁니다. 그쪽은 이 파일을 안 부릅니다. */
-import { $, esc, toast, coverDeck } from './dom.js?v=b861';
-import { photosOpen, closePhotos } from './photoview.js?v=b861';
-import { cropOpen, closeCrop } from './crop.js?v=b861';
-import { sb } from './db.js?v=b861';
-import { fail, netTimeout, drawOffbar, NOROW } from './net.js?v=b861';
-import { D1, asDate, ymd, dayLabel, todayYmd } from './calc.js?v=b861';
+import { $, esc, toast, coverDeck } from './dom.js?v=b862';
+import { photosOpen, closePhotos } from './photoview.js?v=b862';
+import { cropOpen, closeCrop } from './crop.js?v=b862';
+import { sb } from './db.js?v=b862';
+import { fail, netTimeout, drawOffbar, NOROW } from './net.js?v=b862';
+import { D1, asDate, ymd, dayLabel, todayYmd } from './calc.js?v=b862';
 import { trip, plans, legs, pickedDay, catFilter,
-         setPickedDay, setPlans, setCatFilter, clearTrip } from './trip.js?v=b861';
-import { drawCats, catsOpen, setCatsOpen } from './planline.js?v=b861';
-import { drawPlanMap } from './planmap.js?v=b861';
-import { drawPlans } from './planview.js?v=b861';
-import { legIn, fillCityList } from './legs.js?v=b861';
-import { inTrip } from './tabs.js?v=b861';
-import { closeAi } from './aiscreen.js?v=b861';
-import { closeDraft } from './draft.js?v=b861';
-import { closeReview } from './home.js?v=b861';
+         setPickedDay, setPlans, setCatFilter, clearTrip } from './trip.js?v=b862';
+import { drawCats, catsOpen, setCatsOpen } from './planline.js?v=b862';
+import { drawPlanMap } from './planmap.js?v=b862';
+import { drawPlans } from './planview.js?v=b862';
+import { legIn, fillCityList } from './legs.js?v=b862';
+import { inTrip } from './tabs.js?v=b862';
+import { closeAi } from './aiscreen.js?v=b862';
+import { closeDraft } from './draft.js?v=b862';
+import { closeReview } from './home.js?v=b862';
 /* 연속 평가(b409). 기록 탭을 통째로 덮으므로 뒤로가기가 여기를 먼저 닫습니다. */
-import { closeSpree } from './spree.js?v=b861';
-import { closeCity, isCityOpen } from './city.js?v=b861';
-import { closeMap, closeCountries } from './map.js?v=b861';
-import { closePersona } from './persona.js?v=b861';
+import { closeSpree } from './spree.js?v=b862';
+import { closeCity, isCityOpen } from './city.js?v=b862';
+import { closeMap, closeCountries } from './map.js?v=b862';
+import { closePersona } from './persona.js?v=b862';
 /* 지구본 나라 카드(b555). 뒤로가기 사슬이 이것부터 닫습니다. */
-import { 시트닫기 } from './home.js?v=b861';
-import { closeShelf, 거르개닫기 } from './shelf.js?v=b861';
-import { 나라거르개닫기 } from './rating.js?v=b861';
-import { closeDiary } from './diary.js?v=b861';
-import { closeDocs } from './prep.js?v=b861';
-import { is16Open, is16Grid, close16, close16Grid } from './p16.js?v=b861';
-import { isPersonOpen, personBack } from './people.js?v=b861';
-import { isFriendsOpen, closeFriends } from './friends.js?v=b861';
+import { 시트닫기 } from './home.js?v=b862';
+import { closeShelf, 거르개닫기 } from './shelf.js?v=b862';
+import { 나라거르개닫기 } from './rating.js?v=b862';
+import { closeDiary } from './diary.js?v=b862';
+import { closeDocs } from './prep.js?v=b862';
+import { is16Open, is16Grid, close16, close16Grid } from './p16.js?v=b862';
+import { isPersonOpen, personBack } from './people.js?v=b862';
+import { isFriendsOpen, closeFriends } from './friends.js?v=b862';
 /* 후기 화면(b858) — 사람 화면 아래 · 친구 화면 위의 덮는 층. */
-import { isCityRevOpen, closeCityRev } from './cityrev.js?v=b861';
-import { isActivityOpen, closeActivity } from './activity.js?v=b861';
-import { isSetSubOpen, closeSetSub } from './setnav.js?v=b861';
+import { isCityRevOpen, closeCityRev } from './cityrev.js?v=b862';
+import { isActivityOpen, closeActivity } from './activity.js?v=b862';
+import { isSetSubOpen, closeSetSub } from './setnav.js?v=b862';
 /* 다시 간 도시 시트(성향 v2) — 분석 탭 위에 뜨는 시트라 사슬 맨 위쪽에서 닫습니다. */
-import { isVisitsOpen, closeVisits } from './visits.js?v=b861';
+import { isVisitsOpen, closeVisits } from './visits.js?v=b862';
 
 let ctx = { appTab: () => '', showApp: () => {},
             openTrip: async () => {}, drawToday: () => {} };

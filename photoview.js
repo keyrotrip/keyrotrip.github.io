@@ -14,7 +14,7 @@
  *   그것부터 닫아야 합니다. `tripview.js` 의 popstate 사슬 **맨 위**에
  *   있어야 합니다 — 나중에 열린 것이 화면 위에 있으니까요.
  */
-import { $, esc } from './dom.js?v=b861';
+import { $, esc } from './dom.js?v=b862';
 
 let 목록 = [], 지금 = 0, 판 = null;
 

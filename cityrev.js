@@ -12,11 +12,11 @@
  *   bottom:0 은 아이폰 홈 화면 앱에서 키보드 뒤로 갑니다([[ios-keyboard-sheet]]).
  * ⚠ 좋아요·답글 단추는 도시 화면 줄에도 있습니다 — 누르기는 document 에 한 번 답니다(아래).
  */
-import { $, esc, toast, avatarImg } from './dom.js?v=b861';
-import { sb } from './db.js?v=b861';
-import { netTimeout } from './net.js?v=b861';
-import { cities, cityCountry } from './cities.js?v=b861';
-import { arm } from './ui.js?v=b861';
+import { $, esc, toast, avatarImg } from './dom.js?v=b862';
+import { sb } from './db.js?v=b862';
+import { netTimeout } from './net.js?v=b862';
+import { cities, cityCountry } from './cities.js?v=b862';
+import { arm } from './ui.js?v=b862';
 
 let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {} };
 export function setCityRevCtx(o){ ctx = { ...ctx, ...o }; }
@@ -302,7 +302,8 @@ $('crvsheet')?.addEventListener('click', async e => {
   if (b.dataset.rs === 'edit'){
     시트.classList.add('hide');
     도시로(m.city);
-    setTimeout(() => { const n = $('cv_note'); if (n){ n.scrollIntoView({ block: 'center' }); n.focus(); } }, 500);
+    setTimeout(() => { if ($('cv_mine')?.classList.contains('hide') === false) $('cv_mineedit')?.click();   /* 한 줄로 접혀 있으면 칸부터 엶(b862) */
+      const n = $('cv_note'); if (n){ n.scrollIntoView({ block: 'center' }); n.focus(); } }, 500);
   } else if (b.dataset.rs === 'del'){
     if (b.dataset.armed !== '1'){ arm(b, '한 번 더 누르면 지워요'); return; }
     시트.classList.add('hide');

@@ -13,17 +13,17 @@
  * 자료를 건드리므로 여기로 가져오면 안 됩니다.
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
-import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b861';
-import { sb } from './db.js?v=b861';
-import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b861';
-import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b861';
-import { starHtml, starValue } from './stars.js?v=b861';
-import { localTime } from './calc.js?v=b861';
-import { fail, netIsDown } from './net.js?v=b861';
+import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b862';
+import { sb } from './db.js?v=b862';
+import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b862';
+import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b862';
+import { starHtml, starValue } from './stars.js?v=b862';
+import { localTime } from './calc.js?v=b862';
+import { fail, netIsDown } from './net.js?v=b862';
 /* 후기 줄·후기 화면(b858). cityrev.js 는 이 파일을 안 읽습니다(도시 열기는 ctx 로) — 고리 없음. */
-import { revRowsHtml } from './cityrev.js?v=b861';
+import { revRowsHtml } from './cityrev.js?v=b862';
 /* 「○○ 맛집 추천」 칸(b861, db/124) — cmtask.js 는 이 파일을 안 읽습니다(고리 없음). */
-import { foodsHtml } from './cmtask.js?v=b861';
+import { foodsHtml } from './cmtask.js?v=b862';
 
 /* 지금 열려 있는 도시. **app.js 에 있던 것을 여기로 옮겼습니다(b329)** —
    여닫는 것은 이 파일이 하는데 변수만 저쪽에 있어서, 떼어낸 뒤
@@ -70,6 +70,7 @@ const 덮개 = ['friendview', 'whoview', 'actview'];   /* actview — ♡ 알림
  *   가려져 있어서 **빈 목록으로 덮였습니다** — 보관함에서 도시를 열고 별을
  *   누른 뒤 뒤로 가면 보관함이 아니라 프로필로 떨어졌습니다. */
 let 층 = [];
+let 일기모드 = false;        /* b862 — 아래 openCity 의 「일기 쓰기 화면」 */
 
 let cityOpen = null;
 export const isCityOpen = () => cityOpen != null;
@@ -158,6 +159,13 @@ export async function openCity(id, 옵션 = {}){
   else if (층.length) 층[층.length - 1].id = id;     /* 다시 그리기 — 겹은 그대로 */
   else 층 = [{ id, 가린: [] }];
   cityOpen = c;
+  /* 일기 쓰기 화면(b862) — 일기장에서 열 때만. 도시 화면에는 일기 칸이 없습니다(app.css #cityview.cvjmode).
+     다시 그리기는 그대로 두고, 위 겹을 닫고 돌아올 때는 그 겹에 적어 둔 대로. */
+  if (되돌림) 일기모드 = !!층[층.length - 1]?.일기;
+  else if (!다시) 일기모드 = !!옵션.일기;
+  if (층.length) 층[층.length - 1].일기 = 일기모드;
+  $('cityview').classList.toggle('cvjmode', 일기모드);
+  $('cv_jtitle').textContent = 일기모드 ? `${c.name} 일기` : '내 일기';
   if (!되돌림 && !다시 && history.state?.t2 !== 'city') history.pushState({ t2:'city' }, '');
 
   /* 홈에서도 지도에서도 도시를 열 수 있습니다 — 열린 탭이 뭐든 다 덮어야 합니다.
@@ -222,8 +230,11 @@ export async function openCity(id, 옵션 = {}){
   $('cv_note').value = r.comment || '';
   $('cv_journal').value = r.journal || '';
   /* 위 `쓰던한줄`·`쓰던일기` 주석 참고 — 저장 안 한 글을 되돌려 놓습니다. */
-  if (쓰던한줄 != null && 쓰던한줄.trim() !== (r.comment || '').trim())
+  if (!같은곳) 한줄고침 = false;
+  if (쓰던한줄 != null && 쓰던한줄.trim() !== (r.comment || '').trim()){
     $('cv_note').value = 쓰던한줄;
+    한줄고침 = true;                     /* 고치던 글이 있으면 칸을 연 채로 */
+  }
   if (쓰던일기 != null && 쓰던일기.trim() !== (r.journal || '').trim())
     $('cv_journal').value = 쓰던일기;
   /* 내 기록을 끝내 못 받았으면(비행기모드) 한줄평·일기를 잠급니다(b797 — 위 openCity 머리).
@@ -232,6 +243,7 @@ export async function openCity(id, 옵션 = {}){
   $('cv_note').readOnly = 잠금; $('cv_journal').readOnly = 잠금;
   if (잠금 && !되돌림 && !다시) toast('연결이 없어 내 기록을 못 받았어요 — 한줄평·일기는 연결되면 쓸 수 있어요');
   cvNoteDirty();
+  내한줄보기();
   사진불러오기();
   일기바뀜();
 
@@ -352,6 +364,8 @@ export function closeCity(fromPop){
      덮개는 덱 위에 뜬 판이라, 덱이 없으면 덮개를 닫는 순간 빈 화면입니다. */
   if (위.가린.length){
     되살리기(위.가린);
+    /* 일기장에서 일기를 쓰고 돌아옴(b862) — 방금 쓴 글이 일기장에 보이게 다시 폅니다(diary.js). */
+    if (위.가린.some(x => x.p === 'diarypane')) dispatchEvent(new Event('t2:diaryagain'));
     if (위.가린.some(x => !덮개.includes(x.p))) return;
   }
   /* 열었던 탭으로 돌아갑니다 — 덱은 그 칸에 그대로 서 있으므로 되살리기만
@@ -411,6 +425,38 @@ function cvNoteDirty(){
      「막혀 있으니 아무 글자나 괜찮다」가 아닙니다. */
   b.textContent = now ? '등록' : (saved ? '지우기' : '등록');
 }
+/* 내 한줄평이 있으면 칸 대신 「내 한줄평 · 수정 · 삭제」 한 줄(b862, 왓챠처럼 — 사용자: 「한줄평 등록했는데 왜 그대로 남아있냐」).
+   칸에 저장된 글이 그대로 남아 있어서 «안 올라간 것»처럼 읽혔습니다. 「수정」을 눌러야 칸이 열립니다. */
+let 한줄고침 = false;
+function 내한줄보기(){
+  const saved = (myRates[cityOpen?.id]?.comment || '').trim();
+  const 한줄로 = !!saved && !한줄고침;
+  $('cv_mine').classList.toggle('hide', !한줄로);
+  $('cv_noteedit').classList.toggle('hide', 한줄로);
+  $('cv_minet').textContent = saved;
+  $('cv_cancel').classList.toggle('hide', !saved);       /* 고치다 그만두기 — 저장된 글이 있을 때만 */
+  const 잠금 = $('cv_note').readOnly;
+  $('cv_mineedit').disabled = 잠금; $('cv_minedel').disabled = 잠금;
+  const d = $('cv_minedel'); d.dataset.armed = ''; d.textContent = '삭제'; d.style.fontWeight = '';
+}
+export function 한줄고치기(){ 한줄고침 = true; 내한줄보기(); const n = $('cv_note'); n.focus(); n.setSelectionRange?.(n.value.length, n.value.length); }
+$('cv_mineedit').addEventListener('click', 한줄고치기);
+$('cv_cancel').addEventListener('click', () => {
+  $('cv_note').value = myRates[cityOpen?.id]?.comment || '';
+  한줄고침 = false; cvNoteDirty(); 내한줄보기();
+});
+$('cv_minedel').addEventListener('click', async () => {
+  const b = $('cv_minedel'), id = cityOpen?.id; if (!id) return;
+  if (b.dataset.armed !== '1'){ b.dataset.armed = '1'; b.textContent = '한 번 더 누르면 지워요'; b.style.fontWeight = '600'; return; }
+  b.disabled = true;
+  const 됐나 = await ctx.saveRate(id, { comment: null });
+  b.disabled = false;
+  if (됐나 === false){ toast('지우지 못했어요. 잠시 뒤 다시 해주세요.'); return; }
+  toast('한줄평을 지웠어요');
+  if (cityOpen?.id !== id) return;
+  $('cv_note').value = ''; 한줄고침 = false; cvNoteDirty();
+  await openCity(id, { 다시: true });
+});
 $('cv_note').addEventListener('input', cvNoteDirty);
 $('cv_save').addEventListener('click', async () => {
   const v = $('cv_note').value.trim() || null;
@@ -435,6 +481,7 @@ $('cv_save').addEventListener('click', async () => {
   }
   toast(v ? '한줄평을 등록했어요' : '한줄평을 지웠어요');
   if (cityOpen?.id !== id) return;            /* 저장하는 동안 닫혔다 */
+  한줄고침 = false;                             /* 등록했으면 한 줄로 접습니다(b862) */
   cvNoteDirty();
   /* 남들 한줄평 목록에 내 것이 바로 끼어들어야 남긴 느낌이 납니다. */
   await openCity(id, { 다시: true });
@@ -467,7 +514,7 @@ function 일기바뀜(){
      아니라 원고지가 됩니다. */
   const 남음 = 4000 - 칸.value.length;
   $('cv_jnote').textContent =
-    남음 <= 200 ? `${남음}자 남았어요` : (적힌 ? '' : '나중에 일기장에서 모아 봐요.');
+    남음 <= 200 ? `${남음}자 남았어요` : (적힌 ? '' : '나만 보는 일기예요.');
   키맞추기();
 }
 
@@ -647,3 +694,6 @@ $('cv_jsave')?.addEventListener('click', async () => {
   toast(v ? '일기를 저장했어요' : '일기를 지웠어요');
   일기바뀜();
 });
+
+/* 일기 쓰기 화면의 ‹ — 뒤로 한 번이면 일기장(일기장은 덱 밖 판이라 closeCity 가 되살립니다) */
+$('cv_jback')?.addEventListener('click', () => history.back());
