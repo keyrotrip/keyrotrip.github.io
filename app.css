@@ -5194,6 +5194,10 @@ body.readonly .primary{ opacity:.5; }
 /* 도시·나라·별은 문장에 딸린 «서명»입니다. 문장보다 커지면 안 됩니다. */
 .cmt .rrow .t b{ font-size:var(--f-lg); font-weight:600; color:var(--ink-48); }
 .cmt .rrow .st{ font-size:min(var(--f-2xl), 5.2vw); }
+/* 보관함 「맛집 추천」(b873) — 가게 이름이 주인공이라 흐리지 않습니다. 줄 전체를 누릅니다. */
+.cmt.fdmy{ cursor:pointer; }
+.cmt.fdmy .rrow .t b{ color:var(--ink); }
+.fdmeta{ margin-top:8px; font-size:var(--f-sm); color:var(--ink-48); }
 
 
 /* ── 지구본(b516 → b519 에 분석 탭 발자국 카드로 옮김) ─────────────────

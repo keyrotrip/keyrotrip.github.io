@@ -15,27 +15,28 @@
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
 import { $, esc, toast, emptyDo, josa, toTop, coverDeck, backLabel,
-         flagOf, flagOk, flagSprite } from './dom.js?v=b872';
-import { openCity } from './city.js?v=b872';
-import { sb } from './db.js?v=b872';
-import { cities, countryName, cityCountry, onlyCho } from './cities.js?v=b872';
-import { myRates, cityStat, visited, avgTail } from './rate.js?v=b872';
-import { starHtml, paintStars, starValue, 별갈래, BAND_NAME } from './stars.js?v=b872';
-import { fail } from './net.js?v=b872';
-import { arm } from './ui.js?v=b872';
+         flagOf, flagOk, flagSprite } from './dom.js?v=b873';
+import { openCity } from './city.js?v=b873';
+import { sb } from './db.js?v=b873';
+import { cities, countryName, cityCountry, onlyCho } from './cities.js?v=b873';
+import { myRates, cityStat, visited, avgTail } from './rate.js?v=b873';
+import { starHtml, paintStars, starValue, 별갈래, BAND_NAME } from './stars.js?v=b873';
+import { fail } from './net.js?v=b873';
+import { arm } from './ui.js?v=b873';
 /* 깃발 벽의 공유는 지도·나라 목록과 **같은 카드**입니다(b649) — 셋 다
    「몇 개국 다녀왔다」를 말합니다. map.js 가 만들고 여기서 부르기만
    합니다. ⚠ map.js 는 shelf.js 를 안 가져오므로 고리가 안 생깁니다. */
-import { 발자국스펙 } from './map.js?v=b872';
-import { shareCard } from './card.js?v=b872';
-import { todayYmd } from './calc.js?v=b872';
+import { 발자국스펙 } from './map.js?v=b873';
+import { shareCard } from './card.js?v=b873';
+import { todayYmd } from './calc.js?v=b873';
 /* ⚠ `flagOf`·`flagOk` 는 **dom.js 것**입니다(위 줄) — un.js 에 또 만들었다가
      걷었습니다. `UN_CONT`·`UN_TOTAL` 도 un.js 가 «세어서» 줍니다. map.js 를
      끌어오지 않는 이유가 이것입니다 — 195 라는 수를 두 곳에서 적으면
      언젠가 갈라집니다. 두 곳이 같은지는 un.js 의 `검산()` 이 봅니다. */
-import { UN_CODES, UN_TOTAL } from './un.js?v=b872';
-import { loadCities } from './citysearch.js?v=b872';
-import { loadRateData, saveRate } from './rating.js?v=b872';
+import { UN_CODES, UN_TOTAL } from './un.js?v=b873';
+import { loadCities } from './citysearch.js?v=b873';
+import { loadRateData, saveRate } from './rating.js?v=b873';
+import { openFoodNote } from './cityrev.js?v=b873';
 
 let ctx = {
   me: () => null,
@@ -57,7 +58,7 @@ export function setShelfCtx(o){ ctx = { ...ctx, ...o }; }
    도시는 '다녀온 도시', 관광지는 '다녀온 관광지'로 갈랐습니다. */
 const SHELF = { been:'방문한 도시', want:'가보고 싶은 곳', mine:'내가 매긴 곳',
                 comment:'한줄평 남긴 곳', place:'다녀온 맛집', spot:'다녀온 관광지',
-                review:'여행 후기', badge:'여행 배지', flag:'나라 깃발' };
+                review:'여행 후기', badge:'여행 배지', flag:'나라 깃발', food:'맛집 추천' };
 /* 맛집과 관광지는 같은 방식으로 다룹니다 — 분류만 다릅니다. */
 const SHELF_CAT = { place:['식사','카페'], spot:['관광','쇼핑'] };
 
@@ -279,17 +280,65 @@ async function openReviewShelf(){
       .createSignedUrls(paths, 3600);
     by = Object.fromEntries((urls || []).map(u => [u.path, u.signedUrl]));
   }
-  $('shelflist').innerHTML = list.map(r => `
-    <div class="rvcard" data-rvtrip="${esc(r.trip_id)}">
-      ${r.cover ? `<img src="${esc(by[r.cover] || '')}" alt="" loading="lazy">` : ''}
-      <div class="b">
-        <div class="t"><b>${esc(r.title)}</b>
-          <span class="c">${esc(r.end_date)}</span></div>
-        ${r.stars != null ? `<span class="stars">${starHtml(r.stars)}</span>` : ''}
-        ${r.comment ? `<div class="m">${esc(r.comment)}</div>` : ''}
-        ${r.photos ? `<div class="c">사진 ${r.photos}장</div>` : ''}
-      </div>
-    </div>`).join('');
+  /* 한줄평·맛집 추천과 같은 모양(b873, 사용자 2번) — 글이 주인공. 표지가 없으면 도시 사진, 그것도 없으면 첫 글자.
+     ⚠ 별은 글자(★4.5)로만 — 별 그림(.st)을 두면 아래 별 누르기 핸들러가 도시 별점으로 받습니다. */
+  await loadCities();
+  const 날 = d => { const [y, m, dd] = String(d || '').split('-'); return y ? `${y}.${Number(m)}.${Number(dd)}` : ''; };
+  $('shelflist').innerHTML = list.map(r => {
+    const c = (cities || []).find(x => x.name === r.destination);
+    const 그림 = (r.cover && by[r.cover]) || c?.image_url;
+    const 줄 = [r.destination, 날(r.end_date), r.stars != null ? `★${Number(r.stars).toFixed(1)}` : '', r.photos ? `사진 ${r.photos}장` : '']
+      .filter(Boolean).join(' · ');
+    return `<div class="cmt fdmy" data-rvtrip="${esc(r.trip_id)}">
+        <div class="rrow">
+          ${그림 ? `<img class="thumb" src="${esc(그림)}" alt="" loading="lazy">` : `<span class="thumb ph">${esc(String(r.title || '').slice(0, 1))}</span>`}
+          <div class="t"><b>${esc(r.title)}</b><span class="memo">${esc(줄)}</span></div>
+        </div>
+        ${r.comment ? `<div class="cq">${esc(r.comment)}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+/* ── 맛집 추천(b873, db/134 · 사용자: 「보관함에 한줄평 밑에 맛집 후기까지」 → 이름은 도시 화면과 같은 「맛집 추천」) ──
+ * 내가 도시 화면에서 남긴 추천을 전부(한마디 없는 것도). 「다녀온 맛집」(여행 일정 속 식당)과는 다른 것입니다.
+ * 줄을 누르면: 한마디가 있으면 그 글 화면(답글이 거기 달림), 없으면 그 도시 화면.
+ * 찾기 칸 글자마다 서버에 안 갑니다 — 받아 둔 것(내맛집)으로 거릅니다(b866 의 도시 찾기와 같은 이유). */
+let 내맛집 = null;
+async function openFoodShelf(다시){
+  if (!다시 || !내맛집){
+    const r = await sb.rpc('my_foods');
+    if (r.error) return fail(r.error, 'trip');
+    await loadCities();
+    내맛집 = r.data || [];
+  }
+  const 도시 = id => (cities || []).find(c => c.id === id);
+  const q = shelfQ;
+  const list = 내맛집.filter(x => {
+    if (!q) return true;
+    const c = 도시(x.city_id);
+    return String(x.name || '').toLowerCase().includes(q) || (c && 찾기맞나(c, q));
+  });
+  $('shelfcount').textContent = 내맛집.length ? `${내맛집.length}곳` : '';
+  if (!list.length){
+    $('shelflist').innerHTML = q ? `<div class="empty">「${esc(q)}」에 맞는 추천이 없어요.</div>`
+      : emptyDo('아직 맛집 추천이 없어요.', null, null, '도시 화면의 「맛집 추천」에서 다녀온 가게를 남기면 여기에 모여요.');
+    return;
+  }
+  const 날 = t => { const d = new Date(t); return isNaN(d) ? '' : `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`; };
+  $('shelflist').innerHTML = list.map(x => {
+    const c = 도시(x.city_id);
+    const 그림 = x.photo || c?.image_url;
+    const 꼬리 = [x.n_other ? `👍 ${x.n_other}명도 추천` : '', x.n_reply ? `답글 ${x.n_reply}` : ''].filter(Boolean).join(' · ');
+    return `<div class="cmt fdmy" data-myfood="${esc(x.id)}" data-city="${esc(x.city_id)}" data-shop="${esc(x.name)}"${x.note ? ' data-note="1"' : ''}>
+        <div class="rrow">
+          ${그림 ? `<img class="thumb" src="${esc(그림)}" alt="" loading="lazy">` : `<span class="thumb ph">${esc(String(x.name).slice(0, 1))}</span>`}
+          <div class="t"><b>${esc(x.name)}</b>
+            <span class="memo">${esc(c ? `${c.name} · ${cityCountry(c)}` : '')}${x.created_at ? ` · ${날(x.created_at)}` : ''}</span></div>
+        </div>
+        ${x.note ? `<div class="cq">${esc(x.note)}</div>` : ''}
+        ${꼬리 ? `<div class="fdmeta">${꼬리}</div>` : ''}
+      </div>`;
+  }).join('');
 }
 
 /* 후기 카드를 누르면 그 여행을 엽니다. 고치는 것은 거기서 합니다 —
@@ -297,6 +346,11 @@ async function openReviewShelf(){
 $('shelflist').addEventListener('click', e => {
   const c = e.target.closest('[data-rvtrip]');
   if (c) ctx.openTrip(c.dataset.rvtrip);
+  const m = e.target.closest('[data-myfood]');
+  if (m){
+    if (m.dataset.note) openFoodNote(m.dataset.myfood, m.dataset.city);
+    else openCity(m.dataset.city);   /* 한마디 없는 추천은 글 화면이 비어서(food_notes 가 빈 글을 뺌) 도시 화면으로 */
+  }
 });
 
 /* ── 여행 배지 ───────────────────────────────────────────────────────
@@ -479,7 +533,8 @@ export async function openShelf(kind, 다시 = false){
   /* 새로 열 때(기록에 보관함 자리가 없을 때)나 다른 보관함으로 넘어갈 때는 찾던 글을 비웁니다. */
   if (!다시 && (kind !== shelfKind || !['shelf', 'shsheet'].includes(history.state?.t2))){ shelfQ = ''; if ($('sh_q')) $('sh_q').value = ''; }
   shelfKind = kind;
-  $('sh_qwrap')?.classList.toggle('hide', !CITY_KINDS.includes(kind));
+  $('sh_qwrap')?.classList.toggle('hide', !CITY_KINDS.includes(kind) && kind !== 'food');
+  if ($('sh_q')) $('sh_q').placeholder = kind === 'food' ? '가게·도시 이름으로 찾기' : '도시·나라 이름으로 찾기';
   /* ⚠⚠ **뒤로 단추가 늘 「← 프로필」이었습니다(b697, 실제로 눌러보고 찾음).**
      보관함 타일(다녀온 도시·가고 싶은 곳·깃발·한줄평·배지)은 b542 에
      **기록 탭으로 옮겨졌는데** 단추 글자는 마크업에 박힌 채였습니다.
@@ -544,6 +599,7 @@ export async function openShelf(kind, 다시 = false){
   if (kind === 'flag')   return openFlagShelf();
   if (kind === 'place' || kind === 'spot') return openPlaceShelf(kind);
   if (kind === 'review') return openReviewShelf();
+  if (kind === 'food')   return openFoodShelf(다시);
   if (kind === 'badge')  return openBadgeShelf();
 
   await loadCities();
@@ -749,7 +805,7 @@ $('shelflist').addEventListener('click', async e => {
     ctx.loadFootprint();
     return;
   }
-  if (st){
+  if (st?.closest('.stars[data-city]')){   /* 도시 별만(b873) — 다른 목록의 별 그림을 눌러 null 을 읽고 던지던 길 막음 */
     const wrap = st.closest('.stars'), cityId = wrap.dataset.city;
     const row = st.closest('.rrow');
     const v = starValue(st, e.clientX);   /* 반칸 규칙은 stars.js 한 곳(b491) */
