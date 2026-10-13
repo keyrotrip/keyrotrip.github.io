@@ -7,7 +7,7 @@
  *
  * 층: dom.js 만 씁니다. app.js 를 거꾸로 부르지 않습니다 —
  * 하나 필요한 것(AI 시트 닫기)은 setSheetCloser 로 받아 둡니다. */
-import { $ } from './dom.js?v=b864';
+import { $ } from './dom.js?v=b865';
 
 /* ── 좌우로 쓸기 ────────────────────────────────────────────────────
  * 상단의 구역 알약(일정·지출·준비·일행)은 화면 **왼쪽 위**에 있습니다.
@@ -590,10 +590,18 @@ if (window.visualViewport){
       body.scrollTop += 이동;
       return;
     }
-    if (er.top >= top && er.bottom <= bottom) return;
+    /* 칸 위에 붙은 질문 글까지 보이게(`data-kbtop`, b865) — 한줄평·맛집 칸(cmtask.js)은 칸 위 「○○, 한 줄로 남긴다면?」이
+       화면 위로 잘려 나갔습니다(눈금자: 칸 top 27, 사용자: 「살짝만 더 아래로 못내려?」). 그 묶음의 «맨 위»를 위 줄에 맞춥니다. */
+    /* data-kbtop="prev" — 묶음의 «앞 형제»까지(평가 탭: 칸 위 도시 줄 — 사진·이름·별. 사용자: 「도시랑 별점이랑 다 볼 수 있는 상황에서
+       한줄평을 남겨야지」). 묻기 칸은 줄 «밑»에 형제로 붙어서(rating.js) 앞 형제가 그 도시 줄입니다. */
+    const 칸묶음 = el.closest('[data-kbtop]');
+    const 머리 = 칸묶음?.dataset.kbtop === 'prev'
+      ? (칸묶음.closest('.cmask')?.previousElementSibling || 칸묶음) : 칸묶음;
+    const 위끝 = 머리 ? Math.min(er.top, 머리.getBoundingClientRect().top) : er.top;
+    if (위끝 >= top && er.bottom <= bottom) return;
     /* 가운데가 아니라 **위쪽으로** 데려옵니다. 가운데로 두면 칸이 아래
        절반에 앉는데, 가려지는 곳이 바로 거기입니다. */
-    body.scrollTop += er.top - top;
+    body.scrollTop += 위끝 - top;
   }
   /* 키보드가 올라오는 동안 높이가 몇 번에 걸쳐 바뀝니다. 한 번만 재면
      올라오기 전 크기로 계산하게 됩니다. 몇 박자 나눠 다시 봅니다. */

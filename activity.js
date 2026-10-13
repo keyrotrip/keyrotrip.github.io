@@ -11,11 +11,11 @@
  *   사진은 첫 글자 동그라미로 — 화면이 안 깨지게.
  * ⚠ 읽음 처리는 열고 1.2초 뒤(notify.js 와 같은 규칙 — 어느 것이 새것인지 눈에 한 번 들어와야).
  */
-import { $, esc, avatarImg } from './dom.js?v=b864';
-import { sb } from './db.js?v=b864';
-import { netTimeout } from './net.js?v=b864';
-import { cities } from './cities.js?v=b864';
-import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b864';
+import { $, esc, avatarImg } from './dom.js?v=b865';
+import { sb } from './db.js?v=b865';
+import { netTimeout } from './net.js?v=b865';
+import { cities } from './cities.js?v=b865';
+import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b865';
 
 let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {}, openCity: () => {},
             loadNotifs: () => {}, loadSocialCounts: () => {} };

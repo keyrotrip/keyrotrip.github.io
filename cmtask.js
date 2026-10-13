@@ -8,11 +8,11 @@
  * 저장: 한줄평은 saveRate(rating.js — ctx 로 받음, 고리 막기) · 맛집은 food_add(db/124).
  * 누르기는 document 에 한 번 — 지구본 카드 · 평가 탭 줄 · 도시 화면 어디에 붙어도 같은 처리.
  */
-import { esc, toast, avatarImg } from './dom.js?v=b864';
-import { sb } from './db.js?v=b864';
-import { netTimeout } from './net.js?v=b864';
+import { esc, toast, avatarImg } from './dom.js?v=b865';
+import { sb } from './db.js?v=b865';
+import { netTimeout } from './net.js?v=b865';
 /* 「내 추천 지우기」를 한 번 더 눌러 정하는 장치. ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b864';
+import { arm } from './ui.js?v=b865';
 
 /* ⚠ 기다리는 시간(검토에서 찾음): netTimeout 기본 2.5초는 «오프라인» 판정까지 켭니다 — 느린 폰 망에서 저장은 됐는데
    「timeout」 오류 + 20초 오프라인 띠가 떴습니다. 쓰기는 10초, 읽기는 8초. 오류 글은 한국어로. */
@@ -57,7 +57,7 @@ export function 묻기Html(id, 이름, 한줄, 얇게 = false){
     <div class="cmbtns">${한줄남음 ? 단추('cmt', 얇게 ? '✎ 한줄평 ›' : '✎ 한줄평 남기기') : ''}${
       맛집남음 ? 단추('food', 얇게 ? '🍽 맛집 추천하기 ›' : '🍽 맛집 추천하기') : ''}${
       얇게 ? '<button type="button" class="cmx" data-cmskip aria-label="이 도시는 그만 묻기">×</button>' : ''}</div>
-    <div class="cmform"></div>
+    <div class="cmform"${얇게 ? ' data-kbtop="prev"' : ' data-kbtop'}></div>
   </div>`;
 }
 
@@ -171,7 +171,7 @@ export async function foodsHtml(id, 이름){
   return `<div class="fdsec"><div class="fdhd"><b>🍽 ${esc(이름)} 맛집 추천${l.length ? ` <span>${l.length}</span>` : ''}</b></div>
     ${l.length ? 줄 : '<div class="fdempty">아직 추천이 없어요 — 첫 번째로 추천해 보세요</div>'}
     ${ctx.me() ? `<div class="cmask fdadd" data-city="${esc(id)}" data-name="${esc(이름)}">
-      <div class="cmbtns"><button type="button" class="cmbtn wide" data-cmopen="food">+ 내 맛집 추천하기</button></div><div class="cmform"></div></div>` : ''}
+      <div class="cmbtns"><button type="button" class="cmbtn wide" data-cmopen="food">+ 내 맛집 추천하기</button></div><div class="cmform" data-kbtop></div></div>` : ''}
   </div>`;
 }
 
