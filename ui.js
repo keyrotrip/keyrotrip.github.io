@@ -7,7 +7,7 @@
  *
  * 층: dom.js 만 씁니다. app.js 를 거꾸로 부르지 않습니다 —
  * 하나 필요한 것(AI 시트 닫기)은 setSheetCloser 로 받아 둡니다. */
-import { $ } from './dom.js?v=b862';
+import { $ } from './dom.js?v=b863';
 
 /* ── 좌우로 쓸기 ────────────────────────────────────────────────────
  * 상단의 구역 알약(일정·지출·준비·일행)은 화면 **왼쪽 위**에 있습니다.
@@ -528,9 +528,15 @@ if (window.visualViewport){
   function keepInView(){
     const el = document.activeElement;
     if (!el || !el.closest) return;
-    const body = 굴릴칸(el);
+    /* ⚠⚠ **문서 자체가 구르는 화면도 봅니다(b863).** 굴릴칸 은 body·html 앞에서 멈춰서, 도시 화면처럼 «문서»가 구르는 곳은
+       null → 아무것도 안 했습니다. 사파리는 iOS 가 알아서 올려 줘서 몰랐고, 홈 화면 앱은 화면을 안 밀어서(vv.offsetTop 0)
+       한줄평·맛집 칸이 키보드 뒤에 그대로 숨었습니다(사용자 사진 — 거제 · 「화면은 그대로고 키보드만 올라가서 다 가려져」).
+       문서일 때 «판의 사각형»은 문서 전체(맨 끝이 수천 px 아래)라 그대로 쓰면 늘 «다 보인다»가 됩니다 — 보이는 창(레이아웃)으로 셉니다. */
+    const 문서 = document.scrollingElement || document.documentElement;
+    const body = 굴릴칸(el) || (문서.scrollHeight > 문서.clientHeight + 4 ? 문서 : null);
     if (!body) return;
-    const er = el.getBoundingClientRect(), br = body.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const br = body === 문서 ? { top: 0, bottom: 레이아웃높이(), height: 레이아웃높이() } : body.getBoundingClientRect();
     /* ⚠ **크기가 0 이면 손대지 않습니다.** 접혀 있는 칸(이름 바꾸기·신고·
        계정 삭제)은 rect 가 0,0 이라 그대로 셈하면 판을 엉뚱한 데로 굴립니다 —
        실측으로 75px 이 나왔습니다. 숨은 칸에 커서가 갈 일은 없지만, 재 보고
@@ -717,8 +723,10 @@ if (window.visualViewport){
       box.addEventListener('touchstart', toggle, { passive:false });
       box.addEventListener('mousedown',  toggle);
       document.body.appendChild(box);
+      window.__rulerBox = box;   /* 관리자 조절 화면의 스위치로 끌 때(b863, stopRuler) */
 
       const show = () => {
+        if (!window.__ruler) return;   /* 꺼졌으면 여기서 멈춤(b863) */
         /* position:fixed 는 iOS 에서 **키보드로 줄어들지 않는 바깥 화면**을
            기준으로 붙습니다. 키보드가 올라와 화면이 밀리면 눈금자가 위로
            사라집니다 — 정작 봐야 할 순간에 안 보였습니다.
@@ -774,6 +782,11 @@ if (window.visualViewport){
           `${el?.isContentEditable ? ' CE' : ''}  ${STANDALONE ? '홈앱' : '사파리'}\n` +
           /* b820: 새 홈 화면 앱에서 탭바가 59 떠 있던 것을 재려고 — 안전영역과 탭바가 실제로 어디 앉았는지. */
           `안전영역  위 ${안전영역()[0]}  아래 ${안전영역()[1]}\n` +
+          /* b863: 입력칸이 어디 앉았는지 · 무엇이 굴러갔는지 — 평가 탭 「한줄평」 첫 번째에 아래가 비던 것을 재려고. */
+          `칸        ${(() => { if (!typing()) return '-'; const q = el.getBoundingClientRect(); return `top ${Math.round(q.top)}  bottom ${Math.round(q.bottom)}`; })()}
+` +
+          `굴림칸    ${(() => { if (!typing()) return '-'; const b = 굴릴칸(el); return b ? `${b.id || b.className.split(' ')[0] || b.tagName} top ${Math.round(b.scrollTop)} h ${b.clientHeight}` : '없음(문서)'; })()}
+` +
           `탭바      ${(() => { const t = document.querySelector('.tabbar'); if (!t) return '없음';
             const q = t.getBoundingClientRect(); return `top ${Math.round(q.top)}  bottom ${Math.round(q.bottom)}`; })()}\n` +
           /* b173 에서 contenteditable 로 바꿔봤지만 vv.h 가 424 그대로였습니다.
@@ -791,6 +804,12 @@ if (window.visualViewport){
       };
       show();
     };
+    window.stopRuler = () => {
+      window.__ruler = false; window.__probe = false;
+      window.__rulerBox?.remove(); window.__rulerBox = null;
+      document.querySelectorAll('.kbprobe').forEach(n => n.remove());
+    };
+    /* 켜고 끄기는 관리자 조절 화면의 「키보드 눈금자」 스위치(b863, admin.js) — 이 폰에만(t2:kbdbg). 사파리는 주소 ?kb=1 도. */
     /* 주소로 켠 경우 (사파리). 관리자면 loadAdmin 이 로그인 뒤에 부릅니다. */
     if (localStorage.getItem('t2:kbdbg') === '1') window.startRuler();
   }

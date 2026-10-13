@@ -11,15 +11,15 @@
  * 화면을 뜯어도 남의 자료는 안 나옵니다. 서버 쪽 함수가 is_admin() 을
  * 확인하므로 여기서 막는 것은 그저 안 보여주는 것뿐입니다.
  */
-import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b862';
-import { sb } from './db.js?v=b862';
-import { fail, netTimeout } from './net.js?v=b862';
+import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b863';
+import { sb } from './db.js?v=b863';
+import { fail, netTimeout } from './net.js?v=b863';
 /* 사람 신고의 「보기」(b789) — 그 사람 화면을 대시보드 위에 엽니다. */
-import { openPerson } from './people.js?v=b862';
+import { openPerson } from './people.js?v=b863';
 /* 기능 스위치를 바꾸면 그 자리에서 화면에 먹입니다(b491) — flags.js 머리말. */
-import { reapplyFeatures } from './flags.js?v=b862';
+import { reapplyFeatures } from './flags.js?v=b863';
 /* 「사용」 칸(b815) — 유튜브 스튜디오처럼. 관리자 화면을 열 때 받습니다(로그인마다 세지 않게). */
-import { loadUsage } from './adminuse.js?v=b862';
+import { loadUsage } from './adminuse.js?v=b863';
 
 /* ── 칸 셋 「사용 | 비용 | 문제」(b815, 사용자가 고름) ─────────────────────────
  * 분석 탭의 「성향 | 별점 | 어워즈」(anal.js)와 같은 모양·같은 규칙 — 고른 칸은 앱이 켜져 있는 동안 기억합니다.
@@ -48,7 +48,9 @@ $('adm_tabs')?.addEventListener('click', e => {
 export async function loadAdmin(){
   /* 들어가는 문은 프로필 우상단 아이콘 하나입니다. 관리자가 아니면 서버가
      막고, 그때 아이콘도 숨깁니다 — 눌러도 아무 일이 없는 단추를 두면 안 됩니다. */
-  const show = on => $('dashbtn').classList.toggle('hide', !on);
+  /* window.__관리자(b863) — 화면에서 «관리자에게만» 다르게 할 때 봅니다(cmtask.js 하루 세 도시 제한 풀기).
+     권한이 아니라 편의입니다. 서버가 따로 막는 것은 is_admin() 이 그대로 막습니다. */
+  const show = on => { $('dashbtn').classList.toggle('hide', !on); window.__관리자 = !!on; };
   /* 기본 2.5초로는 모자랍니다 — 표 열몇 개를 세는 함수라 첫 호출이 느립니다.
      화면을 막고 있는 것이 아니니 넉넉하게 줍니다. */
   const r = await netTimeout(sb.rpc('admin_stats'), 8000);
@@ -654,3 +656,15 @@ $('errbtn').addEventListener('click', async () => {
     $('errcopy').textContent = await copyText(txt) ? '복사했어요' : '복사하지 못했어요';
   };
 });
+
+/* 키보드 눈금자 켜고 끄기(b863) — 이 폰에만. ui.js 의 startRuler/stopRuler. */
+{
+  const 스위치 = $('s_ruler');
+  if (스위치){
+    try { 스위치.checked = localStorage.getItem('t2:kbdbg') === '1'; } catch {}
+    스위치.addEventListener('change', () => {
+      try { 스위치.checked ? localStorage.setItem('t2:kbdbg', '1') : localStorage.removeItem('t2:kbdbg'); } catch {}
+      if (스위치.checked) window.startRuler?.(); else window.stopRuler?.();
+    });
+  }
+}

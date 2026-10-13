@@ -8,11 +8,11 @@
  * 저장: 한줄평은 saveRate(rating.js — ctx 로 받음, 고리 막기) · 맛집은 food_add(db/124).
  * 누르기는 document 에 한 번 — 지구본 카드 · 평가 탭 줄 · 도시 화면 어디에 붙어도 같은 처리.
  */
-import { esc, toast, avatarImg } from './dom.js?v=b862';
-import { sb } from './db.js?v=b862';
-import { netTimeout } from './net.js?v=b862';
+import { esc, toast, avatarImg } from './dom.js?v=b863';
+import { sb } from './db.js?v=b863';
+import { netTimeout } from './net.js?v=b863';
 /* 「내 추천 지우기」를 한 번 더 눌러 정하는 장치. ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b862';
+import { arm } from './ui.js?v=b863';
 
 /* ⚠ 기다리는 시간(검토에서 찾음): netTimeout 기본 2.5초는 «오프라인» 판정까지 켭니다 — 느린 폰 망에서 저장은 됐는데
    「timeout」 오류 + 20초 오프라인 띠가 떴습니다. 쓰기는 10초, 읽기는 8초. 오류 글은 한국어로. */
@@ -44,7 +44,8 @@ export function 물을까(id, 별, 한줄){
   if (별 == null || Number(별) < 4.5 || 그만(id)) return false;
   if (String(한줄 || '').trim() && 맛집했나(id)) return false;
   const c = 오늘묻은();
-  return c.includes(id) || c.length < 3;
+  /* 관리자는 세 도시 제한 없이(b863, 사용자: 「3번 다 질문해서 이제 질문이 뜨지도 않는데?」 — 시험하려면 늘 떠야 함) */
+  return window.__관리자 === true || c.includes(id) || c.length < 3;
 }
 
 /* 단추 한 줄. 얇게 = 평가 탭 목록용(글자 한 줄 + ×). 부르는 쪽이 물을까()로 거른 뒤 부릅니다. */
@@ -63,11 +64,11 @@ export function 묻기Html(id, 이름, 한줄, 얇게 = false){
 /* 칸 — 맛집(가게 이름 + 한줄평) / 한줄평 */
 function 칸Html(k, 이름){
   if (k === 'food') return `<div class="cmq">${esc(이름)} 맛집 한 곳 추천한다면?<small>별점 없이 가게 이름만 남기면 돼요 · 다음에 갈 사람에게 큰 도움이 돼요</small></div>
-    <input type="text" class="cmfield" data-f="name" name="fdshop" maxlength="40" autocomplete="off" autocapitalize="off" placeholder="가게 이름" aria-label="가게">
-    <input type="text" class="cmfield" data-f="note" maxlength="60" autocomplete="off" placeholder="한줄평" aria-label="가게 한줄평">
+    <input type="search" enterkeyhint="done" class="cmfield" data-f="name" name="fdshop" maxlength="40" autocomplete="off" autocapitalize="off" placeholder="가게 이름" aria-label="가게">
+    <input type="search" enterkeyhint="done" class="cmfield" data-f="note" maxlength="60" autocomplete="off" placeholder="한줄평" aria-label="가게 한줄평">
     <div class="cmrow"><button type="button" class="ghost cmclose" data-cmclose>닫기</button><button type="button" class="cmsave" data-cmsave="food" disabled>등록</button></div>`;
   return `<div class="cmq">${esc(이름)}, 한 줄로 남긴다면?<small>다음에 갈 사람에게 큰 도움이 돼요</small></div>
-    <input type="text" class="cmfield" data-f="cmt" maxlength="200" autocomplete="off" placeholder="한줄평" aria-label="${esc(이름)} 한줄평">
+    <input type="search" enterkeyhint="done" class="cmfield" data-f="cmt" maxlength="200" autocomplete="off" placeholder="한줄평" aria-label="${esc(이름)} 한줄평">
     <div class="cmrow"><button type="button" class="ghost cmclose" data-cmclose>닫기</button><button type="button" class="cmsave" data-cmsave="cmt" disabled>등록</button></div>`;
 }
 

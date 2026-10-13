@@ -6942,3 +6942,9 @@ body:not(.hastab) #a2hs .shwrap{ padding-bottom:calc(var(--sab) + 10px); }
 .cvjback{ display:none; padding:0 10px 0 0; font-size:calc(26px * var(--ts)); line-height:1; color:var(--ink); min-height:0; }
 #cityview.cvjmode .cvjback{ display:inline-block; }
 #cityview.cvjmode > .cvjcard{ margin-top:calc(8px + env(safe-area-inset-top)); }
+/* 「자동 완성 연락처」 줄 줄이기 시도(b863, 사용자: 「자동완성 연락처가 왜자꾸 뜨는거야」) — 아이폰은 autocomplete="off" 를 무시하고
+   이름 칸처럼 보이는 글 칸에 연락처를 내밉니다. 검색 칸(type=search)으로 바꿔 봅니다(폰 확인 전 — 안 줄면 되돌릴 것).
+   검색 칸의 둥근 모양·지우기(×) 단추는 걷어 다른 칸과 똑같이 보이게. */
+.cmfield[type=search], #cv_note{ -webkit-appearance:none; appearance:none; }
+.cmfield[type=search]::-webkit-search-cancel-button, #cv_note::-webkit-search-cancel-button,
+.cmfield[type=search]::-webkit-search-decoration, #cv_note::-webkit-search-decoration{ -webkit-appearance:none; display:none; }
