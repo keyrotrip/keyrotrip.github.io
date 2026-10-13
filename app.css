@@ -602,7 +602,7 @@ h1.brand .mark{ width:1.05em; height:1.05em; flex:none; fill:var(--brand);
 .tabbar button{ position:relative; }
 .tabdot{ position:absolute; top:3px; left:50%; margin-left:6px;
          width:7px; height:7px; border-radius:50%;
-         background:var(--danger); }
+         background:#e0245e; }   /* 알림 점은 ♡ 점과 같은 분홍빛 빨강(b869, 사용자) */
 .sub{ color:var(--ink-48); font-size:var(--f-md); margin:0;
       flex:1; text-align:right; overflow:hidden; text-overflow:ellipsis;
       white-space:nowrap; }
@@ -6847,7 +6847,7 @@ body:not(.hastab) #a2hs .shwrap{ padding-bottom:calc(var(--sab) + 10px); }
 /* 기록 탭 오른쪽 위 아이콘 셋(b859, 시안 A-3) — 지도(자세히) · 공유 · ♡ */
 .gacts .gicon{ display:flex; padding:8px 7px; color:var(--ink); }
 .gheart{ position:relative; }
-#heartdot{ position:absolute; right:4px; top:5px; width:8px; height:8px; border-radius:50%; background:#e0245e;
+#heartdot{ position:absolute; right:3px; top:4px; width:9px; height:9px; border-radius:50%; background:#e0245e;
            box-shadow:0 0 0 2px var(--bg); }
 
 /* ── 한줄평 · 맛집 묻기(b861, cmtask.js) — 단추 한 줄 · 그 자리에서 열리는 칸 · 도시 화면 맛집 · 「첫 한줄평」 ────────── */
@@ -7016,3 +7016,5 @@ body.kbup .tabbar{ display:none; }
 .fdrec .num:empty{ display:none; }
 .cvband{ background:color-mix(in srgb, var(--ink) 7%, var(--canvas)); border-color:color-mix(in srgb, var(--ink) 10%, var(--canvas)); }
 #cv_friends .frsum{ border-bottom:0; }
+.crpto{ margin-left:auto; padding:4px 8px; color:var(--ink-48); font-size:calc(13px * var(--ts)); }
+.crpline .f .crpto + .crpmore{ margin-left:0; }

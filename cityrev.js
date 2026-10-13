@@ -12,11 +12,11 @@
  *   bottom:0 은 아이폰 홈 화면 앱에서 키보드 뒤로 갑니다([[ios-keyboard-sheet]]).
  * ⚠ 좋아요·답글 단추는 도시 화면 줄에도 있습니다 — 누르기는 document 에 한 번 답니다(아래).
  */
-import { $, esc, toast, avatarImg } from './dom.js?v=b868';
-import { sb } from './db.js?v=b868';
-import { netTimeout } from './net.js?v=b868';
-import { cities, cityCountry } from './cities.js?v=b868';
-import { arm } from './ui.js?v=b868';
+import { $, esc, toast, avatarImg } from './dom.js?v=b869';
+import { sb } from './db.js?v=b869';
+import { netTimeout } from './net.js?v=b869';
+import { cities, cityCountry } from './cities.js?v=b869';
+import { arm } from './ui.js?v=b869';
 
 let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {}, redrawFoods: () => {} };
 export function setCityRevCtx(o){ ctx = { ...ctx, ...o }; }
@@ -195,6 +195,7 @@ async function 하나그리기(지금, 이번){
           <div class="f">
             <button type="button" class="crvlike sm${p.liked ? ' on' : ''}" data-crplike="${p.id}"
                     aria-pressed="${p.liked ? 'true' : 'false'}" aria-label="좋아요"${p.user_id === 나 ? ' disabled' : ''}>${하트(p.liked)}<span class="num">${p.n_like || ''}</span></button>
+            ${ctx.me() && p.user_id !== ctx.me()?.id ? `<button type="button" class="ghost crpto" data-crpto="${esc(p.user_id)}" data-name="${esc(p.name)}">답글 달기</button>` : ''}
             <button type="button" class="ghost crpmore" data-crpmore="${p.id}" data-uid="${esc(p.user_id)}"
                     data-txt="${esc(p.body)}" aria-label="더 보기">⋯</button>
           </div>
@@ -255,6 +256,7 @@ async function 추천하나그리기(지금, 이번){
           <div class="n"><b data-person="${esc(p.user_id)}">${esc(p.name)}</b><small>${esc(언제(p.created_at))}</small></div>
           <div class="x">${esc(p.body)}</div>
           <div class="f">
+            ${ctx.me() && p.user_id !== ctx.me()?.id ? `<button type="button" class="ghost crpto" data-crpto="${esc(p.user_id)}" data-name="${esc(p.name)}">답글 달기</button>` : ''}
             <button type="button" class="ghost crpmore" data-crpmore="${p.id}" data-uid="${esc(p.user_id)}"
                     data-txt="${esc(p.body)}" aria-label="더 보기">⋯</button>
           </div>
@@ -294,6 +296,12 @@ document.addEventListener('click', async e => {
       ? { 종류: 'fn', a: 지금.주인, city: 지금.city, uid: 지금.주인, 글: 지금.글 || '' }
       : { 종류: 'rv', a: 지금.a, city: 지금.city, uid: 지금.a, 글: 지금.글 || '' };
     return 메뉴열기();
+  }
+  const 답 = e.target.closest('[data-crpto]');
+  if (답){   /* 답글 달기(b869) — 칸에 「@이름 」을 넣고 커서 */
+    지금.대상 = { id: 답.dataset.crpto, name: 답.dataset.name };
+    const i = $('crv_in'); i.value = `@${답.dataset.name} `; 등록칠(); i.focus(); i.setSelectionRange?.(i.value.length, i.value.length);
+    return;
   }
   const 더 = e.target.closest('[data-crpmore]');
   if (더){
@@ -354,12 +362,14 @@ async function 등록(){
   const 글 = $('crv_in').value.trim();
   if (!글 || 보내는중 || (지금?.판 !== 'one' && 지금?.판 !== 'fn')) return;
   보내는중 = true; $('crv_send').disabled = true;
+  /* 답글에 답하기(b869, A안) — 「@이름 」으로 시작하면 그 사람에게도 알림(p_to). 글을 지워 @이 사라졌으면 안 보냅니다. */
+  const 대상 = 지금.대상 && 글.startsWith('@' + 지금.대상.name) ? 지금.대상.id : null;
   const r = 지금.판 === 'fn'
-    ? await netTimeout(sb.rpc('food_reply_add', { p_id: 지금.id, p_body: 글 }))
-    : await netTimeout(sb.rpc('review_reply_add', { p_author: 지금.a, p_city: 지금.city, p_body: 글 }));
+    ? await netTimeout(sb.rpc('food_reply_add', { p_id: 지금.id, p_body: 글, ...(대상 ? { p_to: 대상 } : {}) }))
+    : await netTimeout(sb.rpc('review_reply_add', { p_author: 지금.a, p_city: 지금.city, p_body: 글, ...(대상 ? { p_to: 대상 } : {}) }));
   보내는중 = false; $('crv_send').disabled = false;
   if (!r || r.error){ toast(r?.error?.message || '연결을 확인해 주세요'); return; }
-  $('crv_in').value = ''; 등록칠(); $('crv_in').blur();
+  $('crv_in').value = ''; 등록칠(); $('crv_in').blur(); 지금.대상 = null;
   바뀜 = true;
   지금.정렬 = 'new';         /* 방금 쓴 것이 보이게 */
   await (지금.판 === 'fn' ? 추천하나그리기 : 하나그리기)(지금, ++차례);
