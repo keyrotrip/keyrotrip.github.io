@@ -18,8 +18,8 @@
  *
  * 밖에서 가져오는 것은 dom.js 와 db.js 뿐입니다. 둘 다 잎이라 순환이 없습니다.
  */
-import { $, toast } from './dom.js?v=b856';
-import { sb } from './db.js?v=b856';
+import { $, toast } from './dom.js?v=b857';
+import { sb } from './db.js?v=b857';
 
 /* 큐가 다 나간 뒤에 화면을 서버 값으로 맞추는 일은 app.js 가 압니다.
    여기서 trip 이나 loadPlans 를 직접 부르면 net → app 으로 거꾸로 기대게 되어
@@ -146,7 +146,8 @@ const OFFNOTE = '<div class="empty">연결이 없어 지금은 볼 수 없어요
    받아둔 내용이 있는데 안내로 덮어버리면 오히려 손해입니다. */
 export function offNote(id){
   const el = $(id); if (!el) return;
-  if (el.querySelector('.rrow, .plan, .row, .ev, .trip, .pcard')) return;
+  /* (`.pcard` 를 뺐습니다(b857) — 옛 성향 카드 이름표라 이제 아무 데서도 안 만듭니다. tools/stale.pl 이 잡음.) */
+  if (el.querySelector('.rrow, .plan, .row, .ev, .trip')) return;
   el.innerHTML = OFFNOTE;
 }
 

@@ -33,42 +33,42 @@
  * 층: 아래층 여럿과 이미 떼어낸 조각들(citysearch · rating · map ·
  *     report · globe)을 씁니다. 그쪽은 이 파일을 안 부르므로 고리가
  *     생기지 않습니다 — 저쪽이 이 화면을 다시 그릴 때는 ctx 를 씁니다. */
-import { $, esc, toast } from './dom.js?v=b856';
-import { sb } from './db.js?v=b856';
-import { fail, netTimeout, netIsDown, drawOffbar } from './net.js?v=b856';
-import { hm, todayYmd } from './calc.js?v=b856';
-import { starHtml, paintStars } from './stars.js?v=b856';
+import { $, esc, toast } from './dom.js?v=b857';
+import { sb } from './db.js?v=b857';
+import { fail, netTimeout, netIsDown, drawOffbar } from './net.js?v=b857';
+import { hm, todayYmd } from './calc.js?v=b857';
+import { starHtml, paintStars } from './stars.js?v=b857';
 /* 평가 히어로는 세 화면이 같은 것을 씁니다 — rateui.js 머리말 참고(b409). */
-import { starValue } from './rateui.js?v=b856';
-import { cities, countryName, cityCountry } from './cities.js?v=b856';
-import { UN_CODES } from './un.js?v=b856';
-import { myRates, cityStat, visited } from './rate.js?v=b856';
-import { plans } from './trip.js?v=b856';
-import { loadCities } from './citysearch.js?v=b856';
+import { starValue } from './rateui.js?v=b857';
+import { cities, countryName, cityCountry } from './cities.js?v=b857';
+import { UN_CODES } from './un.js?v=b857';
+import { myRates, cityStat, visited } from './rate.js?v=b857';
+import { plans } from './trip.js?v=b857';
+import { loadCities } from './citysearch.js?v=b857';
 /* 지구본에서 나라를 누르면 뜨는 카드가 도시 화면으로 보냅니다(b555). */
-import { openCity } from './city.js?v=b856';
-import { saveRate, refreshVisited, loadRateData } from './rating.js?v=b856';
+import { openCity } from './city.js?v=b857';
+import { saveRate, refreshVisited, loadRateData } from './rating.js?v=b857';
 /* CONT 는 대륙별 분모(b451) — 지도 화면과 **같은 표**를 씁니다.
    여기서 새로 적으면 두 화면의 분모가 갈라집니다. */
-import { openMap, UN_COUNTRIES, CONT, CONT_VIEW, mapBackTo } from './map.js?v=b856';
+import { openMap, UN_COUNTRIES, CONT, CONT_VIEW, mapBackTo } from './map.js?v=b857';
 /* ⚠ **`renderAiCard`·`aiPrompt` 를 b398 에서 뗐습니다.** 홈에서 AI 일정
    권유를 걷어냈기 때문입니다(메인은 평가, 일정은 서브). 둘은 report.js 에
    그대로 살아 있으니 일정 쪽에서 쓸 자리가 생기면 거기서 가져다 쓰십시오. */
-import { drawReport } from './report.js?v=b856';
+import { drawReport } from './report.js?v=b857';
 /* 성향은 **card.js 가 정합니다.** 여기서 다시 세지 않습니다 — 두 군데서 세면
    홈에 뜬 유형과 성향 화면의 유형이 언젠가 갈라집니다. */
 /* PERSONA_BG 만 씁니다 — 카드 배경색입니다. personaAxes·personaRank·PERSONA16 은
    b457 에 홈에서 성향을 빼면서 같이 걷었습니다(분석 탭이 씁니다). */
-import { PERSONA_BG } from './card.js?v=b856';
+import { PERSONA_BG } from './card.js?v=b857';
 /* 성향이 바뀌면 홈 맨 위에 한 번 알립니다(b526) — 「다시 열 이유」. */
-import { checkPersonaShift } from './pshift.js?v=b856';
+import { checkPersonaShift } from './pshift.js?v=b857';
 /* 일기장은 제 화면을 엽니다. 「기록 탭에서 왔다」를 적어둬야 닫을 때
    프로필이 아니라 여기로 돌아옵니다(map.js 의 「나온 자리로」와 같은 규칙). */
 /* 손가락으로 돌려 보는 지구본. **성향 탭에 있던 것을 여기로 옮겼습니다(b542)** —
    이 탭이 곧 「내가 어디를 갔나」입니다. */
-import { mountGlobe } from './globe.js?v=b856';
+import { mountGlobe } from './globe.js?v=b857';
 /* 홈 화면에 추가 안내(b844) — 로그인 뒤에도 브라우저로 쓰는 폰에 칩 하나. install.js 머리말 참고. */
-import { 안내할까, 기기알기, 설치안내열기, 폰그림 } from './install.js?v=b856';
+import { 안내할까, 기기알기, 설치안내열기, 폰그림 } from './install.js?v=b857';
 /* 나라 지도 화면(b682). 지구본에서 나라를 누르면 여기로 갑니다. */
 /* ⚠ `ctrymap.js`(나라 페이지)는 b707 에 없앴습니다 — 지구본이 직접 도시까지
    보여줍니다. 파일도 지웠습니다. */
@@ -175,6 +175,10 @@ export function 기록처음으로(){ 처음으로친때 = Date.now(); 시트닫
  *   더 볼 것이 있으면 카드를 눌러 도시 화면으로 들어갑니다.
  * ⚠ `c.cc` 입니다 — 지구본은 속령을 모국으로 칠하고(괌 → US) 카드도
  *   같은 기준으로 골라야 빈 카드가 안 뜹니다(아래 `나라카드` 주석). */
+/* 시험용(b857): **로컬(localhost)에서만** 콘솔로 이 카드를 엽니다 — `__도시카드('tokyo')`. 지구본을 손으로 키워 누르지
+   않고도 카드 안(별 저장 등)을 잴 수 있게 둡니다. 가려진 창에서는 확대 애니메이션이 안 돌아 손으로 재현이 안 됩니다
+   (rAF 함정). b774 에 이 카드의 별 저장이 끊긴 것을 2주 동안 몰랐던 것이 «눌러 볼 길이 없어서»였습니다. 실제 주소에서는 안 답니다. */
+if (typeof location !== 'undefined' && location.hostname === 'localhost') window.__도시카드 = id => 도시눌림(id);
 function 도시눌림(id){
   if (!id) return;
   const c = (cities || []).find(x => x.id === id);
@@ -374,12 +378,22 @@ async function 나라카드(코드, 먼저){
    *   mountGlobe 가 참조로 들고 있어, 더한 뒤 다시 그리면 됩니다.
    * ⚠ 카드를 다시 그리지 «않습니다» — 지금 보고 있는 카드가 날아가고
    *   옆으로 민 자리도 처음으로 돌아갑니다. 별과 숫자만 손봅니다. */
-  판.querySelectorAll('.gsmine .stars').forEach(wrap => {
+  /* ⚠⚠ **b774 부터 이 처리기가 아무 별에도 안 붙어 있었습니다(10-13 사용자 신고: 「지구본에서 확대해서 도시 누르고
+       카드에서 별점 매기면 별점 저장이 안되는 치명적 오류」).** ⚠⚠ b774 에 카드를 「물음 → 별 → 안내」(.gsask)로 다시 짜면서
+       .gsmine · .gsnum · .gslab 을 걷었는데(app.css 에도 적혀 있음), 여기 고르개는 옛 `.gsmine .stars` 를 그대로 찾았습니다 —
+       별은 끌면 칠해지기만 하고(stars.js 의 끌기) 저장은 안 됐습니다. 2주 동안.
+       → 카드 마크업(.gsask · .gsasklab · .gsaskhint)의 이름을 바꾸면 **이 고르개와 아래 글자 셋을 같이** 바꿀 것. */
+  판.querySelectorAll('.gsask .stars').forEach(wrap => {
     wrap.onclick = async e => {
       const st = e.target.closest('.st'); if (!st) return;
       const v = starValue(st, e.clientX);
-      const 칸 = wrap.parentElement;
-      const 숫자 = 칸.querySelector('.gsnum'), 이름표 = 칸.querySelector('.gslab');
+      const 칸 = wrap.closest('.gsask');
+      const 물음 = 칸.querySelector('.gsasklab'), 안내 = 칸.querySelector('.gsaskhint');
+      /* 마크업의 두 상태와 같은 글(위 카드 템플릿) — 매긴 뒤면 「내 별점」, 비었으면 처음 물음. */
+      const 글 = s => {
+        if (물음) 물음.textContent = s != null ? '내 별점' : '여기, 어땠나요?';
+        if (안내) 안내.textContent = s != null ? '다시 눌러 바꿀 수 있어요' : '별을 눌러 매기면 지도가 칠해져요';
+      };
       /* ⚠⚠ **되돌릴 수 있게 «먼저» 적어 둡니다(b734).** ⚠⚠
          b734 전에는 칠해 놓고 저장 결과를 **버렸습니다.** 실패해도 별은
          칠해진 채 남고 지구본까지 그 나라 색으로 칠해져서, 사용자는
@@ -390,14 +404,12 @@ async function 나라카드(코드, 먼저){
          합니다. 바뀐 것은 **실패하면 되돌린다**입니다. */
       const 전값 = myRates[wrap.dataset.city]?.stars ?? null;
       paintStars(wrap, v, true);
-      숫자.textContent = v ? v.toFixed(1) : '';
-      이름표.textContent = v ? '내 별점' : '눌러서 매기기';
+      글(v || null);
 
       const 됐나 = await saveRate(wrap.dataset.city, { stars: v }, true);
       if (됐나 === false){
         paintStars(wrap, 전값, false);
-        숫자.textContent = 전값 != null ? Number(전값).toFixed(1) : '';
-        이름표.textContent = 전값 != null ? '내 별점' : '눌러서 매기기';
+        글(전값);
         toast('저장하지 못했어요. 잠시 뒤 다시 해주세요.');
         return;                       /* 지구본도 안 칠합니다 */
       }
