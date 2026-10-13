@@ -8,11 +8,11 @@
  * 저장: 한줄평은 saveRate(rating.js — ctx 로 받음, 고리 막기) · 맛집은 food_add(db/124).
  * 누르기는 document 에 한 번 — 지구본 카드 · 평가 탭 줄 · 도시 화면 어디에 붙어도 같은 처리.
  */
-import { esc, toast, avatarImg } from './dom.js?v=b866';
-import { sb } from './db.js?v=b866';
-import { netTimeout } from './net.js?v=b866';
+import { esc, toast, avatarImg } from './dom.js?v=b867';
+import { sb } from './db.js?v=b867';
+import { netTimeout } from './net.js?v=b867';
 /* 「내 추천 지우기」를 한 번 더 눌러 정하는 장치. ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b866';
+import { arm } from './ui.js?v=b867';
 
 /* ⚠ 기다리는 시간(검토에서 찾음): netTimeout 기본 2.5초는 «오프라인» 판정까지 켭니다 — 느린 폰 망에서 저장은 됐는데
    「timeout」 오류 + 20초 오프라인 띠가 떴습니다. 쓰기는 10초, 읽기는 8초. 오류 글은 한국어로. */
@@ -170,7 +170,7 @@ export async function foodsHtml(id, 이름){
     const 눌림 = !!f.mine && !내글;
     const 내대표 = !!나 && f.note && f.note_uid === 나;
     return `<div class="crvrow fdrow2">
-      <div class="fdname"><span class="n">${i + 1}</span><b>${esc(f.name)}</b>
+      <div class="fdname"><span class="fdi" aria-hidden="true">${포크}</span><b>${esc(f.name)}</b>
         <button type="button" class="fdrec${눌림 ? ' on' : ''}" data-fdrec="${esc(f.name)}" data-city="${esc(id)}"
         aria-pressed="${눌림 ? 'true' : 'false'}"${!나 || 내글 ? ' disabled' : ''}>${엄지(눌림)}<span>추천 ${f.n}</span></button></div>
       ${f.note ? `${f.note_uid ? `<button class="ghost crvwho" data-person="${esc(f.note_uid)}">${avatarImg(f.note_avatar, f.note_uid, f.note_by,
@@ -184,10 +184,11 @@ export async function foodsHtml(id, 이름){
       ${(f.n_notes || 0) > 1 ? `<button type="button" class="ghost fdmore" data-fdshop="${esc(f.name)}" data-city="${esc(id)}">추천 글 ${f.n_notes - 1}개 더 보기 ›</button>` : ''}` : ''}
     </div>`;
   }).join('');
-  return `<div class="fdsec"><div class="fdhd"><b>🍽 ${esc(이름)} 맛집 추천${l.length ? ` <span>${l.length}</span>` : ''}</b></div>
-    ${l.length ? 줄 : '<div class="fdempty">아직 추천이 없어요 — 첫 번째로 추천해 보세요</div>'}
+  /* b867(사용자 시안 승인): 한줄평 칸과 같은 틀 — 제목 줄(.cvsechd) · 바로 밑 «쓰는 줄»(한줄평 칸과 같은 모양) · 줄들 · 빈 줄은 한 줄만(부제 걷음). */
+  return `<div class="fdsec"><div class="cvsechd"><b>맛집 추천</b>${l.length ? `<span class="n">${l.length}</span>` : ''}</div>
     ${ctx.me() ? `<div class="cmask fdadd" data-city="${esc(id)}" data-name="${esc(이름)}">
-      <div class="cmbtns"><button type="button" class="cmbtn wide" data-cmopen="food">+ 내 맛집 추천하기</button></div><div class="cmform" data-kbtop></div></div>` : ''}
+      <div class="cmbtns"><button type="button" class="cmbtn wide cvwrite" data-cmopen="food"><span>추천하고 싶은 맛집이 있나요?</span><b>추천하기</b></button></div><div class="cmform" data-kbtop></div></div>` : ''}
+    ${l.length ? 줄 : '<div class="secempty">아직 추천이 없어요</div>'}
   </div>`;
 }
 
@@ -253,6 +254,8 @@ document.addEventListener('keydown', e => {
   if (e.key !== 'Enter' || e.isComposing || !e.target.closest?.('.fdedit')) return;
   e.preventDefault(); e.target.closest('.fdedit').querySelector('[data-fdeditsave]')?.click();
 });
+/* 포크·나이프 — 가게 줄 맨 앞(b867, 한줄평 줄과 구별) */
+const 포크 = '<svg class="crvic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8m-2.5-8v5a2.5 2.5 0 0 0 5 0V3M7 11v10m10-18c-2 1.5-3 4-3 7v3h3v8"/></svg>';
 const 말풍선 = '<svg class="crvic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 5.5h15v10.5H10l-5.5 4v-4z"/></svg>';
 /* 엄지 그림 — 한줄평의 하트처럼 선 그림, 누르면 채움 */
 function 엄지(on){

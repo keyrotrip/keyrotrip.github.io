@@ -6889,7 +6889,7 @@ body:not(.hastab) #a2hs .shwrap{ padding-bottom:calc(var(--sab) + 10px); }
 .fdname .n{ flex:none; width:16px; font-weight:800; color:var(--primary); font-variant-numeric:tabular-nums; font-size:calc(16px * var(--ts)); }
 .fdname b{ flex:1; min-width:0; font-size:calc(17px * var(--ts)); overflow-wrap:anywhere; }
 .fdname .fdrec{ flex:none; align-self:center; font-size:calc(14px * var(--ts)); }   /* 추천은 가게 이름 줄 오른쪽(b862, 사용자) */
-.fdrow2 .crvwho, .fdrow2 .crvtxt{ margin-left:26px; }   /* 번호 칸만큼 들여 가게 이름과 나란히 */
+.fdrow2 .crvwho, .fdrow2 .crvtxt{ margin-left:0; }   /* b867: 들여쓰기 걷음 — 한줄평 줄과 같은 왼쪽 선 */
 .fdrow2 .fdname:last-child{ margin-bottom:0; }
 .fdtxt{ cursor:default; }
 .fdrec{ display:flex; align-items:center; gap:5px; border:0; background:none; padding:4px 0; margin:0; min-height:0; font:inherit; color:var(--ink-48); }
@@ -6960,6 +6960,36 @@ body.kbup .tabbar{ display:none; }
 .crvmyb button{ padding:4px 0; min-height:0; font:inherit; font-size:calc(14px * var(--ts)); color:var(--ink-48); }
 .crvmyb button:active{ transform:none; opacity:.6; }
 /* 맛집: 추천 글 더 보기 · 그 자리 고치기(b866) */
-.fdmore{ display:block; margin:10px 0 0 26px; padding:0; min-height:0; font:inherit; font-size:calc(14px * var(--ts)); color:var(--ink-48); }
-.fdedit{ margin:8px 0 0 26px; display:flex; flex-direction:column; gap:8px; }
-.fdrow2 .crvact{ margin-left:26px; }
+.fdmore{ display:block; margin:10px 0 0; padding:0; min-height:0; font:inherit; font-size:calc(14px * var(--ts)); color:var(--ink-48); }
+.fdedit{ margin:8px 0 0; display:flex; flex-direction:column; gap:8px; }
+.fdrow2 .crvact{ margin-left:0; }
+/* ── 한줄평 · 맛집 추천 같은 틀(b867, 사용자 시안 승인) ─────────────────────────────
+   제목 줄 하나(.cvsechd) · 쓰는 줄 하나(한줄평 #cv_noteedit = 맛집 .cvwrite) · 줄 모양(.crvrow) · 빈 줄(.secempty). 구별은 줄 안에서 —
+   한줄평은 이름 옆 「★ 3.5」, 맛집은 맨 위 포크 그림 + 가게 이름 + 👍. */
+.cvfr2{ margin-top:0; }
+.cvsechd{ display:flex; align-items:baseline; gap:6px; margin:var(--s-lg) 0 10px; }
+.cvsechd b{ font-size:calc(17px * var(--ts)); }
+.cvsechd .n{ font-size:calc(14px * var(--ts)); color:var(--ink-48); }
+.cvsechd .r{ margin-left:auto; font-size:calc(13px * var(--ts)); color:var(--ink-48); }
+.fdsec{ margin-top:var(--s-md); }
+.secempty{ padding:14px 0; margin-top:10px; border-top:1px solid var(--line); text-align:center;
+           color:var(--ink-48); font-size:calc(15px * var(--ts)); }
+/* 쓰는 줄 — 둘이 똑같이 보이게 */
+.cvnoterow, .cvwrite{ border:1px solid var(--line); background:var(--canvas); padding:2px 4px 2px 12px; min-height:46px; }
+.cvnoterow #cv_note{ border:0; background:transparent; padding:10px 0; font-size:max(var(--in-floor), calc(15px * var(--ts))); }
+.cvnoterow #cv_save{ background:none; border:0; color:var(--ink); font-weight:700; padding:8px 10px; font-size:calc(14px * var(--ts)); }
+.cvnoterow #cv_save:disabled{ color:var(--ink-48); opacity:1; }
+.cvnoterow #cv_cancel{ padding:8px 6px; font-size:calc(14px * var(--ts)); }
+.fdadd{ margin-top:0; }
+.fdadd .cmbtns{ display:block; }
+.cmbtn.cvwrite{ display:flex; align-items:center; justify-content:space-between; width:100%; text-align:left; font-weight:400; }
+.cvwrite span{ color:var(--ink-48); font-size:calc(15px * var(--ts)); }
+.cvwrite b{ padding:0 10px; font-size:calc(14px * var(--ts)); font-weight:700; color:var(--ink); }
+.cmbtn.cvwrite.on{ border-color:var(--ink-48); }
+.fdsec .crvrow:first-of-type, .crvsec .crvrow:first-of-type{ border-top:0; }
+.fdi{ flex:none; color:var(--ink-48); display:inline-flex; align-self:center; }
+.fdname{ gap:8px; }
+#cv_comments .crvsec{ margin-top:0; }
+#cv_comments .crvsec > .crvrow:first-child{ padding-top:4px; }
+.cmbtn.cvwrite{ border-style:solid; border-color:var(--line); background:var(--canvas); }
+.fdsec .fdadd + .crvrow, .fdsec .fdadd + .secempty{ margin-top:6px; }

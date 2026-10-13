@@ -13,17 +13,17 @@
  * 자료를 건드리므로 여기로 가져오면 안 됩니다.
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
-import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b866';
-import { sb } from './db.js?v=b866';
-import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b866';
-import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b866';
-import { starHtml, starValue } from './stars.js?v=b866';
-import { localTime } from './calc.js?v=b866';
-import { fail, netIsDown } from './net.js?v=b866';
+import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b867';
+import { sb } from './db.js?v=b867';
+import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b867';
+import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b867';
+import { starHtml, starValue } from './stars.js?v=b867';
+import { localTime } from './calc.js?v=b867';
+import { fail, netIsDown } from './net.js?v=b867';
 /* 후기 줄·후기 화면(b858). cityrev.js 는 이 파일을 안 읽습니다(도시 열기는 ctx 로) — 고리 없음. */
-import { revRowsHtml } from './cityrev.js?v=b866';
+import { revRowsHtml } from './cityrev.js?v=b867';
 /* 「○○ 맛집 추천」 칸(b861, db/124) — cmtask.js 는 이 파일을 안 읽습니다(고리 없음). */
-import { foodsHtml } from './cmtask.js?v=b866';
+import { foodsHtml } from './cmtask.js?v=b867';
 
 /* 지금 열려 있는 도시. **app.js 에 있던 것을 여기로 옮겼습니다(b329)** —
    여닫는 것은 이 파일이 하는데 변수만 저쪽에 있어서, 떼어낸 뒤
@@ -82,11 +82,16 @@ export async function refreshCityReviews(){
   const { data } = await sb.rpc('city_comments', { p_city: id });
   if (cityOpen?.id !== id) return;
   const 후기 = 내것먼저(data || []);
-  if (data){ $('cv_comments').innerHTML = revRowsHtml(후기.slice(0, 3), id, Math.max(cityStat[id]?.n_comment ?? 0, 후기.length)); 내한줄보기(); }
+  if (data){ const 수 = Math.max(cityStat[id]?.n_comment ?? 0, 후기.length); $('cv_comments').innerHTML = revRowsHtml(후기.slice(0, 3), id, 수); 한줄평머리(수); 내한줄보기(); }
 }
 /* 내 한줄평은 목록 맨 위에(b866, 사용자: 「한줄평 모아져 있는데 거기서 내가 수정 삭제 하면 되는거 아냐?」) —
    그 줄에 「수정 · 삭제」가 붙습니다(cityrev.js 반응줄). 그래서 위 「내 한줄평 · 수정 · 삭제」 줄은 내 글이 목록에 있으면 숨깁니다. */
 const 내것먼저 = l => { const 나 = ctx.me()?.id; return 나 ? [...l.filter(x => x.user_id === 나), ...l.filter(x => x.user_id !== 나)] : l; };
+/* 「한줄평 N · 좋아요 순」 제목 줄(b867, index.html .cvsechd) — 둘 이상일 때만 정렬 말을 답니다 */
+function 한줄평머리(수){
+  $('cv_cmtn').textContent = 수 ? String(수) : '';
+  $('cv_cmtsort').textContent = 수 > 1 ? '좋아요 순' : '';
+}
 const 목록에내것 = () => !!$('cv_comments')?.querySelector('[data-cvmyedit]');
 /* 맛집 추천 칸만 다시(b861) — 내가 추천을 남긴 뒤(cmtask.js 의 onFood). */
 export async function refreshCityFoods(강제 = false){   /* 강제 = 내가 방금 남기거나 고친 뒤(cmtask onFood) */
@@ -326,6 +331,7 @@ export async function openCity(id, 옵션 = {}){
   const 후기수 = Math.max(cityStat[id]?.n_comment ?? 0, 후기.length);
   /* 못 받았으면(cm 이 없음) 비워 둡니다 — 「첫 한줄평」은 «정말 없을 때»만(b859). */
   $('cv_comments').innerHTML = cm ? revRowsHtml(후기.slice(0, 3), id, 후기수) : '';
+  한줄평머리(cm ? 후기수 : 0);
   내한줄보기();   /* 목록에 내 글이 올라왔으면 위 줄을 숨기게(b866) */
   /* 맛집 추천(b861) — 한줄평 칸 아래. 못 받으면(SQL 전) 칸을 안 그립니다.
      ⚠ 같은 도시를 다시 그릴 때(별 누름·한줄평 저장 — 다시:true)는 비우지 않습니다(검토에서 찾음): 비우면 화면이 줄었다 늘며
@@ -459,14 +465,46 @@ document.addEventListener('click', e => {
   if (고 && $('cityview').contains(고)){
     e.preventDefault();
     if ($('cv_note').readOnly){ toast('연결이 없어 내 기록을 못 받았어요 — 연결되면 고칠 수 있어요'); return; }
-    한줄고치기(); $('cv_note').scrollIntoView({ block: 'center' }); return;
+    /* b867(사용자: 「써진 한줄평에서 수정이 돼야하는데 위쪽에서 수정이 됨 · 맛집처럼 그자리에서」) — 그 줄의 글이 칸으로 바뀝니다 */
+    const 줄 = 고.closest('.crvrow'), 글칸 = 줄?.querySelector('.crvtxt'); if (!글칸 || 줄.querySelector('.cvedit')) return;
+    글칸.insertAdjacentHTML('afterend', `<div class="fdedit cvedit" data-kbtop>
+      <input type="search" enterkeyhint="done" class="cmfield" maxlength="200" autocomplete="off" aria-label="내 한줄평 고치기" value="${esc(myRates[cityOpen?.id]?.comment || 글칸.textContent)}">
+      <div class="cmrow"><button type="button" class="ghost cmclose" data-cveditx>취소</button><button type="button" class="cmsave" data-cveditsave>저장</button></div></div>`);
+    글칸.classList.add('hide'); 줄.querySelector('.crvact')?.classList.add('hide');
+    const 칸 = 줄.querySelector('.cvedit input'); 칸.focus(); 칸.setSelectionRange?.(칸.value.length, 칸.value.length);
+    return;
   }
+  if (e.target.closest('[data-cveditx]') && $('cityview').contains(e.target)){
+    const 줄 = e.target.closest('.crvrow'); 줄?.querySelector('.cvedit')?.remove();
+    줄?.querySelector('.crvtxt')?.classList.remove('hide'); 줄?.querySelector('.crvact')?.classList.remove('hide');
+    return;
+  }
+  const 저 = e.target.closest('[data-cveditsave]');
+  if (저 && $('cityview').contains(저)){ e.preventDefault(); 한줄저장(저); return; }
   const 지 = e.target.closest('[data-cvmydel]');
   if (지 && $('cityview').contains(지)){
     e.preventDefault();
     if ($('cv_note').readOnly){ toast('연결이 없어 내 기록을 못 받았어요 — 연결되면 지울 수 있어요'); return; }
     내한줄지우기(지);
   }
+});
+/* 그 자리 고치기 저장 — 위 칸의 「등록」과 같은 saveRate 길 */
+async function 한줄저장(b){
+  const id = cityOpen?.id; if (!id) return;
+  const v = b.closest('.cvedit')?.querySelector('input')?.value.trim() || '';
+  if (!v){ toast('지우려면 「삭제」를 눌러 주세요'); return; }
+  b.disabled = true;
+  const 됐나 = await ctx.saveRate(id, { comment: v });
+  b.disabled = false;
+  if (됐나 === false){ toast('저장하지 못했어요. 잠시 뒤 다시 해주세요.'); return; }
+  toast('한줄평을 고쳤어요');
+  if (cityOpen?.id !== id) return;
+  $('cv_note').value = v; cvNoteDirty();
+  await openCity(id, { 다시: true });
+}
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.isComposing || !e.target.closest?.('.cvedit')) return;
+  e.preventDefault(); e.target.closest('.cvedit').querySelector('[data-cveditsave]')?.click();
 });
 $('cv_minedel').addEventListener('click', () => 내한줄지우기($('cv_minedel')));
 async function 내한줄지우기(b){

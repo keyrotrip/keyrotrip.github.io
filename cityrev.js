@@ -12,11 +12,11 @@
  *   bottom:0 은 아이폰 홈 화면 앱에서 키보드 뒤로 갑니다([[ios-keyboard-sheet]]).
  * ⚠ 좋아요·답글 단추는 도시 화면 줄에도 있습니다 — 누르기는 document 에 한 번 답니다(아래).
  */
-import { $, esc, toast, avatarImg } from './dom.js?v=b866';
-import { sb } from './db.js?v=b866';
-import { netTimeout } from './net.js?v=b866';
-import { cities, cityCountry } from './cities.js?v=b866';
-import { arm } from './ui.js?v=b866';
+import { $, esc, toast, avatarImg } from './dom.js?v=b867';
+import { sb } from './db.js?v=b867';
+import { netTimeout } from './net.js?v=b867';
+import { cities, cityCountry } from './cities.js?v=b867';
+import { arm } from './ui.js?v=b867';
 
 let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {}, redrawFoods: () => {} };
 export function setCityRevCtx(o){ ctx = { ...ctx, ...o }; }
@@ -64,8 +64,9 @@ function 반응줄(x, 시각 = true, 내단추 = false){
 export function revRowsHtml(list, cityId, 전체수){
   /* 아무도 안 쓴 도시 — 「첫 한줄평」(b859, 사용자가 고른 셋째 방안). 처음이라는 것이 쓸 이유가 됩니다.
      ⚠ 내 한줄평도 이 목록에 들어오므로(city_comments), 비었다는 건 나도 안 썼다는 뜻입니다. */
-  if (!list.length) return `<div class="cmfirst"><b>아직 한줄평이 없어요</b>
-    <span>첫 번째로 남기면 이 도시를 찾는 사람들이 가장 먼저 봐요</span></div>`;
+  /* b867: 부제·점선 상자 걷음(사용자: 「밑줄 친 부제 좀 없애 너무 지저분해」) — 한 줄만. 맛집 칸(cmtask.js)과 같은 .secempty.
+     제목 줄(「한줄평 N · 좋아요 순」)은 이제 index.html 의 .cvsechd 가 맡습니다(city.js 가 숫자를 채움). */
+  if (!list.length) return '<div class="secempty">아직 한줄평이 없어요</div>';
   const 줄 = list.map(x => ({ ...x, city: cityId })).map(x => `
     <div class="crvrow">
       <button class="ghost crvwho" data-person="${esc(x.user_id)}">
@@ -74,7 +75,7 @@ export function revRowsHtml(list, cityId, 전체수){
       <div class="crvtxt" data-crvopen data-crva="${esc(x.user_id)}" data-crvc="${esc(cityId)}">${esc(x.comment)}</div>
       ${반응줄(x, true, true)}
     </div>`).join('');
-  return `<div class="crvsec"><div class="daysep crvhd"><span>한줄평 ${전체수}</span><span class="crvsort">좋아요 순</span></div>${줄}
+  return `<div class="crvsec">${줄}
     ${전체수 > list.length ? `<button type="button" class="ghost crvall" data-crvall="${esc(cityId)}">모두 보기</button>` : ''}</div>`;
 }
 
