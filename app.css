@@ -7051,3 +7051,17 @@ body.kbup .tabbar{ display:none; }
 .audate{ position:relative; flex:1; text-align:center; padding:8px 0; cursor:pointer; }
 .audate b{ font-size:var(--f-lg); }
 .audate input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; border:0; padding:0; margin:0; font-size:16px; }   /* 16 미만이면 아이폰이 화면을 키움(ios-input-zoom) */
+/* 대시보드 「어떻게 열었나」(b872, db/133) — 앱/웹 · 기기 두 띠 */
+.auplat{ margin:12px 0 4px; padding:12px; border:1px solid var(--hairline); background:var(--canvas); }
+.auplat .h{ font-weight:700; font-size:var(--f-md); margin-bottom:8px; }
+.auplat .h span{ font-weight:400; color:var(--ink-48); font-size:var(--f-sm); margin-left:4px; }
+.auplat .r{ font-size:var(--f-sm); color:var(--ink-48); margin-top:6px; }
+.auplat .r b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+.auplat .bar{ display:flex; height:8px; margin-top:5px; background:var(--divider-soft); overflow:hidden; }
+.auplat .bar i{ display:block; height:100%; }
+.auplat .g + .g{ margin-top:10px; }
+.auplat .r{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 8px; }
+.auplat .r .l{ color:var(--ink); }
+.auplat .ios{ background:#3b6fe0; } .auplat .and{ background:#2f9e5b; }
+.auplat .k{ margin-top:10px; font-size:var(--f-xs, 12px); color:var(--ink-48); display:flex; align-items:center; gap:4px; }
+.auplat .k i{ display:inline-block; width:8px; height:8px; } .auplat .k i.and{ margin-left:8px; }

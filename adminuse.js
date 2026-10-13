@@ -19,9 +19,9 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b871';
-import { sb } from './db.js?v=b871';
-import { netTimeout } from './net.js?v=b871';
+import { $, esc, toast } from './dom.js?v=b872';
+import { sb } from './db.js?v=b872';
+import { netTimeout } from './net.js?v=b872';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },
@@ -71,7 +71,7 @@ export async function loadUsage(force){
   if (!자료 || 받은기간 !== 기간 || 받은끝 !== 끝날)
     판.innerHTML = 머리() + `<div class="card auc"><div class="empty"><span class="load">세는 중…</span></div></div>`;
   /* p_end 는 날짜를 옮겼을 때만 보냅니다 — db/132 전 서버(인자 하나)에서도 오늘 보기는 그대로 돌게 */
-  const r = await netTimeout(sb.rpc('admin_usage', { p_days: 기간, ...(기간 === 1 && 끝날 ? { p_end: 끝날 } : {}) }), 15000);
+  const r = await netTimeout(sb.rpc('admin_usage', { p_days: 기간, ...(기간 > 0 && 끝날 ? { p_end: 끝날 } : {}) }), 15000);
   if (이번 !== 차례) return;                       /* 그 사이 기간을 또 바꿨으면 늦은 답은 버립니다 */
   if (r.error || !r.data){
     const 없음 = /admin_usage|does not exist|schema cache|could not find/i.test(r.error?.message || '');
@@ -111,19 +111,47 @@ function 머리(){
         `<button type="button" role="tab" data-au-days="${n}" aria-selected="${n === 기간}"
           class="${n === 기간 ? 'on' : ''}">${l}</button>`).join('')}</div>
       <button type="button" class="ghost aurf" data-au="refresh" aria-label="새로고침">새로고침</button>
-    </div>${기간 === 1 ? 날짜줄() : ''}`;
+    </div>${기간 > 0 ? 날짜줄() : ''}`;
 }
+/* 날짜 줄 — 1일은 하루씩, 7·28·90·365일은 그 기간만큼씩 옮깁니다(b872, 사용자: 「7일 28일도 1일처럼 주 달 옮겨 갈 수 있게」).
+   달력에서 고르는 날은 «끝나는 날». 전체는 줄이 없습니다. */
+const 짧게 = s => 긴날(s).replace(/ \(.\)$/, '');
 function 날짜줄(){
-  const 오늘 = 오늘글(), 날 = 끝날 || 오늘;
+  const 오늘 = 오늘글(), 날 = 끝날 || 오늘, 첫 = 날빼기(날, 기간 - 1);
+  const 이름 = 기간 === 1 ? `${날 === 오늘 ? '오늘 · ' : ''}${긴날(날)}`
+    : `${짧게(첫)} ~ ${날 === 오늘 ? '오늘' : 짧게(날)}`;
+  const 말 = 기간 === 1 ? '하루' : `${기간}일`;
   return `<div class="audaybar">
-      <button type="button" class="ghost" data-au-day="-1" aria-label="하루 전">‹</button>
-      <label class="audate"><b>${날 === 오늘 ? '오늘 · ' : ''}${긴날(날)}</b> <span aria-hidden="true">📅</span>
-        <input type="date" data-au-date value="${날}" max="${오늘}" aria-label="날짜 고르기"></label>
-      <button type="button" class="ghost" data-au-day="1" aria-label="하루 뒤"${날 >= 오늘 ? ' disabled' : ''}>›</button>
+      <button type="button" class="ghost" data-au-day="-1" aria-label="${말} 전">‹</button>
+      <label class="audate"><b>${이름}</b> <span aria-hidden="true">📅</span>
+        <input type="date" data-au-date value="${날}" max="${오늘}" aria-label="끝나는 날 고르기"></label>
+      <button type="button" class="ghost" data-au-day="1" aria-label="${말} 뒤"${날 >= 오늘 ? ' disabled' : ''}>›</button>
+    </div>`;
+}
+/* 어떻게·어디서 열었나(b872, db/133) — 그 기간에 연 사람 중. 기록 전 서버(platform 없음)나 셀 사람이 없으면 안 그림. */
+function 어떻게(D){
+  const P = D.platform; if (!P || !Number(P.known)) return '';
+  const 알 = Number(P.known), 앱 = Number(P.app || 0), 웹 = Number(P.web_only || 0);
+  const 퍼 = v => 알 ? Math.round(v / 알 * 100) : 0;
+  const 띠 = (v, 합, c) => `<i class="${c}" style="width:${(합 ? v / 합 * 100 : 0).toFixed(1)}%"></i>`;
+  const 늦 = D.plat_since && D.from && D.plat_since > D.from ? ` · ${긴날(D.plat_since).replace(/ \(.\)$/, '')}부터 셈` : '';
+  /* 홈 화면 앱 / 웹을 먼저 나누고, 그 안에서 애플 / 안드로이드(사용자). 컴퓨터는 안 셈. */
+  const 칸 = (이름, 명, 애, 안) => {
+    애 = Number(애 || 0); 안 = Number(안 || 0);
+    return `<div class="g"><div class="r"><span class="l">${이름} <b>${수(명)}명</b> ${퍼(명)}%</span>
+        <span class="d">애플 <b>${수(애)}</b> · 안드로이드 <b>${수(안)}</b></span></div>
+      <div class="bar">${띠(애, 애 + 안, 'ios')}${띠(안, 애 + 안, 'and')}</div></div>`;
+  };
+  return `<div class="auplat">
+      <div class="h">어떻게 열었나 <span>${수(알)}명 중${늦}</span></div>
+      ${칸('홈 화면 앱', 앱, P.app_ios, P.app_and)}
+      ${칸('웹', 웹, P.web_ios, P.web_and)}
+      <div class="k"><i class="ios"></i>애플 <i class="and"></i>안드로이드</div>
     </div>`;
 }
 const 기간말 = D => D.all ? `${긴날(D.first || D.from).replace(/ \(.\)$/, '')}부터 지금까지`
   : D.days === 1 ? (D.today === (D.real_today || 오늘글()) ? '오늘 하루 동안' : `${긴날(D.today).replace(/ \(.\)$/, '')} 하루 동안`)
+  : D.today && D.today !== (D.real_today || 오늘글()) ? `${짧게(D.from)} ~ ${짧게(D.today)} 동안`
   : `지난 ${D.days}일 동안`;
 
 /* 지난 기간과 견줄 수 있나 — 쓴 사람은 앱 연 날 기록이, 탈퇴는 탈퇴를 센 기록(117)이 지난 기간 첫날까지 있어야
@@ -161,6 +189,7 @@ function 개요(D){
     <p class="aunote">${D.all ? '전체 기간은 견줄 앞 기간이 없어요' : D.days === 1 ? '▲▼ 는 바로 전날과 견준 값이에요' : `▲▼ 는 바로 앞 ${D.days}일과 견준 값이에요`}
       · 탈퇴 = 계정을 지운 사람${D.del_since ? `(${긴날(D.del_since).replace(/ \(.\)$/, '')}부터 셈)` : ''}${늦게시작 || !기록중
       ? ` · 「쓴 사람」은 ${기록중 ? 긴날(D.since).replace(/ \(.\)$/, '') : '오늘'}부터 세요` : ''}</p>
+    ${어떻게(D)}
     <div class="aucap" id="au_cap" aria-live="polite"></div>
     <div class="auchartwrap" id="au_chartwrap">${그래프(D)}</div>
     <div class="aux"><span>${짧은날(D.from)}</span><span>${짧은날(D.series?.[Math.floor((D.series.length - 1) / 2)]?.d || D.from)}</span><span>${짧은날(D.today)}</span></div>
@@ -578,7 +607,7 @@ $('adm_use')?.addEventListener('click', e => {
   const 하루 = e.target.closest('[data-au-day]');
   if (하루){
     if (하루.disabled) return;
-    const 날 = 날빼기(끝날 || 오늘글(), -Number(하루.dataset.auDay));
+    const 날 = 날빼기(끝날 || 오늘글(), -Number(하루.dataset.auDay) * Math.max(1, 기간));
     끝날 = 날 >= 오늘글() ? null : 날;
     loadUsage(); return;
   }
@@ -616,4 +645,6 @@ $('adm_use')?.addEventListener('change', e => {
   끝날 = 칸.value >= 오늘글() ? null : 칸.value;
   loadUsage();
 });
+
+
 
