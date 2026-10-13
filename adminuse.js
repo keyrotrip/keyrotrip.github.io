@@ -19,9 +19,9 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b870';
-import { sb } from './db.js?v=b870';
-import { netTimeout } from './net.js?v=b870';
+import { $, esc, toast } from './dom.js?v=b871';
+import { sb } from './db.js?v=b871';
+import { netTimeout } from './net.js?v=b871';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },
@@ -38,6 +38,9 @@ const 칸들 = [['ov', '개요'], ['en', '참여'], ['au', '사람들'], ['ad', 
 let 기간 = 28, 보는칸 = 'ov', 지표 = 'a', 깔때기 = 'all';
 let 자료 = null, 받은기간 = null, 받은때 = 0, 차례 = 0;
 let 실시간자료 = [];   /* 실시간 막대 누르기용(b870) */
+/* 「1일」 보기의 날짜(b871, 사용자 시안 승인) — null 이면 오늘. ‹ › 로 하루씩 · 날짜를 누르면 달력. 다른 기간을 고르면 오늘로. */
+let 끝날 = null, 받은끝 = null;
+const 오늘글 = () => new Date().toLocaleDateString('sv');
 
 const 수 = v => Number(v ?? 0).toLocaleString('ko-KR');
 /* 소수 한 자리 — 「1.0」은 「1」로. */
@@ -63,11 +66,12 @@ const 탈퇴서버 = D => D?.kpi?.deletes != null;      /* db/117 을 돌렸나 
 export async function loadUsage(force){
   const 판 = $('adm_use');
   if (!판) return;
-  if (!force && 자료 && 받은기간 === 기간 && Date.now() - 받은때 < 60_000){ 그리기(); return; }
+  if (!force && 자료 && 받은기간 === 기간 && 받은끝 === 끝날 && Date.now() - 받은때 < 60_000){ 그리기(); return; }
   const 이번 = ++차례;
-  if (!자료 || 받은기간 !== 기간)
+  if (!자료 || 받은기간 !== 기간 || 받은끝 !== 끝날)
     판.innerHTML = 머리() + `<div class="card auc"><div class="empty"><span class="load">세는 중…</span></div></div>`;
-  const r = await netTimeout(sb.rpc('admin_usage', { p_days: 기간 }), 15000);
+  /* p_end 는 날짜를 옮겼을 때만 보냅니다 — db/132 전 서버(인자 하나)에서도 오늘 보기는 그대로 돌게 */
+  const r = await netTimeout(sb.rpc('admin_usage', { p_days: 기간, ...(기간 === 1 && 끝날 ? { p_end: 끝날 } : {}) }), 15000);
   if (이번 !== 차례) return;                       /* 그 사이 기간을 또 바꿨으면 늦은 답은 버립니다 */
   if (r.error || !r.data){
     const 없음 = /admin_usage|does not exist|schema cache|could not find/i.test(r.error?.message || '');
@@ -77,7 +81,7 @@ export async function loadUsage(force){
       <div style="margin-top:10px"><button class="small" data-au="retry">다시 받기</button></div></div></div>`;
     return;
   }
-  자료 = r.data; 받은기간 = 기간; 받은때 = Date.now();
+  자료 = r.data; 받은기간 = 기간; 받은끝 = 끝날; 받은때 = Date.now();
   그리기();
 }
 
@@ -107,9 +111,20 @@ function 머리(){
         `<button type="button" role="tab" data-au-days="${n}" aria-selected="${n === 기간}"
           class="${n === 기간 ? 'on' : ''}">${l}</button>`).join('')}</div>
       <button type="button" class="ghost aurf" data-au="refresh" aria-label="새로고침">새로고침</button>
+    </div>${기간 === 1 ? 날짜줄() : ''}`;
+}
+function 날짜줄(){
+  const 오늘 = 오늘글(), 날 = 끝날 || 오늘;
+  return `<div class="audaybar">
+      <button type="button" class="ghost" data-au-day="-1" aria-label="하루 전">‹</button>
+      <label class="audate"><b>${날 === 오늘 ? '오늘 · ' : ''}${긴날(날)}</b> <span aria-hidden="true">📅</span>
+        <input type="date" data-au-date value="${날}" max="${오늘}" aria-label="날짜 고르기"></label>
+      <button type="button" class="ghost" data-au-day="1" aria-label="하루 뒤"${날 >= 오늘 ? ' disabled' : ''}>›</button>
     </div>`;
 }
-const 기간말 = D => D.all ? `${긴날(D.first || D.from).replace(/ \(.\)$/, '')}부터 지금까지` : `지난 ${D.days}일 동안`;
+const 기간말 = D => D.all ? `${긴날(D.first || D.from).replace(/ \(.\)$/, '')}부터 지금까지`
+  : D.days === 1 ? (D.today === (D.real_today || 오늘글()) ? '오늘 하루 동안' : `${긴날(D.today).replace(/ \(.\)$/, '')} 하루 동안`)
+  : `지난 ${D.days}일 동안`;
 
 /* 지난 기간과 견줄 수 있나 — 쓴 사람은 앱 연 날 기록이, 탈퇴는 탈퇴를 센 기록(117)이 지난 기간 첫날까지 있어야
    합니다. 전체는 견줄 기간이 없습니다. */
@@ -143,7 +158,7 @@ function 개요(D){
   return `<div class="card auc auov">
     <p class="ausum">${요약}</p>
     <div class="aukpi aukpi6" role="tablist" aria-label="지표">${카드}</div>
-    <p class="aunote">${D.all ? '전체 기간은 견줄 앞 기간이 없어요' : `▲▼ 는 바로 앞 ${D.days}일과 견준 값이에요`}
+    <p class="aunote">${D.all ? '전체 기간은 견줄 앞 기간이 없어요' : D.days === 1 ? '▲▼ 는 바로 전날과 견준 값이에요' : `▲▼ 는 바로 앞 ${D.days}일과 견준 값이에요`}
       · 탈퇴 = 계정을 지운 사람${D.del_since ? `(${긴날(D.del_since).replace(/ \(.\)$/, '')}부터 셈)` : ''}${늦게시작 || !기록중
       ? ` · 「쓴 사람」은 ${기록중 ? 긴날(D.since).replace(/ \(.\)$/, '') : '오늘'}부터 세요` : ''}</p>
     <div class="aucap" id="au_cap" aria-live="polite"></div>
@@ -290,7 +305,7 @@ function 실시간(D){
     }).join('');
     const 꼭대기글 = 합 > 0 && 꼭대기 >= 0
       ? `<text x="${Math.min(W - 6, Math.max(6, (꼭대기 + .5) * 칸폭)).toFixed(1)}" y="${(H - Math.max(2, 최대 / 최대 * (H - 위 - 2)) - 2).toFixed(1)}" class="aupk">${수(최대)}</text>` : '';
-    return `<div class="aulrow"><div class="hd"><span>${이름}</span><em class="aucap" data-sum="48시간 ${수(합)}">48시간 ${수(합)}</em><b>오늘 ${수(오늘)}</b></div>
+    return `<div class="aulrow"><div class="hd"><span>${이름}</span><em class="aurtcap" data-sum="48시간 ${수(합)}">48시간 ${수(합)}</em><b>오늘 ${수(오늘)}</b></div>
       <svg class="aubars" viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 48시간 한 시간마다 ${이름} — 모두 ${합}" data-k="${k}">${막대}${꼭대기글}</svg></div>`;
   };
   const 지금 = new Date(받은때 || Date.now());
@@ -309,12 +324,12 @@ function 막대말(svg, ev){
   const i = Math.max(0, Math.min(실시간자료.length - 1, Math.floor((ev.clientX - r.left) / r.width * 실시간자료.length)));
   const h = 실시간자료[i], k = svg.dataset.k, 때 = new Date(h.h);
   const 말 = `${때.getMonth() + 1}/${때.getDate()} ${때.getHours()}시 · ${수(h[k] || 0)}개`;
-  const 칸 = svg.closest('.aulrow')?.querySelector('.aucap'); if (칸){ 칸.textContent = 말; 칸.classList.add('on'); }
+  const 칸 = svg.closest('.aulrow')?.querySelector('.aurtcap'); if (칸){ 칸.textContent = 말; 칸.classList.add('on'); }
   svg.querySelectorAll('rect.sel').forEach(x => x.classList.remove('sel'));
   svg.querySelector(`rect[data-i="${i}"]`)?.classList.add('sel');
 }
 function 막대놓기(svg){
-  const 칸 = svg.closest('.aulrow')?.querySelector('.aucap'); if (칸){ 칸.textContent = 칸.dataset.sum; 칸.classList.remove('on'); }
+  const 칸 = svg.closest('.aulrow')?.querySelector('.aurtcap'); if (칸){ 칸.textContent = 칸.dataset.sum; 칸.classList.remove('on'); }
   svg.querySelectorAll('rect.sel').forEach(x => x.classList.remove('sel'));
 }
 document.addEventListener('pointermove', e => { const s = e.target.closest?.('.aubars[data-k]'); if (s) 막대말(s, e); });
@@ -559,7 +574,14 @@ $('adm_use')?.addEventListener('click', e => {
   const 탭 = e.target.closest('[data-au-tab]');
   if (탭){ if (탭.dataset.auTab !== 보는칸){ 보는칸 = 탭.dataset.auTab; 그리기(); } return; }
   const 기 = e.target.closest('[data-au-days]');
-  if (기){ const n = Number(기.dataset.auDays); if (n !== 기간){ 기간 = n; loadUsage(); } return; }
+  if (기){ const n = Number(기.dataset.auDays); if (n !== 기간){ 기간 = n; 끝날 = null; loadUsage(); } return; }
+  const 하루 = e.target.closest('[data-au-day]');
+  if (하루){
+    if (하루.disabled) return;
+    const 날 = 날빼기(끝날 || 오늘글(), -Number(하루.dataset.auDay));
+    끝날 = 날 >= 오늘글() ? null : 날;
+    loadUsage(); return;
+  }
   const 카 = e.target.closest('[data-au-k]');
   if (카){
     if (카.dataset.auK === 지표 || 카.disabled) return;
@@ -585,5 +607,13 @@ $('adm_use')?.addEventListener('click', e => {
   }
   const 단 = e.target.closest('[data-au]');
   if (단) loadUsage(true);
+});
+
+
+/* 「1일」 달력에서 고른 날(b871) */
+$('adm_use')?.addEventListener('change', e => {
+  const 칸 = e.target.closest?.('[data-au-date]'); if (!칸 || !칸.value) return;
+  끝날 = 칸.value >= 오늘글() ? null : 칸.value;
+  loadUsage();
 });
 

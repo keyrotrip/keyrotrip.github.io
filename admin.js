@@ -11,15 +11,15 @@
  * 화면을 뜯어도 남의 자료는 안 나옵니다. 서버 쪽 함수가 is_admin() 을
  * 확인하므로 여기서 막는 것은 그저 안 보여주는 것뿐입니다.
  */
-import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b870';
-import { sb } from './db.js?v=b870';
-import { fail, netTimeout } from './net.js?v=b870';
+import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b871';
+import { sb } from './db.js?v=b871';
+import { fail, netTimeout } from './net.js?v=b871';
 /* 사람 신고의 「보기」(b789) — 그 사람 화면을 대시보드 위에 엽니다. */
-import { openPerson } from './people.js?v=b870';
+import { openPerson } from './people.js?v=b871';
 /* 기능 스위치를 바꾸면 그 자리에서 화면에 먹입니다(b491) — flags.js 머리말. */
-import { reapplyFeatures } from './flags.js?v=b870';
+import { reapplyFeatures } from './flags.js?v=b871';
 /* 「사용」 칸(b815) — 유튜브 스튜디오처럼. 관리자 화면을 열 때 받습니다(로그인마다 세지 않게). */
-import { loadUsage } from './adminuse.js?v=b870';
+import { loadUsage } from './adminuse.js?v=b871';
 
 /* ── 칸 셋 「사용 | 비용 | 문제」(b815, 사용자가 고름) ─────────────────────────
  * 분석 탭의 「성향 | 별점 | 어워즈」(anal.js)와 같은 모양·같은 규칙 — 고른 칸은 앱이 켜져 있는 동안 기억합니다.
@@ -305,7 +305,12 @@ async function 사람신고(){
   칸.innerHTML = 목록.length ? 목록.map(x => `<div class="arow">
       <span class="k"><b>${esc(x.reason)}</b> ${esc(x.target_name || '이름 없음')}${
           x.target_total > 1 ? ` · <b>이 사람 신고 ${x.target_total}건</b>` : ''}
-        ${x.detail ? `<span class="m">“${esc(x.detail)}”</span>` : ''}
+        ${(() => {
+          /* 맛집 사진 신고(b871, 사용자 사진 — 긴 주소가 한 글자 폭으로 찍혔음): 글에서 「#food:N 주소」를 떼고 작은 사진으로 */
+          const 사 = /#food:\d+\s+(https:\/\/qahqqhjleqfrsjiixnas\.supabase\.co\/storage\/v1\/object\/public\/food-photos\/\S+)/.exec(x.detail || '');
+          const 글 = String(x.detail || '').replace(/\s*#food:\d+\s+\S+/, '');
+          return (글 ? `<span class="m">“${esc(글)}”</span>` : '') + (사 ? `<img class="arph" src="${esc(사[1])}" alt="신고된 사진" loading="lazy" onerror="this.remove()">` : '');
+        })()}
         <span class="m">${esc(x.reporter_name || '이름 없음')}님이 · ${
           esc(new Date(x.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric',
                                                               hour: '2-digit', minute: '2-digit' }))}</span></span>
@@ -711,3 +716,4 @@ $('errbtn').addEventListener('click', async () => {
     });
   }
 }
+

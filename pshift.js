@@ -24,11 +24,11 @@
  *   누르는 것이 곧 봤다는 증거입니다. 그전까지는 홈을 그릴 때마다 다시
  *   붙습니다 — 그게 「다시 열 이유」의 뜻이기도 합니다.
  */
-import { esc } from './dom.js?v=b870';
-import { sb } from './db.js?v=b870';
-import { netTimeout } from './net.js?v=b870';
-import { cities } from './cities.js?v=b870';
-import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b870';
+import { esc } from './dom.js?v=b871';
+import { sb } from './db.js?v=b871';
+import { netTimeout } from './net.js?v=b871';
+import { cities } from './cities.js?v=b871';
+import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b871';
 
 let ctx = { me: () => null, 열기: () => {} };
 export function setShiftCtx(o){ ctx = { ...ctx, ...o }; }
@@ -174,10 +174,10 @@ function 그리기(){
   팝.innerHTML = `<div class="pshcard" role="dialog" aria-modal="true" aria-label="성향이 바뀌었어요">
       <p class="pshtitle">성향이 바뀌었어요</p>
       <div class="pshpair">
-        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b870" alt="">
+        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b871" alt="">
           <figcaption><b>${esc(전)}</b><span>${esc(앞)}</span></figcaption></figure>
         <i aria-hidden="true">→</i>
-        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b870" alt="">
+        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b871" alt="">
           <figcaption><b>${esc(지금)}</b><span>${esc(뒤)}</span></figcaption></figure>
       </div>
       <p class="pshwhy">${esc(personaShiftWhy(전, 지금, 대기.규칙) || '최근에 매긴 곳들이 그렇게 말해요.')}</p>

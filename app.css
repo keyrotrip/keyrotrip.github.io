@@ -7035,8 +7035,19 @@ body.kbup .tabbar{ display:none; }
 /* 실시간 숫자(b870) — 「48시간 N」 · 가장 높은 막대 위 숫자 · 누른 막대 */
 .aulrow .hd{ align-items:baseline; gap:8px; }
 .aulrow .hd span{ flex:1; }
-.aucap{ font-style:normal; font-size:var(--f-sm); color:var(--ink-48); font-variant-numeric:tabular-nums; }
-.aucap.on{ color:var(--ink); font-weight:600; }
+.aurtcap{ font-style:normal; font-size:var(--f-sm); color:var(--ink-48); font-variant-numeric:tabular-nums; }
+.aurtcap.on{ color:var(--ink); font-weight:600; }
 .aupk{ font-size:9px; fill:var(--ink); text-anchor:middle; font-weight:700; }
 .aubars rect.sel{ fill:#3b6fe0; }
 .aubars{ touch-action:pan-y; cursor:crosshair; }
+/* 관리자 사람 신고 줄(b871) — 단추가 다섯까지 늘어 글이 한 글자 폭으로 짜부라졌음: 단추는 글 아래 한 줄(넘치면 다음 줄) */
+#adm_reports .arow{ flex-direction:column; align-items:stretch; gap:8px; }
+#adm_reports .arow .abtns{ flex-wrap:wrap; align-self:flex-start; }
+.arph{ display:block; width:96px; height:96px; object-fit:cover; border-radius:4px; margin-top:6px; background:var(--pearl); }
+/* 대시보드 「1일」 날짜 줄(b871) — ‹ 날짜 📅 › · 날짜를 누르면 달력(투명 date 칸을 위에 덮음) */
+.audaybar{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; border:1px solid var(--hairline); background:var(--canvas); }
+.audaybar > button{ padding:8px 14px; min-height:0; font-size:20px; line-height:1; color:var(--ink); }
+.audaybar > button:disabled{ color:var(--ink-48); opacity:.4; }
+.audate{ position:relative; flex:1; text-align:center; padding:8px 0; cursor:pointer; }
+.audate b{ font-size:var(--f-lg); }
+.audate input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; border:0; padding:0; margin:0; font-size:16px; }   /* 16 미만이면 아이폰이 화면을 키움(ios-input-zoom) */

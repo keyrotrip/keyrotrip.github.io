@@ -12,12 +12,12 @@
  *   bottom:0 은 아이폰 홈 화면 앱에서 키보드 뒤로 갑니다([[ios-keyboard-sheet]]).
  * ⚠ 좋아요·답글 단추는 도시 화면 줄에도 있습니다 — 누르기는 document 에 한 번 답니다(아래).
  */
-import { $, esc, toast, avatarImg } from './dom.js?v=b870';
-import { sb } from './db.js?v=b870';
-import { netTimeout } from './net.js?v=b870';
-import { cities, cityCountry } from './cities.js?v=b870';
-import { arm } from './ui.js?v=b870';
-import { openPhotos } from './photoview.js?v=b870';
+import { $, esc, toast, avatarImg } from './dom.js?v=b871';
+import { sb } from './db.js?v=b871';
+import { netTimeout } from './net.js?v=b871';
+import { cities, cityCountry } from './cities.js?v=b871';
+import { arm } from './ui.js?v=b871';
+import { openPhotos } from './photoview.js?v=b871';
 
 let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {}, redrawFoods: () => {} };
 export function setCityRevCtx(o){ ctx = { ...ctx, ...o }; }
@@ -246,7 +246,7 @@ async function 추천하나그리기(지금, 이번){
         <h3 class="crvcity">${esc(x.shop)}</h3>
         <div class="m"><span data-crvcity="${esc(x.city_id)}">${esc(c?.name || '')}</span> 맛집 추천 · ${esc(언제(x.created_at))}</div>
       </div>
-      ${c?.image_url ? `<img class="crvimg" src="${esc(c.image_url)}" alt="" data-crvcity="${esc(x.city_id)}" onerror="this.remove()">` : ''}
+      ${/* 오른쪽 위 도시 사진은 뺌(b871, 사용자: 「우상단에 후쿠오카 사진은 안뜨는게 나은듯」 — 음식 사진과 겹쳐 보임). 도시 이름은 아래 줄이 누르면 도시로 */''}
     </div>
     ${x.photo ? `<img class="fdbig" src="${esc(x.photo)}" alt="" data-fdbig onerror="this.remove()">` : ''}
     <div class="crvbig">${esc(x.note)}</div>
