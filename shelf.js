@@ -15,27 +15,27 @@
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
 import { $, esc, toast, emptyDo, josa, toTop, coverDeck, backLabel,
-         flagOf, flagOk, flagSprite } from './dom.js?v=b865';
-import { openCity } from './city.js?v=b865';
-import { sb } from './db.js?v=b865';
-import { cities, countryName, cityCountry } from './cities.js?v=b865';
-import { myRates, cityStat, visited, avgTail } from './rate.js?v=b865';
-import { starHtml, paintStars, starValue, 별갈래, BAND_NAME } from './stars.js?v=b865';
-import { fail } from './net.js?v=b865';
-import { arm } from './ui.js?v=b865';
+         flagOf, flagOk, flagSprite } from './dom.js?v=b866';
+import { openCity } from './city.js?v=b866';
+import { sb } from './db.js?v=b866';
+import { cities, countryName, cityCountry, onlyCho } from './cities.js?v=b866';
+import { myRates, cityStat, visited, avgTail } from './rate.js?v=b866';
+import { starHtml, paintStars, starValue, 별갈래, BAND_NAME } from './stars.js?v=b866';
+import { fail } from './net.js?v=b866';
+import { arm } from './ui.js?v=b866';
 /* 깃발 벽의 공유는 지도·나라 목록과 **같은 카드**입니다(b649) — 셋 다
    「몇 개국 다녀왔다」를 말합니다. map.js 가 만들고 여기서 부르기만
    합니다. ⚠ map.js 는 shelf.js 를 안 가져오므로 고리가 안 생깁니다. */
-import { 발자국스펙 } from './map.js?v=b865';
-import { shareCard } from './card.js?v=b865';
-import { todayYmd } from './calc.js?v=b865';
+import { 발자국스펙 } from './map.js?v=b866';
+import { shareCard } from './card.js?v=b866';
+import { todayYmd } from './calc.js?v=b866';
 /* ⚠ `flagOf`·`flagOk` 는 **dom.js 것**입니다(위 줄) — un.js 에 또 만들었다가
      걷었습니다. `UN_CONT`·`UN_TOTAL` 도 un.js 가 «세어서» 줍니다. map.js 를
      끌어오지 않는 이유가 이것입니다 — 195 라는 수를 두 곳에서 적으면
      언젠가 갈라집니다. 두 곳이 같은지는 un.js 의 `검산()` 이 봅니다. */
-import { UN_CODES, UN_TOTAL } from './un.js?v=b865';
-import { loadCities } from './citysearch.js?v=b865';
-import { loadRateData, saveRate } from './rating.js?v=b865';
+import { UN_CODES, UN_TOTAL } from './un.js?v=b866';
+import { loadCities } from './citysearch.js?v=b866';
+import { loadRateData, saveRate } from './rating.js?v=b866';
 
 let ctx = {
   me: () => null,
@@ -71,6 +71,11 @@ let shelfKind = 'mine';
 let shelfSort = 'new';
 /* 'all' 이면 안 거릅니다. 값은 별갈래() 가 내는 것과 같습니다. */
 let shelfStar = 'all';
+/* 도시·나라 이름 찾기(b866, 사용자: 「보관함 방문한 도시에 도시 검색기능이 없네 내가 간도시가 많아서」).
+   도시 보관함 넷(been·want·mine·comment)에만. 평가 탭 찾기와 같은 규칙 — 초성이면 초성으로, 아니면 이름·영문·현지어·나라 이름까지(cities.js _hay). */
+let shelfQ = '';
+const CITY_KINDS = ['been', 'want', 'mine', 'comment'];
+const 찾기맞나 = (c, q) => !q || (onlyCho(q) ? String(c._cho || '').includes(q) : String(c._hay || '').includes(q));
 
 /* ── 빈 보관함 (b363) ────────────────────────────────────────────────
  * 전에는 두 곳 다 그냥 **'아직 없어요.'** 였습니다. 무엇이 없는지가 안
@@ -470,8 +475,11 @@ async function openBadgeShelf(){
   }).join('');
 }
 
-export async function openShelf(kind){
+export async function openShelf(kind, 다시 = false){
+  /* 새로 열 때(기록에 보관함 자리가 없을 때)나 다른 보관함으로 넘어갈 때는 찾던 글을 비웁니다. */
+  if (!다시 && (kind !== shelfKind || !['shelf', 'shsheet'].includes(history.state?.t2))){ shelfQ = ''; if ($('sh_q')) $('sh_q').value = ''; }
   shelfKind = kind;
+  $('sh_qwrap')?.classList.toggle('hide', !CITY_KINDS.includes(kind));
   /* ⚠⚠ **뒤로 단추가 늘 「← 프로필」이었습니다(b697, 실제로 눌러보고 찾음).**
      보관함 타일(다녀온 도시·가고 싶은 곳·깃발·한줄평·배지)은 b542 에
      **기록 탭으로 옮겨졌는데** 단추 글자는 마크업에 박힌 채였습니다.
@@ -486,7 +494,7 @@ export async function openShelf(kind){
   $('mappane').classList.add('hide');
   $('shelfpane').classList.remove('hide');
   coverDeck(true);
-  toTop($('shelfpane'));   /* 프로필 안이라 문서가 아니라 setview 를 올립니다(b471) */
+  if (!다시) toTop($('shelfpane'));   /* 프로필 안이라 문서가 아니라 setview 를 올립니다(b471) */
   if (history.state?.t2 !== 'shelf') history.pushState({ t2:'shelf' }, '');
   $('shelfhead').textContent = SHELF[kind] || '보관함';
   /* ⚠⚠ **먼저 비웁니다(b614, 사용자 신고).** ⚠⚠
@@ -499,6 +507,7 @@ export async function openShelf(kind){
    *   이면 그 한순간이 제일 크게 틀려 보입니다.
    * ⚠ 벽(`wall`)도 여기서 벗깁니다. 아래에서도 벗기지만, 그건 이 아래
    *   `await` 다음이라 늦습니다 — 그 사이에 옛 벽이 그대로 보입니다. */
+  if (!다시){   /* 찾기 글자를 칠 때마다 다시 그리면서 「여는 중」이 번쩍이지 않게(b866) */
   $('shelfcount').textContent = '';
   $('shelflist').classList.remove('wall');
   $('shelflist').classList.remove('flagwall');
@@ -509,6 +518,7 @@ export async function openShelf(kind){
   $('shelfshare').classList.add('hide');
   $('shelflist').innerHTML =
     '<div class="empty"><span class="load">보관함을 여는 중…</span></div>';
+  }
   /* 별점이 없는 보관함에서는 정렬 칸을 숨깁니다. 거를 것이 없습니다.
      넘어올 때 걸려 있던 조건도 풀어둡니다 — 다른 보관함의 조건이 남아 있으면
      왜 목록이 짧은지 알 수가 없습니다. */
@@ -539,7 +549,9 @@ export async function openShelf(kind){
   await loadCities();
   /* 전에는 여기서 오류를 안 봤습니다. 실패하면 평가가 하나도 없는 것처럼
      보이고, 공유 자료라 평가 화면까지 같이 비었습니다. 보고 있는 자리에 적습니다. */
-  const rd = await loadRateData();
+  /* 찾기 칸 글자마다 다시 그릴 때(다시)는 서버에 안 갑니다(b866 검토) — 한글은 자모마다 input 이 와서 한 번 찾는 데 수십 번
+     불렀고, 그중 하나만 끊겨도 쓰는 도중 「평가를 못 받아왔어요」로 바뀌었습니다. 이미 받아 둔 내 기록으로 거릅니다. */
+  const rd = 다시 ? {} : await loadRateData();
   if (rd.error){
     $('shelfcount').textContent = '';
     $('shelflist').innerHTML =
@@ -557,7 +569,8 @@ export async function openShelf(kind){
     if (kind === 'mine')    return r?.stars != null;
     if (kind === 'comment') return !!r?.comment;
     return false;
-  }).map(c => ({ ...c, stars: myRates[c.id]?.stars ?? null,
+  }).filter(c => 찾기맞나(c, shelfQ))
+    .map(c => ({ ...c, stars: myRates[c.id]?.stars ?? null,
                         at: myRates[c.id]?.updated_at || '' }));
 
   /* ⚠ **세는 것은 «거르기 전»입니다.** 시트의 개수는 「★4 를 고르면 몇
@@ -632,7 +645,9 @@ export async function openShelf(kind){
             <span class="memo">${esc(cityCountry(c))}${
               avgTail(cityStat[c.id], r)}</span></div>
           <span class="stars" data-city="${esc(c.id)}">${starHtml(r.stars)}</span>
-          <button class="ghost want${r.want ? ' on' : ''}" data-want="${esc(c.id)}" aria-label="가보고 싶어요">♡</button>
+          ${/* ♡(가보고 싶어요)는 「가보고 싶은 곳」에만(b866, 사용자: 「가보고 싶어요라는 뜻인데 내가 다녀온 곳인데」) —
+               평가 탭 줄 모양을 그대로 가져와 다녀온 도시에도 붙어 있었습니다. 여기서는 ♡를 다시 눌러 목록에서 빼는 데 씁니다. */''}
+          ${kind === 'want' ? `<button class="ghost want${r.want ? ' on' : ''}" data-want="${esc(c.id)}" aria-label="가보고 싶어요">♡</button>` : ''}
         </div>`;
         /* ── 한줄평 목록은 문장이 주인공입니다(b513) ─────────────────
            사용자 지적: 「한줄평이 제대로 보이지도 않는다」.
@@ -656,8 +671,15 @@ export async function openShelf(kind){
                ${줄}<div class="cq">${esc(r.comment)}</div></div>`
           : 줄;
       }).join('')
-    : shelfEmpty();
+    : (shelfQ ? `<div class="empty">「${esc(shelfQ)}」에 맞는 도시가 없어요.</div>` : shelfEmpty());
 }
+
+/* 찾기 칸 — 칠 때마다 걸러 다시 그립니다(서버는 안 부름 · 내 목록 안에서만). */
+$('sh_q')?.addEventListener('input', e => {
+  shelfQ = String(e.target.value || '').trim().toLowerCase();
+  openShelf(shelfKind, true);
+});
+$('sh_q')?.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) e.target.blur(); });
 
 export function closeShelf(fromPop){
   if (!fromPop && history.state?.t2 === 'shelf'){ history.back(); return; }

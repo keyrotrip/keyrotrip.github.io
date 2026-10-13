@@ -12,16 +12,18 @@
  *   bottom:0 은 아이폰 홈 화면 앱에서 키보드 뒤로 갑니다([[ios-keyboard-sheet]]).
  * ⚠ 좋아요·답글 단추는 도시 화면 줄에도 있습니다 — 누르기는 document 에 한 번 답니다(아래).
  */
-import { $, esc, toast, avatarImg } from './dom.js?v=b865';
-import { sb } from './db.js?v=b865';
-import { netTimeout } from './net.js?v=b865';
-import { cities, cityCountry } from './cities.js?v=b865';
-import { arm } from './ui.js?v=b865';
+import { $, esc, toast, avatarImg } from './dom.js?v=b866';
+import { sb } from './db.js?v=b866';
+import { netTimeout } from './net.js?v=b866';
+import { cities, cityCountry } from './cities.js?v=b866';
+import { arm } from './ui.js?v=b866';
 
-let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {} };
+let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {}, redrawFoods: () => {} };
 export function setCityRevCtx(o){ ctx = { ...ctx, ...o }; }
 
-let 겹 = [];              /* [{ 판:'all', city, 정렬 } | { 판:'one', a, city, 정렬 }] */
+let 겹 = [];              /* [{ 판:'all', city, 정렬 } | { 판:'one', a, city, 정렬 } | { 판:'fs', city, 가게 } | { 판:'fn', id, city }] */
+/* 맛집 답글(b866, db/127) — 사용자: 「맛집 추천도 한줄평처럼 답글」 → 「추천한 사람 글마다 따로」.
+   같은 덮는 층·같은 답글 칸·같은 ⋯ 메뉴를 씁니다. 'fs' = 한 가게의 추천 글 모음, 'fn' = 추천 글 하나 + 답글. */
 let 차례 = 0;
 let 메뉴대상 = null;      /* ⋯ 를 누른 것: { 종류:'rv'|'rp', a, city, id, uid, 글 } */
 
@@ -45,7 +47,7 @@ const 사진 = (url, id, 이름, px) => avatarImg(url, id, 이름,
   `width:${px}px;height:${px}px;border-radius:50%;object-fit:cover;flex:none`, 'thumb');
 
 /* 좋아요·답글 줄 — 도시 화면 줄 · 후기 화면 머리가 같이 씁니다 */
-function 반응줄(x, 시각 = true){
+function 반응줄(x, 시각 = true, 내단추 = false){
   const 나 = ctx.me()?.id, 내것 = x.user_id === 나;
   return `<div class="crvact">
     <button type="button" class="crvlike${x.liked ? ' on' : ''}" data-crvlike data-crva="${esc(x.user_id)}"
@@ -54,6 +56,7 @@ function 반응줄(x, 시각 = true){
     <button type="button" class="crvrep" data-crvopen data-crva="${esc(x.user_id)}" data-crvc="${esc(x.city)}"
             aria-label="답글${x.n_reply ? ` ${x.n_reply}개` : ' 달기'}">${말풍선}<span class="num">${x.n_reply || ''}</span></button>
     ${시각 ? `<span class="crvwhen">${esc(언제(x.created_at))}</span>` : ''}
+    ${내것 && 내단추 ? `<span class="crvmyb"><button type="button" class="ghost" data-cvmyedit>수정</button><button type="button" class="ghost" data-cvmydel>삭제</button></span>` : ''}
   </div>`;
 }
 
@@ -69,7 +72,7 @@ export function revRowsHtml(list, cityId, 전체수){
         ${사진(x.avatar_url, x.user_id, x.name, 36)}<b>${esc(x.name)}</b>${x.is_friend ? '<span class="crvf">팔로잉</span>' : ''}</button>
       ${별칸(x.stars)}
       <div class="crvtxt" data-crvopen data-crva="${esc(x.user_id)}" data-crvc="${esc(cityId)}">${esc(x.comment)}</div>
-      ${반응줄(x)}
+      ${반응줄(x, true, true)}
     </div>`).join('');
   return `<div class="crvsec"><div class="daysep crvhd"><span>한줄평 ${전체수}</span><span class="crvsort">좋아요 순</span></div>${줄}
     ${전체수 > list.length ? `<button type="button" class="ghost crvall" data-crvall="${esc(cityId)}">모두 보기</button>` : ''}</div>`;
@@ -83,6 +86,11 @@ function 판열기(새){
   그리기();
 }
 export function openCityRevs(city){ 판열기({ 판: 'all', city, 정렬: 'like' }); }
+export function openFoodShop(city, 가게){ 판열기({ 판: 'fs', city, 가게 }); }
+export function openFoodNote(id, city, 옵션 = {}){
+  판열기({ 판: 'fn', id: Number(id), city });
+  if (옵션.쓰기) setTimeout(() => $('crv_in')?.focus(), 0);
+}
 export function openCityRev(a, city, 옵션 = {}){
   판열기({ 판: 'one', a, city, 정렬: 'like' });
   if (옵션.쓰기) setTimeout(() => $('crv_in')?.focus(), 0);
@@ -102,18 +110,24 @@ export function closeCityRev(fromPop){
 }
 /* 닫고 나면 도시 화면의 숫자·하트를 맞춥니다(이 화면에서 누른 것이 있으니) */
 let 바뀜 = false;
-function 도시다시(){ if (바뀜){ 바뀜 = false; ctx.redrawCity?.(); } }
+function 도시다시(){ if (바뀜){ 바뀜 = false; ctx.redrawCity?.(); ctx.redrawFoods?.(); } }
 
 function 그리기(){
   const 지금 = 겹[겹.length - 1];
   const 이번 = ++차례;
   $('crvbody').innerHTML = '<div class="empty"><span class="load">불러오는 중…</span></div>';
   $('crvbody').scrollTop = 0;
-  $('crvtitle').textContent = 지금.판 === 'all' ? `${cities.find(c => c.id === 지금.city)?.name || ''} 한줄평` : '한줄평';
-  $('crvmenu').classList.toggle('hide', 지금.판 !== 'one');
-  $('crvinp').classList.toggle('hide', 지금.판 !== 'one' || !ctx.me());
-  if ($('crv_in')) { $('crv_in').value = ''; 등록칠(); }
-  return 지금.판 === 'all' ? 모두그리기(지금, 이번) : 하나그리기(지금, 이번);
+  $('crvtitle').textContent = 지금.판 === 'all' ? `${cities.find(c => c.id === 지금.city)?.name || ''} 한줄평`
+    : 지금.판 === 'fs' ? (지금.가게 || '맛집 추천') : 지금.판 === 'fn' ? '맛집 추천' : '한줄평';
+  $('crvmenu').classList.toggle('hide', 지금.판 !== 'one' && 지금.판 !== 'fn');
+  $('crvinp').classList.toggle('hide', (지금.판 !== 'one' && 지금.판 !== 'fn') || !ctx.me());
+  if ($('crv_in')) {
+    $('crv_in').value = '';
+    $('crv_in').placeholder = 지금.판 === 'fn' ? '추천 글에 답글을 남겨보세요.' : '한줄평에 답글을 남겨보세요.';
+    등록칠();
+  }
+  return 지금.판 === 'all' ? 모두그리기(지금, 이번) : 지금.판 === 'fs' ? 가게그리기(지금, 이번)
+       : 지금.판 === 'fn' ? 추천하나그리기(지금, 이번) : 하나그리기(지금, 이번);
 }
 
 async function 모두그리기(지금, 이번){
@@ -187,6 +201,66 @@ async function 하나그리기(지금, 이번){
       </div>`).join('') : '<div class="crvnone">첫 답글을 남겨 보세요.</div>'}`;
 }
 
+/* ── 맛집: 한 가게의 추천 글 모음(b866) ─────────────────────────────── */
+async function 가게그리기(지금, 이번){
+  const r = await netTimeout(sb.rpc('food_notes', { p_city: 지금.city, p_name: 지금.가게 }));
+  if (이번 !== 차례) return;
+  if (!r || r.error){ $('crvbody').innerHTML = '<div class="empty">지금은 불러올 수 없어요.</div>'; return; }
+  const 목록 = r.data || [];
+  const 전체 = 목록[0]?.n_all ?? 0, 글없음 = Math.max(0, 전체 - 목록.length);
+  const c = cities.find(z => z.id === 지금.city);
+  $('crvbody').innerHTML = `<div class="crvhd2"><span>${esc(c?.name || '')} · 추천 ${전체}명</span></div>` +
+    (목록.length ? 목록.map(x => `
+    <div class="crvrow">
+      <button class="ghost crvwho" data-person="${esc(x.user_id)}">${사진(x.avatar_url, x.user_id, x.name, 36)}<b>${esc(x.name)}</b></button>
+      <div class="crvtxt" data-fdnote="${x.id}" data-city="${esc(지금.city)}">${esc(x.note)}</div>
+      <div class="crvact"><button type="button" class="crvrep" data-fdnote="${x.id}" data-city="${esc(지금.city)}"
+        aria-label="답글${x.n_reply ? ` ${x.n_reply}개` : ' 달기'}">${말풍선}<span class="num">${x.n_reply || ''}</span></button>
+        <span class="crvwhen">${esc(언제(x.created_at))}</span></div>
+    </div>`).join('') : '<div class="empty">아직 추천 글이 없어요.</div>') +
+    (글없음 ? `<div class="crvnone">글 없이 추천만 ${글없음}명</div>` : '');
+}
+
+/* ── 맛집: 추천 글 하나 + 답글(b866) ────────────────────────────────── */
+async function 추천하나그리기(지금, 이번){
+  const [r, rp] = await Promise.all([
+    netTimeout(sb.rpc('food_note_one', { p_id: 지금.id })),
+    netTimeout(sb.rpc('food_replies_list', { p_id: 지금.id })),
+  ]);
+  if (이번 !== 차례) return;
+  const x = r?.data?.[0];
+  if (!r || r.error || rp?.error){ $('crvbody').innerHTML = '<div class="empty">지금은 불러올 수 없어요.</div>'; return; }
+  if (!x){ $('crvbody').innerHTML = '<div class="empty">지워졌거나 볼 수 없는 추천 글이에요.</div>';
+           $('crvinp').classList.add('hide'); $('crvmenu').classList.add('hide'); return; }
+  지금.글 = x.note; 지금.주인 = x.user_id; 지금.city = x.city_id;
+  const c = cities.find(z => z.id === x.city_id);
+  const 답글 = rp.data || [];
+  $('crvbody').innerHTML = `
+    <div class="crvtop">
+      <div class="l">
+        <button class="ghost crvwho sm" data-person="${esc(x.user_id)}">${사진(x.avatar_url, x.user_id, x.name, 22)}<span>${esc(x.name)}</span></button>
+        <h3 class="crvcity">${esc(x.shop)}</h3>
+        <div class="m"><span data-crvcity="${esc(x.city_id)}">${esc(c?.name || '')}</span> 맛집 추천 · ${esc(언제(x.created_at))}</div>
+      </div>
+      ${c?.image_url ? `<img class="crvimg" src="${esc(c.image_url)}" alt="" data-crvcity="${esc(x.city_id)}" onerror="this.remove()">` : ''}
+    </div>
+    <div class="crvbig">${esc(x.note)}</div>
+    <div class="crvgap"></div>
+    <div class="crvhd2"><span>답글 ${답글.length}개</span></div>
+    ${답글.length ? 답글.map(p => `
+      <div class="crpline">
+        <button class="ghost" data-person="${esc(p.user_id)}" aria-label="${esc(p.name)} 프로필">${사진(p.avatar_url, p.user_id, p.name, 32)}</button>
+        <div class="b">
+          <div class="n"><b data-person="${esc(p.user_id)}">${esc(p.name)}</b><small>${esc(언제(p.created_at))}</small></div>
+          <div class="x">${esc(p.body)}</div>
+          <div class="f">
+            <button type="button" class="ghost crpmore" data-crpmore="${p.id}" data-uid="${esc(p.user_id)}"
+                    data-txt="${esc(p.body)}" aria-label="더 보기">⋯</button>
+          </div>
+        </div>
+      </div>`).join('') : '<div class="crvnone">첫 답글을 남겨 보세요. 궁금한 걸 물어봐도 좋아요.</div>'}`;
+}
+
 /* ── 누르기 — 도시 화면 줄과 후기 화면 둘 다 ───────────────────────────── */
 document.addEventListener('click', async e => {
   const 좋 = e.target.closest('[data-crvlike]');
@@ -197,6 +271,11 @@ document.addEventListener('click', async e => {
   if (열){ e.preventDefault(); return openCityRev(열.dataset.crva, 열.dataset.crvc, { 쓰기: 열.classList.contains('crvrep') && !!ctx.me() }); }
   const 다 = e.target.closest('[data-crvall]');
   if (다){ e.preventDefault(); return openCityRevs(다.dataset.crvall); }
+  /* 맛집 답글(b866) — 도시 화면 맛집 줄(cmtask.js)·가게 글 모음 둘 다 */
+  const 맛글 = e.target.closest('[data-fdnote]');
+  if (맛글){ e.preventDefault(); return openFoodNote(맛글.dataset.fdnote, 맛글.dataset.city, { 쓰기: 맛글.classList.contains('crvrep') && !!ctx.me() }); }
+  const 맛가게 = e.target.closest('[data-fdshop]');
+  if (맛가게){ e.preventDefault(); return openFoodShop(맛가게.dataset.city, 맛가게.dataset.fdshop); }
   if (e.target.closest('[data-crvjump]')){       /* 도시 화면 평균 밑 「후기 N」 → 후기 칸으로 */
     e.preventDefault(); $('cv_comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   if (!$('crvview') || $('crvview').classList.contains('hide') || !$('crvview').contains(e.target)) return;
@@ -210,13 +289,15 @@ document.addEventListener('click', async e => {
   if (도시) return 도시로(도시.dataset.crvcity);
   if (e.target.closest('#crv_send')) return 등록();
   if (e.target.closest('#crvmenu')){
-    메뉴대상 = { 종류: 'rv', a: 지금.a, city: 지금.city, uid: 지금.a, 글: 지금.글 || '' };
+    메뉴대상 = 지금.판 === 'fn'
+      ? { 종류: 'fn', a: 지금.주인, city: 지금.city, uid: 지금.주인, 글: 지금.글 || '' }
+      : { 종류: 'rv', a: 지금.a, city: 지금.city, uid: 지금.a, 글: 지금.글 || '' };
     return 메뉴열기();
   }
   const 더 = e.target.closest('[data-crpmore]');
   if (더){
-    메뉴대상 = { 종류: 'rp', id: Number(더.dataset.crpmore), uid: 더.dataset.uid, 글: 더.dataset.txt,
-               a: 지금.a, city: 지금.city };
+    메뉴대상 = { 종류: 지금.판 === 'fn' ? 'fp' : 'rp', id: Number(더.dataset.crpmore), uid: 더.dataset.uid, 글: 더.dataset.txt,
+               a: 지금.판 === 'fn' ? 지금.주인 : 지금.a, city: 지금.city };
     return 메뉴열기();
   }
 });
@@ -270,15 +351,17 @@ let 보내는중 = false;
 async function 등록(){
   const 지금 = 겹[겹.length - 1];
   const 글 = $('crv_in').value.trim();
-  if (!글 || 보내는중 || 지금?.판 !== 'one') return;
+  if (!글 || 보내는중 || (지금?.판 !== 'one' && 지금?.판 !== 'fn')) return;
   보내는중 = true; $('crv_send').disabled = true;
-  const r = await netTimeout(sb.rpc('review_reply_add', { p_author: 지금.a, p_city: 지금.city, p_body: 글 }));
+  const r = 지금.판 === 'fn'
+    ? await netTimeout(sb.rpc('food_reply_add', { p_id: 지금.id, p_body: 글 }))
+    : await netTimeout(sb.rpc('review_reply_add', { p_author: 지금.a, p_city: 지금.city, p_body: 글 }));
   보내는중 = false; $('crv_send').disabled = false;
   if (!r || r.error){ toast(r?.error?.message || '연결을 확인해 주세요'); return; }
   $('crv_in').value = ''; 등록칠(); $('crv_in').blur();
   바뀜 = true;
   지금.정렬 = 'new';         /* 방금 쓴 것이 보이게 */
-  await 하나그리기(지금, ++차례);
+  await (지금.판 === 'fn' ? 추천하나그리기 : 하나그리기)(지금, ++차례);
   const 끝 = $('crvbody'); 끝.scrollTop = 끝.scrollHeight;
 }
 
@@ -287,8 +370,10 @@ function 메뉴열기(){
   const 나 = ctx.me()?.id, m = 메뉴대상;
   const 내글 = m.uid === 나;
   const 내후기 = m.a === 나;
-  $('crvsheet_edit').classList.toggle('hide', !(m.종류 === 'rv' && 내글));
-  $('crvsheet_del').classList.toggle('hide', !(m.종류 === 'rp' && (내글 || 내후기)));
+  /* 'fn'(내 맛집 추천 글)의 「고치기」는 도시 화면 그 줄의 「수정」으로 보냅니다(b866 검토 — 안 그러면 내 글 ⋯ 이 「닫기」뿐). */
+  $('crvsheet_edit').classList.toggle('hide', !((m.종류 === 'rv' || m.종류 === 'fn') && 내글));
+  $('crvsheet_edit').textContent = m.종류 === 'fn' ? '내 추천 글 고치기' : '내 한줄평 고치기';
+  $('crvsheet_del').classList.toggle('hide', !((m.종류 === 'rp' || m.종류 === 'fp') && (내글 || 내후기)));
   $('crvsheet_repbtn').classList.toggle('hide', 내글 || !나);
   $('crvsheet_main').classList.remove('hide');
   $('crvsheet_rep').classList.add('hide');
@@ -302,22 +387,28 @@ $('crvsheet')?.addEventListener('click', async e => {
   if (b.dataset.rs === 'edit'){
     시트.classList.add('hide');
     도시로(m.city);
+    if (m.종류 === 'fn'){   /* 내 맛집 추천 글 → 도시 화면 그 줄의 「수정」(맛집 칸은 늦게 오니 넉넉히) */
+      setTimeout(() => { const 고 = document.querySelector('#cv_foods [data-fdedit]'); 고?.scrollIntoView({ block: 'center' }); 고?.click(); }, 1200);
+      return;
+    }
     setTimeout(() => { if ($('cv_mine')?.classList.contains('hide') === false) $('cv_mineedit')?.click();   /* 한 줄로 접혀 있으면 칸부터 엶(b862) */
       const n = $('cv_note'); if (n){ n.scrollIntoView({ block: 'center' }); n.focus(); } }, 500);
   } else if (b.dataset.rs === 'del'){
     if (b.dataset.armed !== '1'){ arm(b, '한 번 더 누르면 지워요'); return; }
     시트.classList.add('hide');
-    const r = await netTimeout(sb.rpc('review_reply_del', { p_id: m.id }));
+    const r = await netTimeout(sb.rpc(m.종류 === 'fp' ? 'food_reply_del' : 'review_reply_del', { p_id: m.id }));
     if (!r || r.error){ toast(r?.error?.message || '연결을 확인해 주세요'); return; }
     toast('답글을 지웠어요'); 바뀜 = true;
-    const 지금 = 겹[겹.length - 1]; if (지금?.판 === 'one') 하나그리기(지금, ++차례);
+    const 지금 = 겹[겹.length - 1];
+    if (지금?.판 === 'one') 하나그리기(지금, ++차례);
+    else if (지금?.판 === 'fn') 추천하나그리기(지금, ++차례);
   } else if (b.dataset.rs === 'report'){
     $('crvsheet_main').classList.add('hide');
     $('crvsheet_rep').classList.remove('hide');
   } else if (b.dataset.rs === 'reason'){
     시트.classList.add('hide');
     const 도시 = cities.find(c => c.id === m.city)?.name || m.city;
-    const 더 = `[${m.종류 === 'rv' ? '한줄평' : '답글'} · ${도시}] ${m.글}`.slice(0, 500);
+    const 더 = `[${({ rv: '한줄평', rp: '답글', fn: '맛집 추천 글', fp: '맛집 답글' })[m.종류] || '답글'} · ${도시}] ${m.글}`.slice(0, 500);
     const r = await netTimeout(sb.rpc('report_user', { p_user: m.uid, p_reason: b.dataset.r, p_detail: 더 }));
     toast(!r || r.error ? (r?.error?.message || '연결을 확인해 주세요') : '신고했어요. 살펴볼게요');
   }

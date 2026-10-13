@@ -11,13 +11,13 @@
  *   사진은 첫 글자 동그라미로 — 화면이 안 깨지게.
  * ⚠ 읽음 처리는 열고 1.2초 뒤(notify.js 와 같은 규칙 — 어느 것이 새것인지 눈에 한 번 들어와야).
  */
-import { $, esc, avatarImg } from './dom.js?v=b865';
-import { sb } from './db.js?v=b865';
-import { netTimeout } from './net.js?v=b865';
-import { cities } from './cities.js?v=b865';
-import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b865';
+import { $, esc, avatarImg } from './dom.js?v=b866';
+import { sb } from './db.js?v=b866';
+import { netTimeout } from './net.js?v=b866';
+import { cities } from './cities.js?v=b866';
+import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b866';
 
-let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {}, openCity: () => {},
+let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {}, openFoodNote: () => {}, openCity: () => {},
             loadNotifs: () => {}, loadSocialCounts: () => {} };
 export function setActivityCtx(o){ ctx = { ...ctx, ...o }; }
 
@@ -122,7 +122,7 @@ function 요청줄(목록){
 }
 
 /* 알림 한 줄 */
-const 표시 = { review_like: ['♥', 'lk'], review_reply: ['💬', 'rp'], follow_new: ['', ''], follow_accepted: ['', ''] };
+const 표시 = { review_like: ['♥', 'lk'], review_reply: ['💬', 'rp'], food_reply: ['💬', 'rp'], follow_new: ['', ''], follow_accepted: ['', ''] };
 function 알림줄(x, p, 둘째, 내가){
   const 이름 = p?.name || (x.body || '').split('님')[0] || '';
   const 글 = 이름 && (x.body || '').startsWith(이름)
@@ -136,11 +136,13 @@ function 알림줄(x, p, 둘째, 내가){
   /* 오른쪽 — 한줄평 알림은 그 도시 사진(누르면 그 한줄평), 새 팔로워는 「맞팔로우」(아직 안 했으면) */
   let 오른쪽 = '';
   const c = x.city_id && 도시(x.city_id);
-  if (/^review_/.test(x.kind || '') && x.city_id)
+  if ((/^review_/.test(x.kind || '') || x.kind === 'food_reply') && x.city_id)
     오른쪽 = `<span class="actthumb">${c?.image_url ? `<img src="${esc(c.image_url)}" alt="" loading="lazy" onerror="this.remove()">` : esc((c?.name || '?').slice(0, 1))}</span>`;
   else if (x.kind === 'follow_new' && x.actor_id && !내가.has(x.actor_id))
     오른쪽 = `<button type="button" class="frbtn ac" data-actfb="${esc(x.actor_id)}">맞팔로우</button>`;
-  const 가는곳 = /^review_/.test(x.kind || '') && x.city_id ? ` data-actrev="${esc(x.city_id)}"`
+  /* 맛집 답글(b866, db/127) — 누르면 그 추천 글과 답글(cityrev.js openFoodNote) */
+  const 가는곳 = x.kind === 'food_reply' && x.food_id ? ` data-actfood="${x.food_id}" data-city="${esc(x.city_id || '')}"`
+               : /^review_/.test(x.kind || '') && x.city_id ? ` data-actrev="${esc(x.city_id)}"`
                : x.actor_id && !여행 ? ` data-person="${esc(x.actor_id)}"` : '';
   return `<div class="actrow${x.read_at ? '' : ' new'}"${가는곳}>${얼굴}
     <span class="t">${글} <em>${esc(언제(x.created_at).replace(/ 전$/, ''))}</em></span>${오른쪽}</div>`;
@@ -168,6 +170,8 @@ $('actview')?.addEventListener('click', async e => {
   if (e.target.closest('[data-actgo="requests"]')) return ctx.openFriends('requests');
   const 도시칸 = e.target.closest('[data-cityopen]');
   if (도시칸) return ctx.openCity(도시칸.dataset.cityopen);
+  const 맛 = e.target.closest('[data-actfood]');
+  if (맛) return ctx.openFoodNote(맛.dataset.actfood, 맛.dataset.city);
   const 평 = e.target.closest('[data-actrev]');
   if (평) return ctx.openCityRev(ctx.me()?.id, 평.dataset.actrev);
   const 누구 = e.target.closest('[data-person]');

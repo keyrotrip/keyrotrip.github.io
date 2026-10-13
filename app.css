@@ -6951,3 +6951,15 @@ body:not(.hastab) #a2hs .shwrap{ padding-bottom:calc(var(--sab) + 10px); }
 /* 키보드가 떠 있는 동안 탭바 숨김(b864, 눈금자 실측) — 홈 화면 앱이 화면을 키보드만큼 밀면 탭바가 키보드 뒤로 안 숨고
    화면 가운데에 떠서 글을 덮었습니다(탭바 top 417 · 334 — 사용자 사진). body.kbup 은 ui.js 가 «칸에 커서가 있고 보이는 창이 60 넘게 줄었을 때» 켭니다. */
 body.kbup .tabbar{ display:none; }
+/* 보관함 도시 찾기 칸(b866) */
+#sh_qwrap{ margin:0 0 10px; }
+.shq{ -webkit-appearance:none; appearance:none; }
+.shq::-webkit-search-decoration{ -webkit-appearance:none; }
+/* 내 글 줄의 「수정 · 삭제」(b866 — 한줄평 줄 · 맛집 줄 같은 모양) */
+.crvmyb{ margin-left:auto; display:flex; gap:14px; }
+.crvmyb button{ padding:4px 0; min-height:0; font:inherit; font-size:calc(14px * var(--ts)); color:var(--ink-48); }
+.crvmyb button:active{ transform:none; opacity:.6; }
+/* 맛집: 추천 글 더 보기 · 그 자리 고치기(b866) */
+.fdmore{ display:block; margin:10px 0 0 26px; padding:0; min-height:0; font:inherit; font-size:calc(14px * var(--ts)); color:var(--ink-48); }
+.fdedit{ margin:8px 0 0 26px; display:flex; flex-direction:column; gap:8px; }
+.fdrow2 .crvact{ margin-left:26px; }

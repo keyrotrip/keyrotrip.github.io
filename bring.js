@@ -21,14 +21,14 @@
  *
  * 층: dom.js · db.js · net.js · trip.js · ui.js · card.js 와
  *     이미 떼어낸 aiui.js · cards.js · sheetimp.js 를 씁니다. */
-import { $, esc, toast } from './dom.js?v=b865';
-import { sb } from './db.js?v=b865';
-import { fail } from './net.js?v=b865';
-import { trip } from './trip.js?v=b865';
-import { syncSheets } from './ui.js?v=b865';
-import { fitJpeg, drawSources, SHOT_MAX } from './aiui.js?v=b865';
-import { drawCards } from './cards.js?v=b865';
-import { 표에서일정, 글표, 일정넣기, 좌표찾기, 넣은것되돌리기, 지도로찍기 } from './sheetimp.js?v=b865';
+import { $, esc, toast } from './dom.js?v=b866';
+import { sb } from './db.js?v=b866';
+import { fail } from './net.js?v=b866';
+import { trip } from './trip.js?v=b866';
+import { syncSheets } from './ui.js?v=b866';
+import { fitJpeg, drawSources, SHOT_MAX } from './aiui.js?v=b866';
+import { drawCards } from './cards.js?v=b866';
+import { 표에서일정, 글표, 일정넣기, 좌표찾기, 넣은것되돌리기, 지도로찍기 } from './sheetimp.js?v=b866';
 
 let ctx = { openAi: () => {}, loadChats: async () => {}, loadPlans: async () => {} };
 export function setBringCtx(o){ ctx = { ...ctx, ...o }; }

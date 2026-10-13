@@ -14,13 +14,13 @@
  * 밖으로 나가는 길은 `loadNotifPrefs` 하나입니다.
  *
  * 층: dom.js · db.js · net.js 만 씁니다. */
-import { $, esc, toast } from './dom.js?v=b865';
-import { sb } from './db.js?v=b865';
-import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b865';
+import { $, esc, toast } from './dom.js?v=b866';
+import { sb } from './db.js?v=b866';
+import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b866';
 /* 「읽은 알림 지우기」를 한 번 더 눌러 정하는 장치(b799). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm, disarm } from './ui.js?v=b865';
+import { arm, disarm } from './ui.js?v=b866';
 
-let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {} };
+let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {}, openFoodNote: () => {} };
 export function setNotifyCtx(o){ ctx = { ...ctx, ...o }; }
 
 /* ── 알림 설정 ──────────────────────────────────────────────────────
@@ -299,9 +299,10 @@ export async function loadNotifs(본것){
   /* 팔로우 알림(b789)은 누를 수 있습니다 — 요청이면 받은 요청 목록, 아니면 그 사람. */
   /* 후기 좋아요·답글 알림(b858)은 그 후기 화면으로 — 내 후기이므로 쓴 사람은 나, 도시는 city_id. */
   $('notifs').innerHTML = data.map(n => {
-    const 사람 = (/^follow_/.test(n.kind || '') && n.actor_id) || (/^review_/.test(n.kind || '') && n.city_id);
+    const 사람 = (/^follow_/.test(n.kind || '') && n.actor_id) || (/^review_/.test(n.kind || '') && n.city_id)
+             || (n.kind === 'food_reply' && n.food_id);   /* 맛집 답글(b866) — 그 추천 글로 */
     return `<div class="row"${사람 ? ` data-nkind="${esc(n.kind)}" data-actor="${esc(n.actor_id || '')}"
-                                     data-city="${esc(n.city_id || '')}" style="cursor:pointer"` : ''}>
+                                     data-city="${esc(n.city_id || '')}" data-food="${n.food_id || ''}" style="cursor:pointer"` : ''}>
        <span class="label"${n.read_at ? ' style="opacity:.55"' : ''}>
        ${esc(n.body)}${사람 ? ' ›' : ''}</span>
      <span class="val">${esc(n.created_at.slice(5,10))}</span></div>`;
@@ -309,7 +310,8 @@ export async function loadNotifs(본것){
 }
 $('notifs')?.addEventListener('click', e => {
   const r = e.target.closest('[data-actor]'); if (!r) return;
-  if (/^review_/.test(r.dataset.nkind) && r.dataset.city) ctx.openCityRev(ctx.me()?.id, r.dataset.city);
+  if (r.dataset.nkind === 'food_reply' && r.dataset.food) ctx.openFoodNote(r.dataset.food, r.dataset.city);
+  else if (/^review_/.test(r.dataset.nkind) && r.dataset.city) ctx.openCityRev(ctx.me()?.id, r.dataset.city);
   else if (r.dataset.nkind === 'follow_request') ctx.openFriends('requests');
   else ctx.openPerson(r.dataset.actor);
 });

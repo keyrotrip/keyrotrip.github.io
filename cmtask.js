@@ -8,11 +8,11 @@
  * 저장: 한줄평은 saveRate(rating.js — ctx 로 받음, 고리 막기) · 맛집은 food_add(db/124).
  * 누르기는 document 에 한 번 — 지구본 카드 · 평가 탭 줄 · 도시 화면 어디에 붙어도 같은 처리.
  */
-import { esc, toast, avatarImg } from './dom.js?v=b865';
-import { sb } from './db.js?v=b865';
-import { netTimeout } from './net.js?v=b865';
+import { esc, toast, avatarImg } from './dom.js?v=b866';
+import { sb } from './db.js?v=b866';
+import { netTimeout } from './net.js?v=b866';
 /* 「내 추천 지우기」를 한 번 더 눌러 정하는 장치. ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b865';
+import { arm } from './ui.js?v=b866';
 
 /* ⚠ 기다리는 시간(검토에서 찾음): netTimeout 기본 2.5초는 «오프라인» 판정까지 켭니다 — 느린 폰 망에서 저장은 됐는데
    「timeout」 오류 + 20초 오프라인 띠가 떴습니다. 쓰기는 10초, 읽기는 8초. 오류 글은 한국어로. */
@@ -159,15 +159,31 @@ export async function foodsHtml(id, 이름){
   /* 줄은 한줄평 줄과 같은 모양(b862, 사용자: 「맛집도 한줄평이랑 같은 줄 모양으로 가자」) — 가게 이름 · 쓴 사람(사진·이름, 누르면 그 사람) · 한줄평 ·
      「추천 N」 단추. 「나도 추천」은 글을 안 쓰고 단추만 누르면 됩니다(사용자: 「동의하면 직접 적는게 아니라 추천 버튼만 누르면되게」).
      ⚠ 「1명 · 나도 추천」 같은 말은 걷었습니다(사용자: 「이게 무슨말이야」) — 내가 눌렀는지는 단추 색이 말합니다. */
-  const 줄 = l.slice(0, 5).map((f, i) => `<div class="crvrow fdrow2">
+  /* b866(사용자: 「따봉은 내가 올렸을땐 안눌러져있고 다른 사람이 눌러야지 · 따봉 한번 더 눌러서 글 삭제 하느게 세상에 어딨냐 · 여기도 수정 삭제」):
+     · 내가 «글까지» 쓴 가게의 👍 는 칠하지도 누르지도 않습니다(내 한줄평 ♡ 와 같음) — mine_note(db/127), SQL 전이면 대표 글이 내 것인지로.
+     · 글 없이 👍 만 누른 가게는 칠해지고, 다시 누르면 빠집니다(지워질 글이 없으니 한 번에).
+     · 지우기는 내 글 줄의 「삭제」로만(두 번 눌러 정함). 대표 글은 내 글이 먼저라(db/127) 늘 찾을 수 있습니다.
+     · 💬 = 그 글의 답글(cityrev.js 의 'fn' 판) · 글 쓴 사람이 여럿이면 「추천 글 N개 더 보기」('fs' 판). */
+  const 나 = ctx.me()?.id;
+  const 줄 = l.slice(0, 5).map((f, i) => {
+    const 내글 = f.mine_note ?? (!!f.mine && !!나 && f.note_uid === 나);
+    const 눌림 = !!f.mine && !내글;
+    const 내대표 = !!나 && f.note && f.note_uid === 나;
+    return `<div class="crvrow fdrow2">
       <div class="fdname"><span class="n">${i + 1}</span><b>${esc(f.name)}</b>
-        <button type="button" class="fdrec${f.mine ? ' on' : ''}" data-fdrec="${esc(f.name)}" data-city="${esc(id)}"
-        aria-pressed="${f.mine ? 'true' : 'false'}"${ctx.me() ? '' : ' disabled'}>${엄지(f.mine)}<span>추천 ${f.n}</span></button></div>
+        <button type="button" class="fdrec${눌림 ? ' on' : ''}" data-fdrec="${esc(f.name)}" data-city="${esc(id)}"
+        aria-pressed="${눌림 ? 'true' : 'false'}"${!나 || 내글 ? ' disabled' : ''}>${엄지(눌림)}<span>추천 ${f.n}</span></button></div>
       ${f.note ? `${f.note_uid ? `<button class="ghost crvwho" data-person="${esc(f.note_uid)}">${avatarImg(f.note_avatar, f.note_uid, f.note_by,
           'width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none', 'thumb')}<b>${esc(f.note_by || '여행자')}</b></button>`
         : `<div class="crvwho"><b>${esc(f.note_by || '여행자')}</b></div>`}
-      <div class="crvtxt fdtxt">${esc(f.note)}</div>` : ''}
-    </div>`).join('');
+      <div class="crvtxt fdtxt"${f.note_id ? ` data-fdnote="${f.note_id}" data-city="${esc(id)}"` : ''}>${esc(f.note)}</div>
+      <div class="crvact">${f.note_id ? `<button type="button" class="crvrep" data-fdnote="${f.note_id}" data-city="${esc(id)}"
+          aria-label="답글${f.n_reply ? ` ${f.n_reply}개` : ' 달기'}">${말풍선}<span class="num">${f.n_reply || ''}</span></button>` : ''}
+        ${내대표 ? `<span class="crvmyb"><button type="button" class="ghost" data-fdedit="${esc(f.name)}" data-city="${esc(id)}">수정</button><button type="button" class="ghost" data-fddel="${esc(f.name)}" data-city="${esc(id)}">삭제</button></span>` : ''}
+      </div>
+      ${(f.n_notes || 0) > 1 ? `<button type="button" class="ghost fdmore" data-fdshop="${esc(f.name)}" data-city="${esc(id)}">추천 글 ${f.n_notes - 1}개 더 보기 ›</button>` : ''}` : ''}
+    </div>`;
+  }).join('');
   return `<div class="fdsec"><div class="fdhd"><b>🍽 ${esc(이름)} 맛집 추천${l.length ? ` <span>${l.length}</span>` : ''}</b></div>
     ${l.length ? 줄 : '<div class="fdempty">아직 추천이 없어요 — 첫 번째로 추천해 보세요</div>'}
     ${ctx.me() ? `<div class="cmask fdadd" data-city="${esc(id)}" data-name="${esc(이름)}">
@@ -180,10 +196,8 @@ export async function foodsHtml(id, 이름){
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-fdrec]'); if (!b || b.disabled) return;
   if (!ctx.me()) return;
+  /* 칠해진 👍 = 글 없이 누른 추천뿐(내가 글을 쓴 가게는 disabled — 위 foodsHtml). 그래서 빼도 지워질 글이 없어 한 번에 뺍니다(b866). */
   const 켜짐 = b.classList.contains('on');
-  const 내글 = 켜짐 && b.closest('.fdrow2')?.querySelector('.crvwho')?.dataset.person === ctx.me()?.id;
-  /* ⚠ 뺄 때는 늘 한 번 더(세 번째 검토) — 줄에는 «가장 최근» 한줄평 하나만 보여서, 내 글이 가려져 있어도 food_del_mine 이 같이 지웁니다. */
-  if (켜짐 && b.dataset.armed !== '1'){ b.dataset.armed = '1'; b.querySelector('span').textContent = 내글 ? '한 번 더 누르면 내 글도 지워요' : '한 번 더 누르면 빼요'; return; }   /* arm 은 글자를 통째로 바꿔 엄지 그림이 날아감 — 글자 칸만 */
   b.disabled = true;
   const r = 켜짐
     ? await netTimeout(sb.rpc('food_del_mine', { p_city: b.dataset.city, p_name: b.dataset.fdrec }), 10000)
@@ -193,6 +207,53 @@ document.addEventListener('click', async e => {
   loadMyFoods();             /* 그 도시에 내 추천이 남았는지로 「🍽 맛집 추천하기」를 물을지가 갈립니다 */
   ctx.onFood(b.dataset.city);
 });
+/* 내 추천 글 「수정 · 삭제」(b866, 사용자: 「여기도 똑같이 수정 삭제 있어야하고」) — 한줄평 줄과 같은 자리.
+   수정 = 그 자리에서 글 칸으로 바뀜(장소 이름은 그대로, 글만) → food_add 가 같은 가게 줄의 글을 고칩니다(db/124 on conflict).
+   삭제 = 두 번 눌러 정함(ui.js arm) → food_del_mine(그 가게 내 추천째 · 답글도 같이). */
+document.addEventListener('click', async e => {
+  const 고 = e.target.closest('[data-fdedit]');
+  if (고){
+    const 줄 = 고.closest('.fdrow2'), 글칸 = 줄?.querySelector('.fdtxt'); if (!글칸 || 줄.querySelector('.fdedit')) return;
+    글칸.insertAdjacentHTML('afterend', `<div class="fdedit" data-kbtop>
+      <input type="search" enterkeyhint="done" class="cmfield" maxlength="60" autocomplete="off" aria-label="추천 글 고치기" value="${esc(글칸.textContent)}">
+      <div class="cmrow"><button type="button" class="ghost cmclose" data-fdeditx>취소</button>
+        <button type="button" class="cmsave" data-fdeditsave="${esc(고.dataset.fdedit)}" data-city="${esc(고.dataset.city)}">저장</button></div></div>`);
+    글칸.classList.add('hide');
+    const 칸 = 줄.querySelector('.fdedit input'); 칸.focus(); 칸.setSelectionRange?.(칸.value.length, 칸.value.length);
+    return;
+  }
+  if (e.target.closest('[data-fdeditx]')){
+    const 줄 = e.target.closest('.fdrow2'); 줄?.querySelector('.fdedit')?.remove(); 줄?.querySelector('.fdtxt')?.classList.remove('hide');
+    return;
+  }
+  const 저 = e.target.closest('[data-fdeditsave]');
+  if (저){
+    const 글 = 저.closest('.fdedit')?.querySelector('input')?.value.trim() || '';
+    if (!글){ toast('글을 지우려면 「삭제」를 눌러 주세요'); return; }
+    저.disabled = true;
+    const r = await netTimeout(sb.rpc('food_add', { p_city: 저.dataset.city, p_name: 저.dataset.fdeditsave, p_note: 글 }), 10000);
+    저.disabled = false;
+    if (!r || r.error){ toast(오류말(r)); return; }
+    toast('추천 글을 고쳤어요');
+    ctx.onFood(저.dataset.city);
+    return;
+  }
+  const 지 = e.target.closest('[data-fddel]');
+  if (지){
+    if (지.dataset.armed !== '1'){ arm(지, '한 번 더 누르면 지워요'); return; }
+    지.disabled = true;
+    const r = await netTimeout(sb.rpc('food_del_mine', { p_city: 지.dataset.city, p_name: 지.dataset.fddel }), 10000);
+    if (!r || r.error){ 지.disabled = false; toast(오류말(r)); return; }
+    toast('추천을 지웠어요');
+    loadMyFoods();
+    ctx.onFood(지.dataset.city);
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.isComposing || !e.target.closest?.('.fdedit')) return;
+  e.preventDefault(); e.target.closest('.fdedit').querySelector('[data-fdeditsave]')?.click();
+});
+const 말풍선 = '<svg class="crvic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 5.5h15v10.5H10l-5.5 4v-4z"/></svg>';
 /* 엄지 그림 — 한줄평의 하트처럼 선 그림, 누르면 채움 */
 function 엄지(on){
   return `<svg class="crvic fdic${on ? ' on' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v11H3V10h4Zm0 0 4-7c1.7 0 2.7 1.2 2.4 2.9L13 9h5.6c1.3 0 2.2 1.2 1.9 2.4l-1.8 7.6c-.2.9-1 1.5-1.9 1.5H7"/></svg>`;
