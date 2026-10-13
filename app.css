@@ -4726,7 +4726,7 @@ ol.phl{ list-style:none; margin:12px 0 4px; padding:0; }
 .fvc .awn{ margin-top:6px; font-size:var(--f-lg); }
 .fvx{ text-align:center; font-size:var(--f-md); font-weight:800; color:var(--ink-48); }
 /* 「성향 | 별점 | 어워즈」 칸 줄(b811 · b812) — 친구 화면 밑줄 탭(.frtabs) 그대로. */
-.antabs{ grid-template-columns:repeat(3, 1fr); margin:0 0 var(--s-md); }   /* b812 셋째 칸 「어워즈」 */
+.frtabs.antabs{ grid-template-columns:repeat(3, 1fr); margin:12px 0 var(--s-md); }   /* b812 셋째 칸 「어워즈」 */
 
 /* ⚠ `.bignum` 은 죽었습니다(b464) — 「가보고 싶어요」 카드를 「다음 여행」
    으로 합치면서 큰 숫자를 안 씁니다. `.bnrow`/`.bnsub` 는 홈 캐러셀이
@@ -6256,7 +6256,7 @@ body:has(#whoview:not(.hide)) .tabbar{ display:none; }
 .frqcancel{ flex:none; padding:8px 2px; font-size:var(--f-md); color:var(--ink); font-weight:400; }
 .frshint{ padding:18px 2px; font-size:var(--f-sm); color:var(--ink-48); }
 /* 탭 — 밑줄, 숫자는 옆에 */
-.frtabs{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); margin-top:12px;
+.frtabs{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr));   /* b860: 친구 화면은 두 칸 — 분석·대시보드 칸 줄은 .frtabs.antabs · .frtabs.admtabs 가 셋으로(b859 에 이 줄이 분석 탭까지 두 칸으로 만들어 「어워즈」가 아랫줄로 밀렸음) */ margin-top:12px;
          border-bottom:1px solid var(--line); }
 .frtabs button{ position:relative; border:0; background:none; padding:12px 0 10px;
                 font-size:var(--f-md); color:var(--ink-48);
@@ -6604,7 +6604,7 @@ body.cron{ overflow:hidden; }
 
 /* ══ 관리자 「사용 | 비용 | 문제」(b815) ════════════════════════════════════════════════════
    칸 줄은 분석 탭(.antabs)과 같은 모양 — 셋. 「문제」에 볼 것(오늘 오류·안 읽은 신고)이 있으면 빨간 점. */
-.admtabs{ grid-template-columns:repeat(3, minmax(0,1fr)); margin:0 0 var(--s-sm); }
+.frtabs.admtabs{ grid-template-columns:repeat(3, minmax(0,1fr)); margin:0 0 var(--s-sm); }
 .admtabs button.hasdot::after{ content:''; display:inline-block; width:6px; height:6px; margin-left:5px;
   vertical-align:2px; border-radius:50%; background:var(--bad); }
 
