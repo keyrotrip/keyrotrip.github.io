@@ -20,15 +20,15 @@
  *
  * 층: dom.js · db.js · cities.js · citysearch.js · stars.js · rateui.js ·
  *     rate.js · rating.js · home.js(지문 비우기만). */
-import { $, esc } from './dom.js?v=b857';
-import { sb } from './db.js?v=b857';
-import { cities } from './cities.js?v=b857';
-import { loadCities } from './citysearch.js?v=b857';
-import { paintStars } from './stars.js?v=b857';
-import { rateHero, starValue } from './rateui.js?v=b857';
-import { saveRate, 방금확정 } from './rating.js?v=b857';
-import { 넘긴줄, 인기 } from './rate.js?v=b857';
-import { resetHomeSig } from './home.js?v=b857';
+import { $, esc } from './dom.js?v=b858';
+import { sb } from './db.js?v=b858';
+import { cities } from './cities.js?v=b858';
+import { loadCities } from './citysearch.js?v=b858';
+import { paintStars } from './stars.js?v=b858';
+import { rateHero, starValue } from './rateui.js?v=b858';
+import { saveRate, 방금확정 } from './rating.js?v=b858';
+import { 넘긴줄, 인기 } from './rate.js?v=b858';
+import { resetHomeSig } from './home.js?v=b858';
 
 /* ⚠ showApp 은 **기본값에도 둡니다.** 없으면 위 돌아가기() 가 조용히
    아무 일도 안 하는데, 그게 b423~b425 동안 그대로 나가 있었습니다. */
@@ -36,6 +36,8 @@ let ctx = { me: () => null, showApp: () => {} };
 export function setSpreeCtx(o){ ctx = { ...ctx, ...o }; }
 
 let 주머니 = [], 지금 = null, 센것 = 0, 도는중 = false;
+/* 카드를 날려 보내고 다음으로(b858 카드 더미). 아래 손짓 블록이 진짜 것으로 갈아 끼웁니다 — 그 전엔 그냥 다음. */
+let 날리기 = (dir, id) => { if (지금?.id === id) 다음(); };
 /* ⚠ **센것과 건드림은 다릅니다(b413).** 센것은 **별을 준 곳**만 셉니다 —
    화면에 보여줄 숫자라 「안 가봤어요」를 스무 번 누른 것을 「20곳 매김」
    이라고 쓸 수는 없습니다. 건드림은 **자료가 바뀌었는가**입니다.
@@ -111,17 +113,24 @@ function 그리기(){
     return;
   }
   /* 홈·맛보기와 **같은 히어로**입니다(rateui.js). 안 그러면 같은 일을 하는
-     화면이 앱 안에서 셋으로 갈립니다. */
-  box.innerHTML = rateHero(지금, { id:'spreehero', ask:'다녀오셨다면 별점을 남겨주세요',
-    /* ⚠ 이 화면은 이것 하나뿐이라 세로가 통째로 남습니다. 사진을 정방형으로
+     화면이 앱 안에서 셋으로 갈립니다.
+     ⚠ 이 화면은 이것 하나뿐이라 세로가 통째로 남습니다. 사진을 정방형으로
        키우고 글자·별을 사진 밖으로 뺍니다 — 여기서 사진은 장식이 아니라
-       **판단 근거**입니다(rateui.js 의 모양 주석). */
-    모양:'square' });
-  /* ⚠ **다음 사진을 미리 받아 둡니다(b799, GPT 리포트에서 찾음).** 전에는 별을 누르고
-     0.26초(넘기면 0.19초) 뒤 카드를 갈아끼울 때에야 다음 사진을 받기 시작해서, 넘길 때마다
-     사진 칸이 비었다 채워졌습니다. 같은 주소로 받아 두면 갈아끼울 때 캐시에서 바로 뜹니다.
-     한 장만 — 넘기지 않고 나가면 받은 것이 헛일이 되니까요. */
-  const 다음도시 = 주머니[1];
+       **판단 근거**입니다(rateui.js 의 모양 주석).
+   ── 카드 더미(b858, 사용자: 「옆으로 넘길 때 다음 카드가 미리 보이면서 넘어 오는 것」 → 시안 B 「카드 통째」) ──
+     지금 카드 뒤에 다음 두 곳 카드가 겹쳐 보이고(.sp1 · .sp2), 밀면 뒤 카드가 커지며 앞으로 옵니다(아래 따라가기).
+     ⚠ 뒤 카드는 «그림»입니다 — 누를 수 없고(pointer-events · inert) 읽히지도 않습니다(aria-hidden).
+       id 도 따로(spreenext1·2) — 같은 id 가 둘이면 getElementById 가 엉뚱한 것을 줍니다(b858 #rvback 사고).
+     ⚠ 다 날아간 뒤 통째로 다시 그립니다 — 뒤 카드가 이미 앞 카드 자리까지 와 있어서 갈아끼워도 안 튑니다. */
+  const 카드 = (c, 자리, id) => `<div class="spcard ${자리 === 2 ? 'sp2' : 자리 === 1 ? 'sp1' : 'spcur'}"${자리 ? ' aria-hidden="true" inert' : ''}>${
+    rateHero(c, { id, ask:'다녀오셨다면 별점을 남겨주세요', 모양:'square' })}</div>`;
+  box.innerHTML = `<div class="spdeck">${
+    주머니[2] ? 카드(주머니[2], 2, 'spreenext2') : ''}${
+    주머니[1] ? 카드(주머니[1], 1, 'spreenext1') : ''}${
+    카드(지금, 0, 'spreehero')}</div>`;
+  /* ⚠ **그다음 사진을 미리 받아 둡니다(b799, GPT 리포트에서 찾음).** 뒤 두 장은 이미 화면에 있으니(위 더미)
+     그 다음 한 장 — 넘길 때 맨 뒤에 새로 들어오는 카드가 빈칸으로 안 뜨게. */
+  const 다음도시 = 주머니[3];
   if (다음도시?.image_url){
     const 미리 = new Image();
     미리.decoding = 'async';
@@ -134,8 +143,16 @@ function 그리기(){
    금방 지칩니다. 숫자가 올라가는 것이 그만두게도 하고 더 하게도 합니다. */
 function 세기(){
   const el = $('spreecount');
-  if (el) el.textContent = 센것 ? `${센것}곳 매김` : '';
+  if (!el) return;
+  /* 밀기 안내 한 줄(b858, 사용자: 「옆으로 밀면 다음 장이 나온다는걸 유저들이 인식할 수 있나?」 → 「안내 한 줄만」).
+     손으로 한 번도 안 밀어 본 사람에게, 이번에 연 뒤 처음 세 장 동안만 「N곳 매김」 자리에 띄웁니다.
+     한 번 밀면(아래 손짓 블록) 이 폰에서는 다시 안 나옵니다. 새 줄을 끼우지 않습니다 — 카드가 밀리면 별을 잘못 누릅니다. */
+  const 안내 = !밀어봄() && 본장 < 3;
+  el.classList.toggle('sphint', 안내);
+  el.textContent = 안내 ? '← 옆으로 밀면 다음 도시 →' : 센것 ? `${센것}곳 매김` : '';
 }
+let 본장 = 0;
+const 밀어봄 = () => { try { return localStorage.getItem('t2:spswiped') === '1'; } catch { return false; } };
 
 /* ── 문턱째(해외 10곳째 — v3, 전엔 5곳째)를 매긴 순간(b822) ──────────────────────────────────────────
  * 「확정」인지는 rating.js 가 압니다(저장은 전부 saveRate 를 지나므로 거기서 저장 전·후를 셉니다).
@@ -156,7 +173,9 @@ $('spreepersona')?.addEventListener('click', () => { 성향으로 = true; closeS
 /* 다음으로. 별을 매겼든 넘겼든 여기로 옵니다. */
 function 다음(){
   주머니 = 주머니.filter(c => c.id !== 지금?.id);
+  본장++;
   그리기();
+  세기();
 }
 
 export async function openSpree(){
@@ -173,7 +192,7 @@ export async function openSpree(){
   document.body.classList.remove('hastab');    /* 화면에 이것 하나만 둡니다 */
   window.scrollTo({ top:0 });
   if (history.state?.t2 !== 'spree') history.pushState({ t2:'spree' }, '');
-  센것 = 0; 건드림 = false; 세기();
+  센것 = 0; 건드림 = false; 본장 = 0; 세기();
   /* 머리줄은 늘 「N곳 매김」으로 엽니다. 지난번에 확정만 하고 안 보러 갔으면 아래 확정줄() 이 다시 띄웁니다. */
   $('spreecount')?.classList.remove('hide');
   $('spreepersona')?.classList.add('hide');
@@ -246,19 +265,37 @@ $('spreeclose')?.addEventListener('click', () => closeSpree());
   const 통 = $('spreebox');
   let 잡음 = false, 가로냐 = null, x0 = 0, y0 = 0, dx = 0, 시작id = null;
 
-  /* 애니메이션 없이 즉시 제자리로. 카드를 갈아끼운 뒤에 씁니다. */
-  const 씻기 = () => {
-    if (!통) return;
-    통.style.transition = 'none';
-    통.style.transform = ''; 통.style.opacity = '';
-    void 통.offsetWidth;                 /* 지운 값을 지금 반영시킵니다 */
-    통.style.transition = '';
+  /* ── 카드 더미(b858) — 움직이는 것은 «앞 카드»와 뒤 두 장입니다(통 전체가 아니라). ──
+     p(0→1) = 얼마나 밀었나. 뒤 카드(.sp1)는 p 만큼 앞 카드 자리로, 맨 뒤(.sp2)는 .sp1 자리로 옵니다.
+     ⚠ 숫자(34px·.94 / 64px·.88)는 app.css 의 .spcard.sp1 · .sp2 와 같아야 합니다 — 다르면 손을 대는 순간 뒤 카드가 튑니다. */
+  const 앞 = () => 통?.querySelector('.spcur');
+  const 뒤들 = () => [통?.querySelector('.sp1'), 통?.querySelector('.sp2')];
+  const 따라 = (dx, 먼저 = false) => {
+    const 카 = 앞(); if (!카) return;
+    const p = 먼저 ? 1 : Math.min(1, Math.abs(dx) / 140);
+    카.style.transform = `translateX(${dx}px) rotate(${dx / 26}deg)`;
+    const [a, b] = 뒤들();
+    if (a){ a.style.transform = `translateY(${34 * (1 - p)}px) scale(${.94 + .06 * p})`;
+            a.style.filter = `brightness(${.92 + .08 * p})`; }
+    if (b){ b.style.transform = `translateY(${64 - 30 * p}px) scale(${.88 + .06 * p})`;
+            b.style.filter = `brightness(${.85 + .07 * p})`; }
   };
+  const 전환 = on => [앞(), ...뒤들()].forEach(el => { if (el) el.style.transition = on
+    ? 'transform .22s ease-out, filter .22s ease-out' : 'none'; });
   /* 덜 밀었을 때 스르르 돌아옵니다. */
   const 되돌리기 = () => {
-    if (!통) return;
-    통.style.transition = 'transform .22s ease-out, opacity .22s ease-out';
-    통.style.transform = ''; 통.style.opacity = '';
+    전환(true);
+    [앞(), ...뒤들()].forEach(el => { if (el){ el.style.transform = ''; el.style.filter = ''; } });
+  };
+  /* 앞 카드를 날려 보내고(dir 1 오른쪽 · -1 왼쪽) 뒤 카드를 앞으로. 다 오면 다시 그립니다.
+     별 누름 · 단추 · 손으로 밀기가 다 이 하나로 넘깁니다 — 넘어가는 모양이 하나여야 합니다. */
+  날리기 = (dir, id) => {
+    const 카 = 앞();
+    if (!지금 || 지금.id !== id) return;          /* 그새 다른 카드로 넘어갔습니다(두 번 넘기지 않게) */
+    if (!카){ 다음(); return; }
+    전환(true);
+    따라(dir * window.innerWidth, true);
+    setTimeout(() => { if (지금?.id === id) 다음(); }, 210);
   };
 
   통?.addEventListener('pointerdown', e => {
@@ -281,7 +318,7 @@ $('spreeclose')?.addEventListener('click', () => closeSpree());
       if (Math.abs(ax) < 8 && Math.abs(ay) < 8) return;   /* 아직 방향을 모릅니다 */
       가로냐 = Math.abs(ax) > Math.abs(ay);
       if (!가로냐){ 잡음 = false; return; }                /* 세로 — 스크롤에 넘깁니다 */
-      통.style.transition = 'none';
+      전환(false);
       /* ⚠⚠ **`setPointerCapture` 는 던질 수 있습니다.** 그 손가락이 이미
          놓였거나 다른 요소가 잡고 있으면 `NotFoundError` 가 납니다.
          그러면 **이 아래가 통째로 안 돌아** 카드가 손가락을 안 따라옵니다
@@ -293,8 +330,7 @@ $('spreeclose')?.addEventListener('click', () => closeSpree());
       try { 통.setPointerCapture?.(e.pointerId); } catch {}
     }
     dx = ax;
-    통.style.transform = `translateX(${dx}px) rotate(${dx / 26}deg)`;
-    통.style.opacity = String(Math.max(.4, 1 - Math.abs(dx) / 560));
+    따라(dx);
   });
 
   const 끝내기 = () => {
@@ -304,14 +340,11 @@ $('spreeclose')?.addEventListener('click', () => closeSpree());
        한 손으로 못 밉니다. */
     const 넘길까 = Math.abs(dx) > Math.min(110, window.innerWidth * .25);
     if (!넘길까 || !지금 || 지금.id !== 시작id){ 되돌리기(); return; }
-    const 끝점 = dx > 0 ? window.innerWidth : -window.innerWidth;
-    통.style.transition = 'transform .2s ease-out, opacity .2s ease-out';
-    통.style.transform = `translateX(${끝점}px) rotate(${끝점 / 26}deg)`;
-    통.style.opacity = '0';
     /* 「다른 여행지」와 **같은 뜻**입니다 — 기다리지 않습니다(위 누르기 주석). */
     saveRate(시작id, { stars: null }, true);
     건드림 = true;
-    setTimeout(() => { 다음(); 씻기(); }, 190);
+    try { localStorage.setItem('t2:spswiped', '1'); } catch {}   /* 밀어 봤으니 안내 한 줄은 이제 그만(세기) */
+    날리기(dx > 0 ? 1 : -1, 시작id);
   };
   통?.addEventListener('pointerup', 끝내기);
   통?.addEventListener('pointercancel', () => { 잡음 = false; 되돌리기(); });
@@ -331,7 +364,9 @@ $('spreebox')?.addEventListener('click', async e => {
        잘못 눌렀으면 기록 탭에서 고칠 수 있습니다. */
     /* 안 기다립니다 — 끝나면 문턱째(해외 10곳째)였는지만 봅니다(위 확정줄, b822). */
     saveRate(wrap.dataset.city, { stars: v }, true).then(확정줄);
-    setTimeout(다음, 260);
+    /* 별이 칠해지는 것을 잠깐 보여 준 뒤 오른쪽으로 날립니다(b858 카드 더미). */
+    const id = 지금?.id;
+    setTimeout(() => 날리기(1, id), 200);
     return;
   }
   const b = e.target.closest('[data-rate]');
@@ -340,5 +375,6 @@ $('spreebox')?.addEventListener('click', async e => {
      (b843 — 빼지는 않습니다, 위 「물어볼 도시」 ⚠⚠). */
   saveRate(지금.id, b.dataset.rate === 'want' ? { want: true } : { stars: null }, true);
   건드림 = true;
-  다음();
+  /* 「가보고 싶어요」는 오른쪽, 「다른 여행지」는 왼쪽으로 날아갑니다(손으로 미는 것과 같은 모양). */
+  날리기(b.dataset.rate === 'want' ? 1 : -1, 지금.id);
 });

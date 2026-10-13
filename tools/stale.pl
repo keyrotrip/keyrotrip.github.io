@@ -42,4 +42,9 @@ for my $f (@js){
 my $bad = 0;
 for my $c (sort keys %ucls){ next if $cls{$c}; $bad++; my @w = @{$ucls{$c}}; printf "  클래스 .%-18s %s\n", $c, join(' ', @w[0..($#w > 3 ? 3 : $#w)]); }
 for my $c (sort keys %uid){ next if $ids{$c}; $bad++; my @w = @{$uid{$c}}; printf "  id #%-20s %s\n", $c, join(' ', @w[0..($#w > 3 ? 3 : $#w)]); }
-print $bad ? "  ↑ 마크업이 안 만드는 이름 ${bad}개 — 옛 이름표인지 확인\n" : "  검사 끝\n";
+# 같은 id 가 index.html 에 둘(b858) — getElementById 는 «앞의 것»만 줍니다. 후기 화면의 #rvback 이 기록 탭 띠의
+#   #rvback 과 겹쳐, 뒤로 단추가 아무것도 안 했습니다(문법·import 다 멀쩡). 여기서 잡습니다.
+{ my %n; my $h = nocomment(slurp('index.html'));
+  $n{$1}++ while $h =~ /\bid="([\w-]+)"/g;
+  for (sort grep { $n{$_} > 1 } keys %n){ $bad++; printf "  id #%-20s index.html 에 %d번 — 하나만 있어야 함\n", $_, $n{$_}; } }
+print $bad ? "  ↑ 마크업이 안 만드는 이름·겹친 id ${bad}개 — 옛 이름표인지 확인\n" : "  검사 끝\n";

@@ -25,14 +25,14 @@
  * ⚠ 줄 전체를 단추 하나로 만들지 않습니다 — 오른쪽 사진·단추가 따로 눌려야 해서 «사람 단추 + 옆 단추»
  *   형제로 둡니다(단추 안에 단추는 안 됩니다). 그래서 누르기 처리는 도시·단추를 사람보다 «먼저» 봅니다.
  */
-import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b857';
-import { sb } from './db.js?v=b857';
-import { netTimeout } from './net.js?v=b857';
-import { cities, countryName } from './cities.js?v=b857';
+import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b858';
+import { sb } from './db.js?v=b858';
+import { netTimeout } from './net.js?v=b858';
+import { cities, countryName } from './cities.js?v=b858';
 /* 소식의 도시 사진을 누르면 여는 화면(b789). city.js 는 이 파일을 안 읽으므로 고리가 없습니다. */
-import { openCity } from './city.js?v=b857';
+import { openCity } from './city.js?v=b858';
 /* 「팔로잉」·「삭제」를 한 번 더 눌러 정하는 장치(b800). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b857';
+import { arm } from './ui.js?v=b858';
 
 let ctx = { me: () => null, openPerson: () => {} };
 export function setFriendsCtx(o){ ctx = { ...ctx, ...o }; }
@@ -53,17 +53,19 @@ export async function openFriends(t, 옵션 = {}){
   판.classList.remove('hide');
   판.scrollTop = 0;
   if (history.state?.t2 !== 'friend') history.pushState({ t2:'friend' }, '');
-  $('fr_q').value = '';
-  $('fr_found').innerHTML = '';
+  찾기비우기();
+  판.classList.remove('frs');
   탭칠하기();
   loadSocialCounts();       /* 탭 옆 숫자(b800) — 기다리지 않습니다 */
   /* 프로필의 「친구 찾기」(b791) — 찾기 칸에 커서를 둡니다. ⚠ 아래 await «전»에
      해야 아이폰이 키보드를 올립니다(누른 그 순간 안이어야 합니다). */
-  if (옵션.찾기) $('fr_q').focus();
+  if (옵션.찾기) 찾기열기();
   await 그리기();
 }
 
 export function closeFriends(fromPop){
+  /* 찾기 화면(b858)이 열려 있으면 그것만 닫습니다 — 뒤로가기도 「취소」처럼 친구 화면으로. */
+  if (찾기중()) return 찾기닫기(fromPop);
   if (!fromPop && history.state?.t2 === 'friend'){ history.back(); return; }
   $('friendview')?.classList.add('hide');
   차례++;
@@ -355,17 +357,58 @@ $('friendview')?.addEventListener('click', async e => {
 
   if (e.target.closest('#friendback')) return closeFriends();
 });
-/* 찾기는 엔터(모바일 키보드의 「검색」)로 — 「찾기」 단추는 b800 에 뺐습니다. type=search 의 ×(지우기)는
-   'search' 이벤트로 옵니다 — 그때 결과도 비웁니다(찾기() 가 빈 칸이면 비웁니다). */
-$('fr_q')?.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); 찾기(); } });
-$('fr_q')?.addEventListener('search', () => { if (!$('fr_q').value.trim()) 찾기(); });
+/* ── 찾기 화면(b858, 인스타처럼) ─────────────────────────────────────────
+ * 사용자(10-13): 「윤 입력만 해도 뜨게 해주고 … 검색을 지우면 검색된 친구가 사라져야 하는데 그대로 떠 있고 …
+ *   검색은 다른 창에서 진행 되어야지」.
+ * ⚠ 옛 판(b800)은 엔터에서만 찾았고, 비우기는 type=search 의 'search' 이벤트에 기댔습니다 — **아이폰은 글자를
+ *   지워 비울 때 그 이벤트를 안 보냅니다**(그래서 결과가 남았습니다). 이제 'input' 하나로 치고 지우는 것을 다 봅니다.
+ * ⚠ 서버는 «앞글자가 같으면» 20명까지(db/121). 늦게 온 답이 새 답을 덮지 않게 차례(찾기차례)를 셉니다.
+ * ⚠ 열 때 focus 는 «누른 그 순간» 안에서 — 아이폰이 키보드를 올리는 조건입니다(await 앞). */
+let 찾기차례 = 0, 찾기틈 = null;
+const 찾기중 = () => $('friendview')?.classList.contains('frs') === true;
+function 찾기비우기(){
+  clearTimeout(찾기틈); 찾기차례++;
+  if ($('fr_q')) $('fr_q').value = '';
+  $('fr_qx')?.classList.add('hide');
+  if ($('fr_found')) $('fr_found').innerHTML = 찾기안내();
+}
+const 찾기안내 = () => '<div class="frshint">이름 앞글자만 쳐도 찾아져요.</div>';
+function 찾기열기(){
+  if (찾기중()) { $('fr_q').focus(); return; }
+  찾기비우기();
+  $('friendview').classList.add('frs');
+  $('friendview').scrollTop = 0;
+  history.pushState({ t2:'frsearch' }, '');
+  $('fr_q').focus();
+}
+function 찾기닫기(fromPop){
+  if (!fromPop && history.state?.t2 === 'frsearch'){ history.back(); return; }
+  $('fr_q')?.blur();
+  찾기비우기();
+  $('friendview')?.classList.remove('frs');
+}
+$('fr_qbtn')?.addEventListener('click', 찾기열기);
+$('fr_qcancel')?.addEventListener('click', () => 찾기닫기());
+$('fr_qx')?.addEventListener('click', () => { 찾기비우기(); $('fr_q').focus(); });
+$('fr_q')?.addEventListener('input', () => {
+  const 있다 = !!$('fr_q').value.trim();
+  $('fr_qx').classList.toggle('hide', !$('fr_q').value);
+  clearTimeout(찾기틈);
+  if (!있다){ 찾기차례++; $('fr_found').innerHTML = 찾기안내(); return; }
+  찾기틈 = setTimeout(찾기, 180);       /* 한 글자마다 서버를 부르지 않게 잠깐 기다립니다 */
+});
+/* 엔터(키보드의 「검색」)는 키보드만 내립니다 — 결과는 이미 떠 있습니다. */
+$('fr_q')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); clearTimeout(찾기틈); 찾기(); $('fr_q').blur(); }
+});
 
 async function 찾기(){
   const q = $('fr_q').value.trim();
   const 칸 = $('fr_found');
-  if (!q){ 칸.innerHTML = ''; return; }
-  칸.innerHTML = '<div class="memo">찾는 중…</div>';
+  if (!q){ 칸.innerHTML = 찾기안내(); return; }
+  const 이번 = ++찾기차례;
   const r = await netTimeout(sb.rpc('people_find', { p_name: q }));
+  if (이번 !== 찾기차례) return;        /* 그새 글자가 바뀌었거나 비웠습니다 */
   if (!r || r.error){ 칸.innerHTML = 빈칸('지금은 찾을 수 없어요.', r?.error?.message || ''); return; }
   const 나 = ctx.me()?.id;
   const 목록 = (r.data || []).filter(p => p.user_id !== 나);
@@ -373,9 +416,8 @@ async function 찾기(){
     /* 상태는 이름 밑 둘째 줄(b800, 인스타처럼) — 누르면 그 사람 화면에서 팔로우합니다. */
     ? 목록.map(p => 사람줄(p, '', p.mine === 'accepted' ? '팔로잉 중'
                                 : p.mine === 'requested' ? '요청됨' : '')).join('')
-    : 빈칸(`「${q}」 이름을 가진 사람이 없어요.`,
-           '이름은 띄어쓰기·대소문자와 상관없이, 글자가 모두 같아야 찾아져요. ' +
-           '처음 이름(메일 앞부분)을 그대로 쓰는 사람은 안 찾아져요 — 그 사람에게 프로필 링크를 받으세요.');
+    : `<div class="frshint">「${esc(q)}」${josa(q, '으로', '로').slice(q.length)} 시작하는 이름이 없어요.<br>` +
+      '처음 이름(메일 앞부분)을 그대로 쓰는 사람은 안 찾아져요 — 그 사람에게 프로필 링크를 받으세요.</div>';
 }
 
 /* ── 내 프로필 링크 ─────────────────────────────────────────────────── */

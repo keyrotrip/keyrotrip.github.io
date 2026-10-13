@@ -33,42 +33,42 @@
  * 층: 아래층 여럿과 이미 떼어낸 조각들(citysearch · rating · map ·
  *     report · globe)을 씁니다. 그쪽은 이 파일을 안 부르므로 고리가
  *     생기지 않습니다 — 저쪽이 이 화면을 다시 그릴 때는 ctx 를 씁니다. */
-import { $, esc, toast } from './dom.js?v=b857';
-import { sb } from './db.js?v=b857';
-import { fail, netTimeout, netIsDown, drawOffbar } from './net.js?v=b857';
-import { hm, todayYmd } from './calc.js?v=b857';
-import { starHtml, paintStars } from './stars.js?v=b857';
+import { $, esc, toast } from './dom.js?v=b858';
+import { sb } from './db.js?v=b858';
+import { fail, netTimeout, netIsDown, drawOffbar } from './net.js?v=b858';
+import { hm, todayYmd } from './calc.js?v=b858';
+import { starHtml, paintStars } from './stars.js?v=b858';
 /* 평가 히어로는 세 화면이 같은 것을 씁니다 — rateui.js 머리말 참고(b409). */
-import { starValue } from './rateui.js?v=b857';
-import { cities, countryName, cityCountry } from './cities.js?v=b857';
-import { UN_CODES } from './un.js?v=b857';
-import { myRates, cityStat, visited } from './rate.js?v=b857';
-import { plans } from './trip.js?v=b857';
-import { loadCities } from './citysearch.js?v=b857';
+import { starValue } from './rateui.js?v=b858';
+import { cities, countryName, cityCountry } from './cities.js?v=b858';
+import { UN_CODES } from './un.js?v=b858';
+import { myRates, cityStat, visited } from './rate.js?v=b858';
+import { plans } from './trip.js?v=b858';
+import { loadCities } from './citysearch.js?v=b858';
 /* 지구본에서 나라를 누르면 뜨는 카드가 도시 화면으로 보냅니다(b555). */
-import { openCity } from './city.js?v=b857';
-import { saveRate, refreshVisited, loadRateData } from './rating.js?v=b857';
+import { openCity } from './city.js?v=b858';
+import { saveRate, refreshVisited, loadRateData } from './rating.js?v=b858';
 /* CONT 는 대륙별 분모(b451) — 지도 화면과 **같은 표**를 씁니다.
    여기서 새로 적으면 두 화면의 분모가 갈라집니다. */
-import { openMap, UN_COUNTRIES, CONT, CONT_VIEW, mapBackTo } from './map.js?v=b857';
+import { openMap, UN_COUNTRIES, CONT, CONT_VIEW, mapBackTo, 발자국스펙 } from './map.js?v=b858';
 /* ⚠ **`renderAiCard`·`aiPrompt` 를 b398 에서 뗐습니다.** 홈에서 AI 일정
    권유를 걷어냈기 때문입니다(메인은 평가, 일정은 서브). 둘은 report.js 에
    그대로 살아 있으니 일정 쪽에서 쓸 자리가 생기면 거기서 가져다 쓰십시오. */
-import { drawReport } from './report.js?v=b857';
+import { drawReport } from './report.js?v=b858';
 /* 성향은 **card.js 가 정합니다.** 여기서 다시 세지 않습니다 — 두 군데서 세면
    홈에 뜬 유형과 성향 화면의 유형이 언젠가 갈라집니다. */
 /* PERSONA_BG 만 씁니다 — 카드 배경색입니다. personaAxes·personaRank·PERSONA16 은
    b457 에 홈에서 성향을 빼면서 같이 걷었습니다(분석 탭이 씁니다). */
-import { PERSONA_BG } from './card.js?v=b857';
+import { PERSONA_BG, shareCard } from './card.js?v=b858';
 /* 성향이 바뀌면 홈 맨 위에 한 번 알립니다(b526) — 「다시 열 이유」. */
-import { checkPersonaShift } from './pshift.js?v=b857';
+import { checkPersonaShift } from './pshift.js?v=b858';
 /* 일기장은 제 화면을 엽니다. 「기록 탭에서 왔다」를 적어둬야 닫을 때
    프로필이 아니라 여기로 돌아옵니다(map.js 의 「나온 자리로」와 같은 규칙). */
 /* 손가락으로 돌려 보는 지구본. **성향 탭에 있던 것을 여기로 옮겼습니다(b542)** —
    이 탭이 곧 「내가 어디를 갔나」입니다. */
-import { mountGlobe } from './globe.js?v=b857';
+import { mountGlobe } from './globe.js?v=b858';
 /* 홈 화면에 추가 안내(b844) — 로그인 뒤에도 브라우저로 쓰는 폰에 칩 하나. install.js 머리말 참고. */
-import { 안내할까, 기기알기, 설치안내열기, 폰그림 } from './install.js?v=b857';
+import { 안내할까, 기기알기, 설치안내열기, 폰그림 } from './install.js?v=b858';
 /* 나라 지도 화면(b682). 지구본에서 나라를 누르면 여기로 갑니다. */
 /* ⚠ `ctrymap.js`(나라 페이지)는 b707 에 없앴습니다 — 지구본이 직접 도시까지
    보여줍니다. 파일도 지웠습니다. */
@@ -340,7 +340,7 @@ async function 나라카드(코드, 먼저){
         <div class="gsfootrow">
           <span>${st?.avg_stars != null
             ? `평균 <b>${Number(st.avg_stars).toFixed(1)}</b>${
-                st.n_rated ? ` · ${st.n_rated}명` : ''}`
+                st.n_rated ? ` · ${st.n_rated}명` : ''}${st.n_comment ? ` · 한줄평 ${st.n_comment}` : ''}`
             : '아직 아무도 안 매김'}</span>
           <span class="gsgo2">자세히 보기 ›</span></div>
       </div></div></div>`;
@@ -403,17 +403,28 @@ async function 나라카드(코드, 먼저){
        ⚠ 먼저 칠하는 것 자체는 그대로 둡니다 — 누른 즉시 반응이 있어야
          합니다. 바뀐 것은 **실패하면 되돌린다**입니다. */
       const 전값 = myRates[wrap.dataset.city]?.stars ?? null;
-      paintStars(wrap, v, true);
-      글(v || null);
+      /* 같은 점수를 다시 누르면 지웁니다(b858, 사용자: 「별 4개 부분을 다시 누르면 별이 지워져야 하는데 그대로 4개가
+         다시 채워진다」) — 평가 탭 목록·도시 화면·보관함과 같은 규칙. 0(끌어서 맨 왼쪽)도 지우기. */
+      const 새값 = (v === 0 || (전값 != null && Number(전값) === v)) ? null : v;
+      paintStars(wrap, 새값, true);
+      글(새값);
 
-      const 됐나 = await saveRate(wrap.dataset.city, { stars: v }, true);
+      const 됐나 = await saveRate(wrap.dataset.city, { stars: 새값 }, true);
       if (됐나 === false){
         paintStars(wrap, 전값, false);
         글(전값);
         toast('저장하지 못했어요. 잠시 뒤 다시 해주세요.');
         return;                       /* 지구본도 안 칠합니다 */
       }
-      if (v && 지구갔다 && !지구갔다.has(코드)){ 지구갔다.add(코드); 지구?.다시(); }
+      /* 지구본 칠 맞추기. ⚠ 지울 때도(b858, 사용자: 「별점 지웠는데 색칠은 그대로」) — 전에는 매길 때만 더했습니다.
+         나라 칠(지구갔다 = 나라 코드)은 그 나라에 다녀온 도시가 하나도 안 남았을 때만 뺍니다(saveRate 가 visited 를
+         서버에 다시 물어 맞춰 둠 — 지난 여행으로 다녀온 곳은 남습니다). 주·도 칠은 그릴 때 visited·myRates 를 다시 봅니다. */
+      if (지구갔다){
+        if (새값 && !지구갔다.has(코드)) 지구갔다.add(코드);
+        if (!새값 && !(cities || []).some(c => c.cc === 코드 && (visited.has(c.id) || myRates[c.id]?.stars != null)))
+          지구갔다.delete(코드);
+        지구?.다시();
+      }
       /* 발자국 숫자가 달라졌으니 이 탭은 다음에 다시 그립니다. */
       resetHomeSig();
     };
@@ -1149,8 +1160,11 @@ $('rv_rate').addEventListener('click', async e => {
   const wrap = st.closest('.stars');
   if (!wrap?.dataset.city) return;
   const v = starValue(st, e.clientX);   /* 반칸 규칙은 stars.js 한 곳(b491) */
-  paintStars(wrap, v, true);
-  await saveRate(wrap.dataset.city, { stars: v }, true);
+  /* 같은 점수를 다시 누르면 지웁니다(b858 — 다른 화면과 같은 규칙). */
+  const 전 = myRates[wrap.dataset.city]?.stars;
+  const 새값 = (v === 0 || (전 != null && Number(전) === v)) ? null : v;
+  paintStars(wrap, 새값, true);
+  await saveRate(wrap.dataset.city, { stars: 새값 }, true);
 });
 
 /* ── 한줄평·일기 저장(b558) ──────────────────────────────────────────
@@ -1500,7 +1514,26 @@ async function renderFoot(통){
   자세히.type = 'button';
   자세히.textContent = '자세히 ›';
   자세히.onclick = 지도열기;
-  감쌈.appendChild(자세히);
+  /* ── 공유 아이콘(b858, 사용자: 「자세히 탭 안에 들어가야 공유하기 기능이 있었는데 자세히 왼쪽에 공유 기능 아이콘도
+     만들자 사람들이 공유를 어디서 해야하는 지 몰라」) ──
+     지도 화면(#mappane)의 #fp_img 와 «같은 카드»(발자국 탑승권 — map.js 의 발자국스펙)를 같은 아이콘으로 보냅니다.
+     ⚠ 도시 목록은 visited(rate.js — my_visited 로 받은 것, 지도 화면과 같은 출처)에서 만듭니다.
+     ⚠ 둘을 한 칸(.gacts)에 나란히 — 「자세히」 자리 규칙(#homeview .gmore 의 위·오른쪽)은 이제 .gacts 가 집니다. */
+  const 공유 = document.createElement('button');
+  공유.className = 'gmore gshare';
+  공유.type = 'button';
+  공유.setAttribute('aria-label', '내 발자국 공유하기');
+  공유.innerHTML = `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5.5v3.6C8.2 9.8 4.6 13.6 3.5 19c2.4-3.2 5.7-4.7 10.5-4.7v3.7L21 11.75z"/></svg>`;
+  공유.onclick = () => {
+    const 간곳 = (cities || []).filter(c => visited.has(c.id));
+    if (!간곳.length){ toast('아직 다녀온 곳이 없어요 — 별점을 매기면 지구본이 칠해져요'); return; }
+    shareCard(발자국스펙(간곳), 'aitrip-발자국');
+  };
+  const 단추칸 = document.createElement('div');
+  단추칸.className = 'gacts';
+  단추칸.append(공유, 자세히);
+  감쌈.appendChild(단추칸);
 
   /* ⚠ ＋/− 단추가 여기 있었습니다(b560 → b561 에 걷음, 사용자 결정).
      확대는 손가락 둘로 집기와 마우스 휠 둘입니다. */

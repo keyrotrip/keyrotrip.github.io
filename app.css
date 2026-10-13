@@ -1990,6 +1990,22 @@ input[type=time]::-webkit-date-and-time-value{ text-align:left; }
 .rateq .herostars .st{ font-size:min(calc(34px * var(--ts)), 10vw); }
 .rateq .herostars .st i{ color:var(--star-hi); }
 
+/* ── 빠르게 매기기 카드 더미(b858, 시안 B 「카드 통째」) ───────────────────────────────
+ * 사용자: 「옆으로 넘길 때 다음 카드가 미리 보이면서 넘어 오는 것」. 지금 카드(.spcur) 뒤로 다음 두 곳(.sp1 · .sp2)이
+ * 아래로 살짝 비켜 겹칩니다. 밀면 spree.js 의 따라가기가 뒤 카드를 앞 자리로 끌어옵니다.
+ * ⚠ .sp1 · .sp2 의 transform 숫자는 spree.js 의 따라(dx) 와 같아야 합니다(다르면 손대는 순간 튐).
+ * ⚠ 앞 카드만 자리를 차지합니다(뒤 둘은 absolute) — 높이는 앞 카드가 정하고, 비켜 나온 만큼 아래 여백(margin-bottom). */
+.spdeck{ position:relative; width:100%; margin-bottom:34px; }
+/* 밀기 안내 한 줄(spree.js 세기) — 「N곳 매김」 자리. 흐린 글씨로, 단추처럼 안 보이게. */
+#spreecount.sphint{ color:var(--ink-48); font-size:var(--f-sm); letter-spacing:.01em; }
+.spcard{ position:relative; z-index:3; background:var(--canvas); border:1px solid var(--line);
+         border-radius:var(--r-lg); padding:12px 12px 14px; box-shadow:0 6px 18px rgba(0,0,0,.08);
+         will-change:transform; }
+.spcard.sp1, .spcard.sp2{ position:absolute; left:0; right:0; top:0; pointer-events:none; }
+.spcard.sp1{ z-index:2; transform:translateY(34px) scale(.94); filter:brightness(.92); }
+.spcard.sp2{ z-index:1; transform:translateY(64px) scale(.88); filter:brightness(.85); }
+@media (prefers-reduced-motion: reduce){ .spcard{ transition:none !important; } }
+
 /* 「안 가봤어요 ›」의 화살표. 문구보다 흐리게 — **넘어간다는 것만** 알리면
    되고, 화살표가 문구만큼 진하면 그게 주인공처럼 보입니다. */
 .trybar button i{ font-style:normal; opacity:.45; margin-left:1px; }
@@ -3704,8 +3720,12 @@ code{ background:var(--parchment); padding:2px 7px; border-radius:var(--r-sm);
    실측 198), b766 처럼 여백이 0 이면 **더해야** 맞습니다.
    ⚠ 위 여백을 만질 때 이 줄을 «같이» 보십시오. 둘이 어긋나면 로고와
      「자세히」가 딴 높이에 앉습니다. */
-#homeview .gmore{ right:calc(var(--s-md) + 2px);
+#homeview .gmore, #homeview .gacts{ right:calc(var(--s-md) + 2px);
                   top:calc(var(--sat) + var(--edge) + 6px); }
+/* 공유 아이콘 + 「자세히」 한 칸(b858) — 자리는 칸이 잡고, 안의 둘은 나란히. */
+.gacts{ position:absolute; right:2px; top:2px; z-index:2; display:flex; align-items:center; gap:2px; }
+.gacts .gmore, #homeview .gacts .gmore{ position:relative; right:auto; top:auto; }
+.gacts .gshare{ padding:8px 8px; display:flex; }
 
 /* ⚠ **「스미는 띠」(그러데이션)를 걷었습니다(b765 안에서 한 번 더,
    사용자: 「뭉개지말고 그냥 일자로 끊어줘」).** 흐려도 티가 안 나는 것을
@@ -6218,6 +6238,21 @@ body:has(#whoview:not(.hide)) .tabbar{ display:none; }
 .frq input:focus{ outline:none; box-shadow:none; font-size:max(var(--in-floor), var(--f-md)); }
 .frq:focus-within{ outline:2px solid var(--primary-focus); outline-offset:0; }
 #fr_found:not(:empty){ margin-top:6px; }
+/* 찾기 화면(b858) — 평소엔 단추(.frqbtn)만, .frs 가 붙으면 찾기 줄·결과만. 결과는 찾기 화면에서만 보입니다. */
+.frqbtn{ width:100%; border:0; font:inherit; font-size:var(--f-md); text-align:left; padding:11px 12px; }
+.frqbtn:active{ transform:none; opacity:.7; }
+#fr_srow, #fr_found{ display:none; }
+#friendview.frs > .frhead, #friendview.frs > #fr_qbtn, #friendview.frs > .frtabs,
+#friendview.frs > #fr_list{ display:none; }
+#friendview.frs > #fr_srow{ display:flex; align-items:center; gap:10px; }
+#friendview.frs > #fr_found{ display:block; }
+#fr_srow .frq{ flex:1; min-width:0; margin-top:0; }
+/* 굵은 검은 테두리(:focus-within outline)는 찾기 화면에선 뺍니다 — 칸이 하나뿐이라 어디 있는지 다 압니다. */
+#fr_srow .frq:focus-within{ outline:0; }
+.frqx{ flex:none; display:flex; border:0; background:none; padding:6px 0 6px 6px; color:var(--ink-48); }
+.frqx:active{ transform:none; opacity:.6; }
+.frqcancel{ flex:none; padding:8px 2px; font-size:var(--f-md); color:var(--ink); font-weight:400; }
+.frshint{ padding:18px 2px; font-size:var(--f-sm); color:var(--ink-48); }
 /* 탭 — 밑줄, 숫자는 옆에 */
 .frtabs{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); margin-top:12px;
          border-bottom:1px solid var(--line); }
@@ -6260,6 +6295,90 @@ body:has(#whoview:not(.hide)) .tabbar{ display:none; }
    600 이 되고, 팔로워 수 <b>(bolder)는 900 으로 튀었습니다. 단추 자체는 400 으로 되돌려 속 글자가 제 굵기를 갖게 합니다. */
 .frwho, .frrow{ font-weight:400; }
 .frbtns{ display:flex; gap:6px; flex:none; }
+
+/* ── 도시 후기 — 좋아요 · 답글 · 후기 화면(b858, cityrev.js) ─────────────────────
+ * 사용자: 왓챠피디아처럼 · 별은 「★ 4.5」 네모 · 반응 줄은 「♡ 3  💬 2 · 2일 전」(둘 다 아이콘 — 「통일감」). */
+.crvsec{ margin-top:var(--s-lg); }
+.crvhd{ display:flex; align-items:baseline; justify-content:space-between; }
+.crvhd .crvsort{ font-size:var(--f-sm); font-weight:400; color:var(--ink-48); }
+.crvrow{ padding:14px 0; border-bottom:1px solid var(--line); }
+.crvrow:last-of-type{ border-bottom:0; }
+.crvwho{ display:flex; align-items:center; gap:10px; padding:0; color:var(--ink); font-weight:700;
+        font-size:var(--f-md); text-align:left; max-width:100%; }
+.crvwho b{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.crvwho.sm{ gap:6px; font-weight:400; font-size:var(--f-sm); color:var(--ink-48); }
+.crvwho:active, .crvlike:active, .crvrep:active{ transform:none; opacity:.6; }
+.crvf{ flex:none; font-size:var(--f-xs); font-weight:600; color:var(--ink-48); background:var(--pearl); padding:1px 6px; }
+.crvpill{ display:inline-flex; align-items:center; gap:4px; margin-top:10px; padding:2px 8px;
+         border:1px solid var(--line); background:var(--canvas); font-weight:700; font-size:var(--f-sm);
+         font-variant-numeric:tabular-nums; color:var(--ink); }
+.crvpill i{ font-style:normal; color:var(--star); }
+.crvtxt{ margin-top:8px; font-size:var(--f-md); line-height:1.55; color:var(--ink); cursor:pointer;
+        white-space:pre-wrap; overflow-wrap:anywhere; }
+.crvact{ display:flex; align-items:center; gap:16px; margin-top:10px; color:var(--ink-48); font-size:var(--f-sm); }
+.crvlike, .crvrep{ display:flex; align-items:center; gap:4px; border:0; background:none; padding:4px 0; margin:0;
+                 color:inherit; font:inherit; font-variant-numeric:tabular-nums; min-height:32px; }
+.crvlike[disabled]{ opacity:1; cursor:default; }
+.crvic{ width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linejoin:round; }
+.crvlike.on{ color:var(--ink); }
+.crvic.on{ fill:#e0245e; stroke:#e0245e; }
+.crvlike.sm .crvic{ width:17px; height:17px; }
+.crvwhen{ margin-left:2px; }
+.crvall{ display:block; width:100%; padding:14px 0; border-top:1px solid var(--line); text-align:center;
+        color:var(--ink-48); font-size:var(--f-md); font-weight:400; }
+#cv_avgn .cvrvn{ display:inline; min-height:0; padding:0; font:inherit; color:inherit; text-decoration:underline; text-underline-offset:2px; font-weight:400; }
+
+/* 후기 화면 — 머리 · 내용 · 맨 아래 답글 칸. 보이는 창에 맞춤(키보드 위) */
+body:has(#crvview:not(.hide)) .tabbar{ display:none; }
+#crvview:not(.hide){
+  position:fixed; left:0; right:0; top:var(--vvtop, 0px); height:var(--vvh, 100dvh); z-index:1145;
+  display:flex; flex-direction:column; background:var(--bg);
+  padding-top:calc(var(--sat) + var(--edge));
+}
+#crvview > *{ width:100%; max-width:480px; margin-left:auto; margin-right:auto; }
+.crvbar{ flex:none; display:grid; grid-template-columns:44px 1fr 44px; align-items:center;
+        padding:4px 8px; border-bottom:1px solid var(--line); }
+.crvbar b{ text-align:center; font-size:var(--f-lg); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.crvbar button{ padding:6px; color:var(--ink); font-size:var(--f-xl); line-height:1; }
+#crvbody{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+         padding:0 16px 16px; }
+#crvbody > .crvrow{ padding:14px 0; }
+.crvhd2{ display:flex; align-items:center; justify-content:space-between; padding:14px 0 4px;
+        font-size:var(--f-sm); color:var(--ink-48); }
+.crvsortb{ display:flex; align-items:center; gap:4px; padding:4px 0; font-size:var(--f-sm); font-weight:400; color:var(--ink-48); }
+.crvtop{ display:flex; gap:12px; padding-top:16px; }
+.crvtop .l{ flex:1; min-width:0; }
+.crvcity{ margin:8px 0 2px; font-size:var(--f-xl); cursor:pointer; }
+.crvtop .m{ font-size:var(--f-sm); color:var(--ink-48); }
+.crvimg{ width:76px; height:76px; object-fit:cover; flex:none; background:var(--pearl); cursor:pointer; }
+.crvbig{ margin-top:14px; font-size:var(--f-md); line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
+.crvlikers{ display:flex; align-items:center; gap:8px; margin-top:14px; font-size:var(--f-sm); color:var(--ink-48); }
+.crvlikers .row{ display:flex; border:0; padding:0; margin:0; }
+.crvlikers .row > *{ border:2px solid var(--bg); margin-left:-7px; }
+.crvlikers .row > *:first-child{ margin-left:0; }
+.crvpad .crvact{ margin-top:6px; }
+.crvgap{ height:10px; background:var(--pearl); margin:14px -16px 0; }
+.crpline{ display:flex; gap:10px; padding:12px 0; border-bottom:1px solid var(--line); }
+.crpline:last-child{ border-bottom:0; }
+.crpline > button{ padding:0; flex:none; align-self:flex-start; }
+.crpline .b{ flex:1; min-width:0; }
+.crpline .n{ font-size:var(--f-md); }
+.crpline .n b{ cursor:pointer; }
+.crpline .n small{ margin-left:6px; color:var(--ink-48); font-size:var(--f-sm); }
+.crpline .x{ margin-top:3px; font-size:var(--f-md); line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; }
+.crpline .f{ display:flex; align-items:center; justify-content:space-between; margin-top:4px; color:var(--ink-48); font-size:var(--f-sm); }
+.crpmore{ padding:4px 2px; color:var(--ink-48); font-size:var(--f-md); }
+.crvnone{ padding:18px 0; text-align:center; font-size:var(--f-sm); color:var(--ink-48); }
+.crvinp{ flex:none; padding:8px 16px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:var(--bg); }
+/* 키보드가 올라오면(--kb > 0) 아래 안전영역 여백은 뺍니다 — 키보드가 그 자리를 덮습니다. */
+.crvinp{ padding-bottom:max(8px, calc(8px + env(safe-area-inset-bottom) - var(--kb, 0px))); }
+.crvbox{ display:flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--canvas); padding:0 4px 0 12px; }
+.crvbox input{ flex:1; min-width:0; border:0; background:transparent; padding:11px 0; color:var(--ink);
+              font-size:max(var(--in-floor), var(--f-md)); -webkit-appearance:none; appearance:none; }
+.crvbox input:focus{ outline:none; box-shadow:none; font-size:max(var(--in-floor), var(--f-md)); }
+.crvbox:focus-within{ border-color:var(--ink-48); }
+#crv_send{ flex:none; padding:8px 10px; font-weight:600; color:var(--ink-48); }
+#crv_send.on{ color:var(--ink); }
 /* 친구 기록의 도시 줄 — 누르면 그 도시(b789) */
 .whorow[data-cityopen]{ cursor:pointer; }
 .whorow[data-cityopen]:active{ background:var(--pearl); }
@@ -6546,6 +6665,14 @@ body.cron{ overflow:hidden; }
 .aubars .r{ fill:var(--ink); }
 .aubars .s{ fill:var(--star); }
 .aubars .z{ fill:var(--divider-soft); }
+/* 실시간 막대 항목마다 한 줄(b858) — 줄마다 높이를 따로. 색은 줄 이름과 같은 뜻으로. */
+.aulrows{ display:flex; flex-direction:column; gap:10px; }
+.aulrow .hd{ display:flex; justify-content:space-between; font-size:var(--f-sm); margin-bottom:3px; }
+.aulrow .hd span{ color:var(--ink-48); }
+.aulrow .hd b{ font-variant-numeric:tabular-nums; }
+.aulrows + .aux{ padding-right:0; }
+.aubars .c{ fill:#3b8a8a; }
+.aubars .j{ fill:#8b6fb5; }
 .aulg{ display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:8px; font-size:var(--f-xs); color:var(--ink-48); }
 .aulg i{ display:inline-block; width:8px; height:8px; margin-right:5px; }
 .aulg i.r, .aulg i.b, .ausplit .b{ background:var(--ink); }

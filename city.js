@@ -13,13 +13,15 @@
  * 자료를 건드리므로 여기로 가져오면 안 됩니다.
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
-import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b857';
-import { sb } from './db.js?v=b857';
-import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b857';
-import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b857';
-import { starHtml, starValue, starsRo } from './stars.js?v=b857';
-import { localTime } from './calc.js?v=b857';
-import { fail, netIsDown } from './net.js?v=b857';
+import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b858';
+import { sb } from './db.js?v=b858';
+import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b858';
+import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b858';
+import { starHtml, starValue, starsRo } from './stars.js?v=b858';
+import { localTime } from './calc.js?v=b858';
+import { fail, netIsDown } from './net.js?v=b858';
+/* 후기 줄·후기 화면(b858). cityrev.js 는 이 파일을 안 읽습니다(도시 열기는 ctx 로) — 고리 없음. */
+import { revRowsHtml } from './cityrev.js?v=b858';
 
 /* 지금 열려 있는 도시. **app.js 에 있던 것을 여기로 옮겼습니다(b329)** —
    여닫는 것은 이 파일이 하는데 변수만 저쪽에 있어서, 떼어낸 뒤
@@ -69,6 +71,16 @@ let 층 = [];
 
 let cityOpen = null;
 export const isCityOpen = () => cityOpen != null;
+/* 지금 열린 도시(b858) — 후기 화면(cityrev.js)이 「도시로」를 누를 때 같은 도시면 다시 안 엽니다. */
+export const openCityId = () => cityOpen?.id ?? null;
+/* 후기 화면에서 좋아요·답글을 바꾸고 돌아왔을 때 후기 칸만 다시(b858) */
+export async function refreshCityReviews(){
+  const id = cityOpen?.id; if (!id) return;
+  const { data } = await sb.rpc('city_comments', { p_city: id });
+  if (cityOpen?.id !== id) return;
+  const 후기 = data || [];
+  $('cv_comments').innerHTML = revRowsHtml(후기.slice(0, 3), id, Math.max(cityStat[id]?.n_comment ?? 0, 후기.length));
+}
 /* 탭을 옮기면(app.js 의 showApp) 도시가 통째로 닫힙니다 — 겹도 같이 버립니다. */
 export function clearCityOpen(){ cityOpen = null; 층 = []; }
 
@@ -193,7 +205,9 @@ export async function openCity(id, 옵션 = {}){
     }
   }
   $('cv_avg').textContent  = s?.n_rated ? Number(s.avg_stars).toFixed(1) : '–';
-  $('cv_avgn').textContent = s?.n_rated ? `${s.n_rated}명이 매김` : '아직 아무도 안 매김';
+  /* 후기 수(b858) — 누르면 아래 후기 칸으로 내려갑니다. */
+  $('cv_avgn').innerHTML = esc(s?.n_rated ? `${s.n_rated}명이 매김` : '아직 아무도 안 매김') +
+    (s?.n_comment ? ` · <button type="button" class="ghost cvrvn" data-crvjump>한줄평 ${s.n_comment}</button>` : '');
   $('cv_stars').innerHTML  = starHtml(r.stars);
   $('cv_want').classList.toggle('on', !!r.want);
   $('cv_note').value = r.comment || '';
@@ -262,29 +276,18 @@ export async function openCity(id, 옵션 = {}){
              ${avatarImg(x.avatar_url, x.user_id, x.name || '여행자',
                          'width:36px; height:36px; border-radius:50%; object-fit:cover; flex:none', 'thumb')}
              <span class="t"><b>${esc(x.name || '여행자')}</b>
-               ${x.comment ? `<span class="memo">${esc(x.comment)}</span>` : ''}
                ${x.stars != null ? starsRo(x.stars) : '<span class="memo">다녀왔어요</span>'}</span>
            </button>
          </div>`).join('') + '</div>'
     : '';
 
-  /* 남들 한줄평. 별점만 매긴 사람은 여기 안 나옵니다 — 이름이 걸리니까요.
-     ⚠ 팔로우하는 사람은 위 칸에 이미 나오므로 여기서 뺍니다(두 번 안 나오게). */
-  const 위에 = new Set(친구.map(x => x.user_id));
-  const others = (cm || []).filter(x => x.user_id !== ctx.me().id && !위에.has(x.user_id));
-  $('cv_comments').innerHTML = others.length
-    ? `<div class="daysep">다른 사람들</div>` + others.map(x =>
-        `<div class="rrow" style="padding:10px 0">
-           <button class="ghost frwho" data-person="${esc(x.user_id)}"
-                   aria-label="${esc(x.name)} 프로필">
-             ${avatarImg(x.avatar_url, x.user_id, x.name,
-                         'width:36px; height:36px; border-radius:50%; object-fit:cover; flex:none', 'thumb')}
-           </button>
-           <div class="t"><b data-person="${esc(x.user_id)}" style="cursor:pointer">${esc(x.name)}</b>
-             <span class="memo">${esc(x.comment)}</span>
-             ${starsRo(x.stars)}</div>
-         </div>`).join('')
-    : '';
+  /* 후기(b858, 왓챠처럼) — 좋아요 순 셋 + 「모두 보기」. 별점만 매긴 사람은 안 나옵니다 — 이름이 걸리니까요.
+     ⚠ 팔로우하는 사람 후기도 여기 나옵니다(「팔로잉」 딱지) — 그래서 위 친구 칸에서는 한줄평 글을 뺐습니다.
+     ⚠ 내 후기도 나옵니다 — 남이 누른 좋아요·답글을 보려면. 내 줄 하트는 못 누릅니다.
+     ⚠ 수는 city_stats 의 n_comment(db/122)를 먼저, 없으면(SQL 전) 받은 줄 수. */
+  const 후기 = cm || [];
+  const 후기수 = Math.max(cityStat[id]?.n_comment ?? 0, 후기.length);
+  $('cv_comments').innerHTML = revRowsHtml(후기.slice(0, 3), id, 후기수);
   /* 위 겹에서 돌아왔으면 보던 자리로(b789). 친구·한줄평 칸이 다 그려진
      «뒤»에 옮깁니다 — 먼저 옮기면 페이지가 아직 짧아서 중간에 걸립니다. */
   if (되돌림?.y) window.scrollTo({ top: 되돌림.y });

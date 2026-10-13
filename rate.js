@@ -266,6 +266,8 @@ if (typeof window !== 'undefined') window.__rateCheck = () => {
  *   그건 남 한 명이므로 그대로 나옵니다. 그래서 숫자를 빼서 셉니다. */
 export function avgTail(stat, mine){
   const others = (stat?.n_rated || 0) - (mine?.stars != null ? 1 : 0);
-  return others > 0
-    ? ` · 평균 ${Number(stat.avg_stars).toFixed(1)} (${stat.n_rated}명)` : '';
+  /* 후기 수(b858, 사용자: 「평균 몇점 옆에 후기도 몇개인지」) — db/122 의 n_comment. 없으면(SQL 전) 안 붙습니다. */
+  const 후기 = stat?.n_comment ? ` · 한줄평 ${stat.n_comment}` : '';
+  return (others > 0
+    ? ` · 평균 ${Number(stat.avg_stars).toFixed(1)} (${stat.n_rated}명)` : '') + 후기;
 }

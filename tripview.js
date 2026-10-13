@@ -17,39 +17,41 @@
  * 여행 → 도시 → 지도처럼 쌓인 것을 한 번에 걷어내야 목록이 제대로 보입니다.
  *
  * 층: 아래층과 이미 떼어낸 조각 여럿을 씁니다. 그쪽은 이 파일을 안 부릅니다. */
-import { $, esc, toast, coverDeck } from './dom.js?v=b857';
-import { photosOpen, closePhotos } from './photoview.js?v=b857';
-import { cropOpen, closeCrop } from './crop.js?v=b857';
-import { sb } from './db.js?v=b857';
-import { fail, netTimeout, drawOffbar, NOROW } from './net.js?v=b857';
-import { D1, asDate, ymd, dayLabel, todayYmd } from './calc.js?v=b857';
+import { $, esc, toast, coverDeck } from './dom.js?v=b858';
+import { photosOpen, closePhotos } from './photoview.js?v=b858';
+import { cropOpen, closeCrop } from './crop.js?v=b858';
+import { sb } from './db.js?v=b858';
+import { fail, netTimeout, drawOffbar, NOROW } from './net.js?v=b858';
+import { D1, asDate, ymd, dayLabel, todayYmd } from './calc.js?v=b858';
 import { trip, plans, legs, pickedDay, catFilter,
-         setPickedDay, setPlans, setCatFilter, clearTrip } from './trip.js?v=b857';
-import { drawCats, catsOpen, setCatsOpen } from './planline.js?v=b857';
-import { drawPlanMap } from './planmap.js?v=b857';
-import { drawPlans } from './planview.js?v=b857';
-import { legIn, fillCityList } from './legs.js?v=b857';
-import { inTrip } from './tabs.js?v=b857';
-import { closeAi } from './aiscreen.js?v=b857';
-import { closeDraft } from './draft.js?v=b857';
-import { closeReview } from './home.js?v=b857';
+         setPickedDay, setPlans, setCatFilter, clearTrip } from './trip.js?v=b858';
+import { drawCats, catsOpen, setCatsOpen } from './planline.js?v=b858';
+import { drawPlanMap } from './planmap.js?v=b858';
+import { drawPlans } from './planview.js?v=b858';
+import { legIn, fillCityList } from './legs.js?v=b858';
+import { inTrip } from './tabs.js?v=b858';
+import { closeAi } from './aiscreen.js?v=b858';
+import { closeDraft } from './draft.js?v=b858';
+import { closeReview } from './home.js?v=b858';
 /* 연속 평가(b409). 기록 탭을 통째로 덮으므로 뒤로가기가 여기를 먼저 닫습니다. */
-import { closeSpree } from './spree.js?v=b857';
-import { closeCity, isCityOpen } from './city.js?v=b857';
-import { closeMap, closeCountries } from './map.js?v=b857';
-import { closePersona } from './persona.js?v=b857';
+import { closeSpree } from './spree.js?v=b858';
+import { closeCity, isCityOpen } from './city.js?v=b858';
+import { closeMap, closeCountries } from './map.js?v=b858';
+import { closePersona } from './persona.js?v=b858';
 /* 지구본 나라 카드(b555). 뒤로가기 사슬이 이것부터 닫습니다. */
-import { 시트닫기 } from './home.js?v=b857';
-import { closeShelf, 거르개닫기 } from './shelf.js?v=b857';
-import { 나라거르개닫기 } from './rating.js?v=b857';
-import { closeDiary } from './diary.js?v=b857';
-import { closeDocs } from './prep.js?v=b857';
-import { is16Open, is16Grid, close16, close16Grid } from './p16.js?v=b857';
-import { isPersonOpen, personBack } from './people.js?v=b857';
-import { isFriendsOpen, closeFriends } from './friends.js?v=b857';
-import { isSetSubOpen, closeSetSub } from './setnav.js?v=b857';
+import { 시트닫기 } from './home.js?v=b858';
+import { closeShelf, 거르개닫기 } from './shelf.js?v=b858';
+import { 나라거르개닫기 } from './rating.js?v=b858';
+import { closeDiary } from './diary.js?v=b858';
+import { closeDocs } from './prep.js?v=b858';
+import { is16Open, is16Grid, close16, close16Grid } from './p16.js?v=b858';
+import { isPersonOpen, personBack } from './people.js?v=b858';
+import { isFriendsOpen, closeFriends } from './friends.js?v=b858';
+/* 후기 화면(b858) — 사람 화면 아래 · 친구 화면 위의 덮는 층. */
+import { isCityRevOpen, closeCityRev } from './cityrev.js?v=b858';
+import { isSetSubOpen, closeSetSub } from './setnav.js?v=b858';
 /* 다시 간 도시 시트(성향 v2) — 분석 탭 위에 뜨는 시트라 사슬 맨 위쪽에서 닫습니다. */
-import { isVisitsOpen, closeVisits } from './visits.js?v=b857';
+import { isVisitsOpen, closeVisits } from './visits.js?v=b858';
 
 let ctx = { appTab: () => '', showApp: () => {},
             openTrip: async () => {}, drawToday: () => {} };
@@ -175,6 +177,7 @@ window.addEventListener('popstate', () => {
         열리고, 거기서 다른 판을 더 열지 않습니다 — 그래서 사진 바로 다음입니다.
         사람 화면은 친구 화면 위에서도 열리므로 사람을 먼저 묻습니다. */
   if (isPersonOpen()) return personBack(true);   /* 들어간 판(b799)이 있으면 한 겹만 */
+  if (isCityRevOpen()) return closeCityRev(true);   /* 후기 화면(b858) — 사람 화면이 그 위에 뜹니다 */
   if (isFriendsOpen()) return closeFriends(true);
   /* 0-2) 다시 간 도시 시트(성향 v2) — 분석 탭 위에 얹히고, 거기서 다른 판을 안 엽니다. */
   if (isVisitsOpen()) return closeVisits(true);

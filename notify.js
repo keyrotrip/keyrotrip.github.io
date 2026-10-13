@@ -14,13 +14,13 @@
  * 밖으로 나가는 길은 `loadNotifPrefs` 하나입니다.
  *
  * 층: dom.js · db.js · net.js 만 씁니다. */
-import { $, esc, toast } from './dom.js?v=b857';
-import { sb } from './db.js?v=b857';
-import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b857';
+import { $, esc, toast } from './dom.js?v=b858';
+import { sb } from './db.js?v=b858';
+import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b858';
 /* 「읽은 알림 지우기」를 한 번 더 눌러 정하는 장치(b799). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm, disarm } from './ui.js?v=b857';
+import { arm, disarm } from './ui.js?v=b858';
 
-let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {} };
+let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {} };
 export function setNotifyCtx(o){ ctx = { ...ctx, ...o }; }
 
 /* ── 알림 설정 ──────────────────────────────────────────────────────
@@ -264,7 +264,8 @@ export async function loadNotifs(본것){
     return;
   }
   const { data, error } = await sb.from('notifications')
-    .select('id,kind,body,created_at,read_at,actor_id')
+    /* '*' — city_id(db/122, 후기 알림)가 없는 서버에서도 그대로 돕니다. 칸 이름을 적으면 SQL 전엔 알림이 통째로 안 옵니다. */
+    .select('*')
     .order('created_at', { ascending:false }).limit(30);
   const unread = (data || []).filter(n => !n.read_at).length;
   /* ⚠ 하단바 「프로필」 위의 점입니다(b759). 숫자가 아니라 점인 이유는
@@ -297,10 +298,11 @@ export async function loadNotifs(본것){
   단추.classList.toggle('hide', !읽은);
 
   /* 팔로우 알림(b789)은 누를 수 있습니다 — 요청이면 받은 요청 목록, 아니면 그 사람. */
+  /* 후기 좋아요·답글 알림(b858)은 그 후기 화면으로 — 내 후기이므로 쓴 사람은 나, 도시는 city_id. */
   $('notifs').innerHTML = data.map(n => {
-    const 사람 = /^follow_/.test(n.kind || '') && n.actor_id;
-    return `<div class="row"${사람 ? ` data-nkind="${esc(n.kind)}" data-actor="${esc(n.actor_id)}"
-                                     style="cursor:pointer"` : ''}>
+    const 사람 = (/^follow_/.test(n.kind || '') && n.actor_id) || (/^review_/.test(n.kind || '') && n.city_id);
+    return `<div class="row"${사람 ? ` data-nkind="${esc(n.kind)}" data-actor="${esc(n.actor_id || '')}"
+                                     data-city="${esc(n.city_id || '')}" style="cursor:pointer"` : ''}>
        <span class="label"${n.read_at ? ' style="opacity:.55"' : ''}>
        ${esc(n.body)}${사람 ? ' ›' : ''}</span>
      <span class="val">${esc(n.created_at.slice(5,10))}</span></div>`;
@@ -308,7 +310,8 @@ export async function loadNotifs(본것){
 }
 $('notifs')?.addEventListener('click', e => {
   const r = e.target.closest('[data-actor]'); if (!r) return;
-  if (r.dataset.nkind === 'follow_request') ctx.openFriends('requests');
+  if (/^review_/.test(r.dataset.nkind) && r.dataset.city) ctx.openCityRev(ctx.me()?.id, r.dataset.city);
+  else if (r.dataset.nkind === 'follow_request') ctx.openFriends('requests');
   else ctx.openPerson(r.dataset.actor);
 });
 $('readall').addEventListener('click', async e => {

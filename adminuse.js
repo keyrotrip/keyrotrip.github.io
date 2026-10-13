@@ -19,9 +19,9 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b857';
-import { sb } from './db.js?v=b857';
-import { netTimeout } from './net.js?v=b857';
+import { $, esc, toast } from './dom.js?v=b858';
+import { sb } from './db.js?v=b858';
+import { netTimeout } from './net.js?v=b858';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },
@@ -265,31 +265,33 @@ function 그래프잇기(){
   놓기();
 }
 
-/* ② 실시간 — 오늘(서울) 숫자 셋 + 최근 48시간 한 시간 막대(새 별점 · 가입 쌓기) */
+/* ② 실시간 — 오늘(서울) 연 사람 + 최근 48시간 한 시간 막대 «항목마다 한 줄»(b858)
+   사용자: 「새 별점 개수가 너무 많아서 가입은 구별이 안돼서 항목별로 막대 그래프 분리」 → 줄마다 높이를 따로 잡습니다
+   (가입 1명도 그 줄에선 꽉 찬 막대). 새 후기·새 일기는 db/122 의 c·j — SQL 전엔 그 두 줄을 안 그립니다. */
 function 실시간(D){
   const L = D.live || {}, hs = L.hours || [];
-  const 최대 = Math.max(1, ...hs.map(h => Number(h.r || 0) + Number(h.s || 0)));
-  const W = 320, H = 56, 칸폭 = W / Math.max(1, hs.length);
-  const 막대 = hs.map((h, i) => {
-    const r = Number(h.r || 0), s = Number(h.s || 0);
-    const hr = r / 최대 * (H - 4), hs2 = s / 최대 * (H - 4);
-    const x = (i * 칸폭 + 1).toFixed(1), w = Math.max(1, 칸폭 - 2).toFixed(1);
-    return (r ? `<rect x="${x}" width="${w}" y="${(H - hr).toFixed(1)}" height="${hr.toFixed(1)}" class="r"/>` : '')
-      + (s ? `<rect x="${x}" width="${w}" y="${(H - hr - hs2).toFixed(1)}" height="${hs2.toFixed(1)}" class="s"/>` : '')
-      + (!r && !s ? `<rect x="${x}" width="${w}" y="${H - 1}" height="1" class="z"/>` : '');
-  }).join('');
+  const W = 320, H = 30, 칸폭 = W / Math.max(1, hs.length);
+  const 줄들 = [['r', '새 별점', L.ratings], ['s', '가입', L.signups],
+               ['c', '새 한줄평', L.comments], ['j', '새 일기', L.journals]]
+    .filter(([k]) => k === 'r' || k === 's' || hs.some(h => k in h));
+  const 줄 = ([k, 이름, 오늘]) => {
+    const 최대 = Math.max(1, ...hs.map(h => Number(h[k] || 0)));
+    const 막대 = hs.map((h, i) => {
+      const v = Number(h[k] || 0), x = (i * 칸폭 + 1).toFixed(1), w = Math.max(1, 칸폭 - 2).toFixed(1);
+      if (!v) return `<rect x="${x}" width="${w}" y="${H - 1}" height="1" class="z"/>`;
+      const hh = Math.max(2, v / 최대 * (H - 2));
+      return `<rect x="${x}" width="${w}" y="${(H - hh).toFixed(1)}" height="${hh.toFixed(1)}" class="${k}"><title>${v}</title></rect>`;
+    }).join('');
+    return `<div class="aulrow"><div class="hd"><span>${이름}</span><b>오늘 ${수(오늘)}</b></div>
+      <svg class="aubars" viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 48시간 한 시간마다 ${이름}">${막대}</svg></div>`;
+  };
   const 지금 = new Date(받은때 || Date.now());
   const 시각 = `${String(지금.getHours()).padStart(2, '0')}:${String(지금.getMinutes()).padStart(2, '0')}`;
   return `<div class="card auc">
     <h2><span class="grow">실시간</span><span class="aulv"><i aria-hidden="true"></i>${시각} 기준</span></h2>
-    <div class="aulvn">
-      <div><b>${수(L.active)}</b><span>오늘 연 사람</span></div>
-      <div><b>${수(L.signups)}</b><span>오늘 가입</span></div>
-      <div><b>${수(L.ratings)}</b><span>오늘 새 별점</span></div>
-    </div>
-    <svg class="aubars" viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 48시간 한 시간마다 새 별점과 가입">${막대}</svg>
+    <div class="aulvn"><div><b>${수(L.active)}</b><span>오늘 연 사람</span></div></div>
+    <div class="aulrows">${줄들.map(줄).join('')}</div>
     <div class="aux"><span>48시간 전</span><span>지금</span></div>
-    <div class="aulg"><span><i class="r"></i>새 별점</span><span><i class="s"></i>가입</span></div>
   </div>`;
 }
 
@@ -298,7 +300,11 @@ function 쌓인것(D){
   const T = D.total || {};
   /* 뒤의 둘은 예전 대시보드(043)의 비용 칸에 있던 것 — 혼자 쓰는 앱인지 같이 쓰는 앱인지가 여기서 갈립니다. */
   const 칸 = [['가입자', T.users, '명'], ['별점', T.ratings, '개'], ['매긴 사람', T.raters, '명'],
-              ['성향 확정', T.persona, '명'], ['팔로우', T.follows, '건'], ['여행', T.trips, '개'],
+              ['성향 확정', T.persona, '명'],
+              /* 후기·일기·좋아요·답글(b858, db/122) — SQL 전엔 칸이 없어 안 그립니다 */
+              ...('comments' in T ? [['한줄평', T.comments, '개'], ['일기', T.journals, '개'],
+                                     ['좋아요', T.review_likes, '개'], ['답글', T.review_replies, '개']] : []),
+              ['팔로우', T.follows, '건'], ['여행', T.trips, '개'],
               ['지금 여행 중', T.trips_now, '개'], ['함께 쓰는 여행', T.trips_shared, '개']];
   return `<div class="card auc">
     <h2>지금까지 쌓인 것</h2>
