@@ -7,7 +7,7 @@
  *
  * 층: dom.js 만 씁니다. app.js 를 거꾸로 부르지 않습니다 —
  * 하나 필요한 것(AI 시트 닫기)은 setSheetCloser 로 받아 둡니다. */
-import { $ } from './dom.js?v=b863';
+import { $ } from './dom.js?v=b864';
 
 /* ── 좌우로 쓸기 ────────────────────────────────────────────────────
  * 상단의 구역 알약(일정·지출·준비·일행)은 화면 **왼쪽 위**에 있습니다.
@@ -535,6 +535,11 @@ if (window.visualViewport){
     const 문서 = document.scrollingElement || document.documentElement;
     const body = 굴릴칸(el) || (문서.scrollHeight > 문서.clientHeight + 4 ? 문서 : null);
     if (!body) return;
+    /* ⚠⚠ **탭 화면 안쪽이 구르는 곳이면 문서는 0 으로 되돌립니다(b864, 눈금자 실측).** 평가 탭에서 「✎ 한줄평」을 누르면
+       홈 화면 앱이 문서를 키보드만큼 밀었습니다 — scrollY 286 · off 286 · 굴림칸 rateview h 424(= vv.h). 탭 화면은 높이가
+       보이는 창(dvh)이라 문서가 밀린 만큼 아래가 빈 바닥으로 드러났습니다(사용자 사진 넷 — 「개판인데?」).
+       칸은 아래에서 «탭 화면 안»을 굴려 올리므로 문서까지 밀릴 까닭이 없습니다. 탭 덱 안일 때만 — 다른 화면은 문서가 구르는 게 맞습니다. */
+    if (body !== 문서 && body.closest?.('#tabdeck') && window.scrollY > 0) window.scrollTo(0, 0);
     const er = el.getBoundingClientRect();
     const br = body === 문서 ? { top: 0, bottom: 레이아웃높이(), height: 레이아웃높이() } : body.getBoundingClientRect();
     /* ⚠ **크기가 0 이면 손대지 않습니다.** 접혀 있는 칸(이름 바꾸기·신고·

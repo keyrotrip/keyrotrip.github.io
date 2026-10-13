@@ -6948,3 +6948,6 @@ body:not(.hastab) #a2hs .shwrap{ padding-bottom:calc(var(--sab) + 10px); }
 .cmfield[type=search], #cv_note{ -webkit-appearance:none; appearance:none; }
 .cmfield[type=search]::-webkit-search-cancel-button, #cv_note::-webkit-search-cancel-button,
 .cmfield[type=search]::-webkit-search-decoration, #cv_note::-webkit-search-decoration{ -webkit-appearance:none; display:none; }
+/* 키보드가 떠 있는 동안 탭바 숨김(b864, 눈금자 실측) — 홈 화면 앱이 화면을 키보드만큼 밀면 탭바가 키보드 뒤로 안 숨고
+   화면 가운데에 떠서 글을 덮었습니다(탭바 top 417 · 334 — 사용자 사진). body.kbup 은 ui.js 가 «칸에 커서가 있고 보이는 창이 60 넘게 줄었을 때» 켭니다. */
+body.kbup .tabbar{ display:none; }
