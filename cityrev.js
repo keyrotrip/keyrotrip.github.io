@@ -12,11 +12,12 @@
  *   bottom:0 은 아이폰 홈 화면 앱에서 키보드 뒤로 갑니다([[ios-keyboard-sheet]]).
  * ⚠ 좋아요·답글 단추는 도시 화면 줄에도 있습니다 — 누르기는 document 에 한 번 답니다(아래).
  */
-import { $, esc, toast, avatarImg } from './dom.js?v=b869';
-import { sb } from './db.js?v=b869';
-import { netTimeout } from './net.js?v=b869';
-import { cities, cityCountry } from './cities.js?v=b869';
-import { arm } from './ui.js?v=b869';
+import { $, esc, toast, avatarImg } from './dom.js?v=b870';
+import { sb } from './db.js?v=b870';
+import { netTimeout } from './net.js?v=b870';
+import { cities, cityCountry } from './cities.js?v=b870';
+import { arm } from './ui.js?v=b870';
+import { openPhotos } from './photoview.js?v=b870';
 
 let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {}, redrawFoods: () => {} };
 export function setCityRevCtx(o){ ctx = { ...ctx, ...o }; }
@@ -215,7 +216,8 @@ async function 가게그리기(지금, 이번){
     (목록.length ? 목록.map(x => `
     <div class="crvrow">
       <button class="ghost crvwho" data-person="${esc(x.user_id)}">${사진(x.avatar_url, x.user_id, x.name, 36)}<b>${esc(x.name)}</b></button>
-      <div class="crvtxt" data-fdnote="${x.id}" data-city="${esc(지금.city)}">${esc(x.note)}</div>
+      <div class="fdbody"><div class="fdl"><div class="crvtxt" data-fdnote="${x.id}" data-city="${esc(지금.city)}">${esc(x.note)}</div></div>
+        ${x.photo ? `<img class="fdph" src="${esc(x.photo)}" alt="" loading="lazy" data-fdnote="${x.id}" data-city="${esc(지금.city)}" onerror="this.remove()">` : ''}</div>
       <div class="crvact"><button type="button" class="crvrep" data-fdnote="${x.id}" data-city="${esc(지금.city)}"
         aria-label="답글${x.n_reply ? ` ${x.n_reply}개` : ' 달기'}">${말풍선}<span class="num">${x.n_reply || ''}</span></button>
         <span class="crvwhen">${esc(언제(x.created_at))}</span></div>
@@ -234,7 +236,7 @@ async function 추천하나그리기(지금, 이번){
   if (!r || r.error || rp?.error){ $('crvbody').innerHTML = '<div class="empty">지금은 불러올 수 없어요.</div>'; return; }
   if (!x){ $('crvbody').innerHTML = '<div class="empty">지워졌거나 볼 수 없는 추천 글이에요.</div>';
            $('crvinp').classList.add('hide'); $('crvmenu').classList.add('hide'); return; }
-  지금.글 = x.note; 지금.주인 = x.user_id; 지금.city = x.city_id;
+  지금.글 = x.note; 지금.주인 = x.user_id; 지금.city = x.city_id; 지금.사진 = x.photo || null;
   const c = cities.find(z => z.id === x.city_id);
   const 답글 = rp.data || [];
   $('crvbody').innerHTML = `
@@ -246,6 +248,7 @@ async function 추천하나그리기(지금, 이번){
       </div>
       ${c?.image_url ? `<img class="crvimg" src="${esc(c.image_url)}" alt="" data-crvcity="${esc(x.city_id)}" onerror="this.remove()">` : ''}
     </div>
+    ${x.photo ? `<img class="fdbig" src="${esc(x.photo)}" alt="" data-fdbig onerror="this.remove()">` : ''}
     <div class="crvbig">${esc(x.note)}</div>
     <div class="crvgap"></div>
     <div class="crvhd2"><span>답글 ${답글.length}개</span></div>
@@ -293,10 +296,11 @@ document.addEventListener('click', async e => {
   if (e.target.closest('#crv_send')) return 등록();
   if (e.target.closest('#crvmenu')){
     메뉴대상 = 지금.판 === 'fn'
-      ? { 종류: 'fn', a: 지금.주인, city: 지금.city, uid: 지금.주인, 글: 지금.글 || '' }
+      ? { 종류: 'fn', a: 지금.주인, city: 지금.city, uid: 지금.주인, 글: 지금.글 || '', id: 지금.id, 사진: 지금.사진 }
       : { 종류: 'rv', a: 지금.a, city: 지금.city, uid: 지금.a, 글: 지금.글 || '' };
     return 메뉴열기();
   }
+  if (e.target.closest('[data-fdbig]')) return openPhotos([e.target.closest('[data-fdbig]').src], 0);
   const 답 = e.target.closest('[data-crpto]');
   if (답){   /* 답글 달기(b869) — 칸에 「@이름 」을 넣고 커서 */
     지금.대상 = { id: 답.dataset.crpto, name: 답.dataset.name };
@@ -420,7 +424,12 @@ $('crvsheet')?.addEventListener('click', async e => {
     시트.classList.add('hide');
     const 도시 = cities.find(c => c.id === m.city)?.name || m.city;
     const 더 = `[${({ rv: '한줄평', rp: '답글', fn: '맛집 추천 글', fp: '맛집 답글' })[m.종류] || '답글'} · ${도시}] ${m.글}`.slice(0, 500);
-    const r = await netTimeout(sb.rpc('report_user', { p_user: m.uid, p_reason: b.dataset.r, p_detail: 더 }));
-    toast(!r || r.error ? (r?.error?.message || '연결을 확인해 주세요') : '신고했어요. 살펴볼게요');
+    /* 사진이 있는 맛집 추천 글은 사진 신고로(b870, 사용자: 「사진은 신고 들어오면 일단 바로 내리자」) — 서버가 바로 숨기고 신고 목록에 남깁니다 */
+    const 사진신고 = m.종류 === 'fn' && m.사진;
+    const r = 사진신고
+      ? await netTimeout(sb.rpc('food_photo_report', { p_id: m.id, p_reason: b.dataset.r }))
+      : await netTimeout(sb.rpc('report_user', { p_user: m.uid, p_reason: b.dataset.r, p_detail: 더 }));
+    toast(!r || r.error ? (r?.error?.message || '연결을 확인해 주세요') : 사진신고 ? '신고했어요. 사진은 바로 내렸어요' : '신고했어요. 살펴볼게요');
+    if (사진신고 && r && !r.error){ 바뀜 = true; const 지금 = 겹[겹.length - 1]; if (지금?.판 === 'fn') 추천하나그리기(지금, ++차례); }
   }
 });

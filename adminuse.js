@@ -19,9 +19,9 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b869';
-import { sb } from './db.js?v=b869';
-import { netTimeout } from './net.js?v=b869';
+import { $, esc, toast } from './dom.js?v=b870';
+import { sb } from './db.js?v=b870';
+import { netTimeout } from './net.js?v=b870';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },
@@ -33,10 +33,11 @@ const 지표들 = [
   { k: 'p', kpi: 'persona', 이름: '성향 확정',   단위: '명' },
   { k: 't', kpi: 'trips',   이름: '새 여행',     단위: '개', 새: true },
 ];
-const 기간들 = [[7, '7일'], [28, '28일'], [90, '90일'], [365, '365일'], [0, '전체']];
+const 기간들 = [[1, '1일'], [7, '7일'], [28, '28일'], [90, '90일'], [365, '365일'], [0, '전체']];   /* 1일 = 오늘 하루(b870, 사용자) — 앞 기간(어제)과 견줌 */
 const 칸들 = [['ov', '개요'], ['en', '참여'], ['au', '사람들'], ['ad', '고급']];
 let 기간 = 28, 보는칸 = 'ov', 지표 = 'a', 깔때기 = 'all';
 let 자료 = null, 받은기간 = null, 받은때 = 0, 차례 = 0;
+let 실시간자료 = [];   /* 실시간 막대 누르기용(b870) */
 
 const 수 = v => Number(v ?? 0).toLocaleString('ko-KR');
 /* 소수 한 자리 — 「1.0」은 「1」로. */
@@ -270,20 +271,27 @@ function 그래프잇기(){
    (가입 1명도 그 줄에선 꽉 찬 막대). 새 후기·새 일기는 db/122 의 c·j — SQL 전엔 그 두 줄을 안 그립니다. */
 function 실시간(D){
   const L = D.live || {}, hs = L.hours || [];
-  const W = 320, H = 30, 칸폭 = W / Math.max(1, hs.length);
+  /* b870(사용자: 「실시간은 막대만 있고 숫자를 모르니 감이 안오네」 → 셋 다): ① 줄마다 「48시간 N」 ② 가장 높은 막대 위에 그 숫자
+     ③ 막대를 누르거나 훑으면 그 줄 머리에 「10/13 22시 · 3개」(아래 문서 하나에 단 손잡이 — 자료는 실시간자료). 위 10 은 숫자 자리. */
+  실시간자료 = hs;
+  const W = 320, H = 40, 위 = 10, 칸폭 = W / Math.max(1, hs.length);
   const 줄들 = [['r', '새 별점', L.ratings], ['s', '가입', L.signups],
                ['c', '새 한줄평', L.comments], ['j', '새 일기', L.journals], ['m', '새 맛집', L.foods]]
     .filter(([k]) => k === 'r' || k === 's' || hs.some(h => k in h));
   const 줄 = ([k, 이름, 오늘]) => {
-    const 최대 = Math.max(1, ...hs.map(h => Number(h[k] || 0)));
+    const 값들 = hs.map(h => Number(h[k] || 0));
+    const 최대 = Math.max(1, ...값들), 합 = 값들.reduce((a, b) => a + b, 0);
+    const 꼭대기 = 값들.indexOf(Math.max(...값들, 0));
     const 막대 = hs.map((h, i) => {
-      const v = Number(h[k] || 0), x = (i * 칸폭 + 1).toFixed(1), w = Math.max(1, 칸폭 - 2).toFixed(1);
-      if (!v) return `<rect x="${x}" width="${w}" y="${H - 1}" height="1" class="z"/>`;
-      const hh = Math.max(2, v / 최대 * (H - 2));
-      return `<rect x="${x}" width="${w}" y="${(H - hh).toFixed(1)}" height="${hh.toFixed(1)}" class="${k}"><title>${v}</title></rect>`;
+      const v = 값들[i], x = (i * 칸폭 + 1).toFixed(1), w = Math.max(1, 칸폭 - 2).toFixed(1);
+      if (!v) return `<rect x="${x}" width="${w}" y="${H - 1}" height="1" class="z" data-i="${i}"/>`;
+      const hh = Math.max(2, v / 최대 * (H - 위 - 2));
+      return `<rect x="${x}" width="${w}" y="${(H - hh).toFixed(1)}" height="${hh.toFixed(1)}" class="${k}" data-i="${i}"/>`;
     }).join('');
-    return `<div class="aulrow"><div class="hd"><span>${이름}</span><b>오늘 ${수(오늘)}</b></div>
-      <svg class="aubars" viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 48시간 한 시간마다 ${이름}">${막대}</svg></div>`;
+    const 꼭대기글 = 합 > 0 && 꼭대기 >= 0
+      ? `<text x="${Math.min(W - 6, Math.max(6, (꼭대기 + .5) * 칸폭)).toFixed(1)}" y="${(H - Math.max(2, 최대 / 최대 * (H - 위 - 2)) - 2).toFixed(1)}" class="aupk">${수(최대)}</text>` : '';
+    return `<div class="aulrow"><div class="hd"><span>${이름}</span><em class="aucap" data-sum="48시간 ${수(합)}">48시간 ${수(합)}</em><b>오늘 ${수(오늘)}</b></div>
+      <svg class="aubars" viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 48시간 한 시간마다 ${이름} — 모두 ${합}" data-k="${k}">${막대}${꼭대기글}</svg></div>`;
   };
   const 지금 = new Date(받은때 || Date.now());
   const 시각 = `${String(지금.getHours()).padStart(2, '0')}:${String(지금.getMinutes()).padStart(2, '0')}`;
@@ -294,6 +302,24 @@ function 실시간(D){
     <div class="aux"><span>48시간 전</span><span>지금</span></div>
   </div>`;
 }
+
+/* 실시간 막대 누르기·훑기(b870) — 그 줄 머리에 「10/13 22시 · 3개」, 손을 떼면 「48시간 N」 으로 */
+function 막대말(svg, ev){
+  const r = svg.getBoundingClientRect(); if (!r.width || !실시간자료.length) return;
+  const i = Math.max(0, Math.min(실시간자료.length - 1, Math.floor((ev.clientX - r.left) / r.width * 실시간자료.length)));
+  const h = 실시간자료[i], k = svg.dataset.k, 때 = new Date(h.h);
+  const 말 = `${때.getMonth() + 1}/${때.getDate()} ${때.getHours()}시 · ${수(h[k] || 0)}개`;
+  const 칸 = svg.closest('.aulrow')?.querySelector('.aucap'); if (칸){ 칸.textContent = 말; 칸.classList.add('on'); }
+  svg.querySelectorAll('rect.sel').forEach(x => x.classList.remove('sel'));
+  svg.querySelector(`rect[data-i="${i}"]`)?.classList.add('sel');
+}
+function 막대놓기(svg){
+  const 칸 = svg.closest('.aulrow')?.querySelector('.aucap'); if (칸){ 칸.textContent = 칸.dataset.sum; 칸.classList.remove('on'); }
+  svg.querySelectorAll('rect.sel').forEach(x => x.classList.remove('sel'));
+}
+document.addEventListener('pointermove', e => { const s = e.target.closest?.('.aubars[data-k]'); if (s) 막대말(s, e); });
+document.addEventListener('pointerdown', e => { const s = e.target.closest?.('.aubars[data-k]'); if (s) 막대말(s, e); });
+document.addEventListener('pointerout', e => { const s = e.target.closest?.('.aubars[data-k]'); if (s && !s.contains(e.relatedTarget)) 막대놓기(s); });
 
 /* ③ 쌓인 것 — 지금까지 */
 function 쌓인것(D){
@@ -560,3 +586,4 @@ $('adm_use')?.addEventListener('click', e => {
   const 단 = e.target.closest('[data-au]');
   if (단) loadUsage(true);
 });
+

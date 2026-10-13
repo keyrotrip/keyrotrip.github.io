@@ -11,15 +11,15 @@
  * 화면을 뜯어도 남의 자료는 안 나옵니다. 서버 쪽 함수가 is_admin() 을
  * 확인하므로 여기서 막는 것은 그저 안 보여주는 것뿐입니다.
  */
-import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b869';
-import { sb } from './db.js?v=b869';
-import { fail, netTimeout } from './net.js?v=b869';
+import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b870';
+import { sb } from './db.js?v=b870';
+import { fail, netTimeout } from './net.js?v=b870';
 /* 사람 신고의 「보기」(b789) — 그 사람 화면을 대시보드 위에 엽니다. */
-import { openPerson } from './people.js?v=b869';
+import { openPerson } from './people.js?v=b870';
 /* 기능 스위치를 바꾸면 그 자리에서 화면에 먹입니다(b491) — flags.js 머리말. */
-import { reapplyFeatures } from './flags.js?v=b869';
+import { reapplyFeatures } from './flags.js?v=b870';
 /* 「사용」 칸(b815) — 유튜브 스튜디오처럼. 관리자 화면을 열 때 받습니다(로그인마다 세지 않게). */
-import { loadUsage } from './adminuse.js?v=b869';
+import { loadUsage } from './adminuse.js?v=b870';
 
 /* ── 칸 셋 「사용 | 비용 | 문제」(b815, 사용자가 고름) ─────────────────────────
  * 분석 탭의 「성향 | 별점 | 어워즈」(anal.js)와 같은 모양·같은 규칙 — 고른 칸은 앱이 켜져 있는 동안 기억합니다.
@@ -233,11 +233,18 @@ export async function loadAdmin(){
   const 지금 = rows.filter(x => !지난판오류(x));
   const 지난 = rows.filter(지난판오류);
 
+  /* b870(사용자: 「최근 신고와 오류도 내가 지우거나 할 수 있게 · 누가 제보했는지는 알아야지」) — db/130 admin_feed 가
+     보낸 사람(who · who_id)과 신고 번호(id)를 줍니다. 신고는 「처리함 · 지우기」, 오류는 같은 메시지 묶음째 「지우기」.
+     SQL 전(옛 admin_feed)이면 who 가 없어 예전처럼 보입니다. */
+  const 누구칸 = x => x.who ? ` · <button type="button" class="ghost afwho"${x.who_id ? ` data-repwho="${esc(x.who_id)}"` : ''}>${esc(x.who)}</button>`
+                   : Number(x.people) > 1 ? ` · ${Number(x.people)}명` : '';
   const 줄 = x => `<div class="arow">
       <span class="k"><b>${esc(x.kind)}</b> ${esc(String(x.body).slice(0, 120))}
         <span class="m">${esc((x.at || '').slice(0, 16).replace('T', ' '))}${
-          x.build ? ' · ' + esc(x.build) : ''}</span></span>
-      ${Number(x.n) > 1 ? `<span class="v">${x.n}회</span>` : ''}</div>`;
+          x.build ? ' · ' + esc(x.build) : ''}${누구칸(x)}</span></span>
+      ${Number(x.n) > 1 ? `<span class="v">${x.n}회</span>` : ''}
+      ${x.kind === '신고' && x.id ? `<span class="abtns"><button class="small" data-fbact="${x.id}" data-del="0">처리함</button><button class="small" data-fbact="${x.id}" data-del="1">지우기</button></span>`
+        : x.kind === '오류' && 'who' in x ? `<span class="abtns"><button class="small" data-errdel="${esc(x.body)}">지우기</button></span>` : ''}</div>`;
 
   $('adm_feedcard').classList.toggle('hide', !rows.length && !날짜접힘);
   $('adm_feed').innerHTML = 지금.map(줄).join('')
@@ -260,6 +267,21 @@ export async function loadAdmin(){
   });
 }
 
+/* 「최근 신고와 오류」 단추(b870) — 지우기는 한 번 더 눌러 정함 */
+$('adm_feed')?.addEventListener('click', async e => {
+  const 누구 = e.target.closest('[data-repwho]');
+  if (누구) return openPerson(누구.dataset.repwho);
+  const 신 = e.target.closest('[data-fbact]'), 오 = e.target.closest('[data-errdel]');
+  const b = 신 || 오; if (!b) return;
+  if ((오 || 신.dataset.del === '1') && b.dataset.armed !== '1'){ b.dataset.armed = '1'; b.textContent = '한 번 더'; return; }
+  b.disabled = true;
+  const r = 신
+    ? await netTimeout(sb.rpc('admin_report_act', { p_id: Number(신.dataset.fbact), p_del: 신.dataset.del === '1' }), 8000)
+    : await netTimeout(sb.rpc('admin_error_del', { p_message: 오.dataset.errdel }), 8000);
+  if (!r || r.error){ b.disabled = false; toast('못 했어요: ' + (r?.error?.message || '연결')); return; }
+  toast(신 ? (신.dataset.del === '1' ? '신고를 지웠어요' : '처리했어요') : `오류 ${r.data ?? ''}건을 지웠어요`);
+  loadAdmin();
+});
 $('adm_refresh').addEventListener('click', loadAdmin);
 $('adm_probrefresh')?.addEventListener('click', loadAdmin);   /* 문제 칸(b815) */
 
@@ -289,11 +311,32 @@ async function 사람신고(){
                                                               hour: '2-digit', minute: '2-digit' }))}</span></span>
       <span class="abtns">
         <button class="small" data-repwho="${esc(x.target)}">보기</button>
+        ${(() => {
+          /* 신고 글은 누구나 적을 수 있어(report_user) 믿지 않습니다(두 번째 검토) — 우리 저장소 주소일 때만 단추를 달고,
+             지우는 파일은 서버(admin_food_photo)가 돌려준 «그 줄의 실제 주소»로 정합니다. */
+          const m = /#food:(\d+)\s+(https:\/\/qahqqhjleqfrsjiixnas\.supabase\.co\/storage\/v1\/object\/public\/food-photos\/\S+)/.exec(x.detail || '');
+          return m ? `<a class="small" href="${esc(m[2])}" target="_blank" rel="noopener">사진 보기</a><button class="small" data-fphoto="${m[1]}" data-show="1">사진 되살리기</button><button class="small" data-fphoto="${m[1]}" data-show="0">사진 지우기</button>` : ''; })()}
         <button class="small" data-repdone="${esc(String(x.id))}">처리함</button></span>
     </div>`).join('')
     : emptyDo('처리할 신고가 없어요.');
 }
 $('adm_reports')?.addEventListener('click', async e => {
+  /* 맛집 사진 신고(b870, db/129) — 신고 순간 이미 숨겨져 있습니다. 잘못된 신고면 되살리고, 확실하면 주소째 지웁니다 */
+  const 사진 = e.target.closest('[data-fphoto]');
+  if (사진){
+    사진.disabled = true;
+    const 지움 = 사진.dataset.show !== '1';
+    if (지움 && 사진.dataset.armed !== '1'){ 사진.dataset.armed = '1'; 사진.textContent = '한 번 더'; return; }
+    const r = await netTimeout(sb.rpc('admin_food_photo', { p_id: Number(사진.dataset.fphoto), p_show: !지움 }), 8000);
+    사진.disabled = false;
+    if (!r || r.error){ toast('못 했어요: ' + (r?.error?.message || '연결')); return; }
+    /* 지우기면 저장소 파일까지(db/130 관리자 지우기 규칙) — 공개 통이라 줄만 비우면 주소로 계속 보입니다 */
+    const 경로 = 지움 && typeof r.data === 'string' ? r.data.split('/food-photos/')[1]?.split('?')[0] : '';
+    if (경로) await sb.storage.from('food-photos').remove([decodeURIComponent(경로)]).catch(() => {});
+    toast(지움 ? '사진을 지웠어요' : '사진을 되살렸어요');
+    사람신고();
+    return;
+  }
   const 누구 = e.target.closest('[data-repwho]');
   if (누구) return openPerson(누구.dataset.repwho);
   const b = e.target.closest('[data-repdone]'); if (!b) return;

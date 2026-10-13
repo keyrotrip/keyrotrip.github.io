@@ -68,12 +68,15 @@ Deno.serve(async (req) => {
     // 그 외래키 때문에 **계정 줄이 안 지워집니다.** SQL 쪽에서는 storage 스키마를
     // 못 건드려서(소유자가 다릅니다) 여기서 지웁니다.
     // 실패해도 멈추지 않습니다 — 통이 없을 수도 있고, 그때는 막을 것도 없습니다.
-    try {
-      const { data: files } = await admin.storage.from('avatars').list(user.id);
-      if (files?.length)
-        await admin.storage.from('avatars')
-          .remove(files.map((f) => `${user.id}/${f.name}`));
-    } catch { /* 통이 없거나 이미 비었음 */ }
+    // b870: 맛집 사진(food-photos)도 — 공개 통이라 남으면 주소로 계속 보입니다. 앱(account.js)도 먼저 지우지만 여기서 한 번 더.
+    for (const 통 of ['avatars', 'food-photos']) {
+      try {
+        const { data: files } = await admin.storage.from(통).list(user.id, { limit: 1000 });
+        if (files?.length)
+          await admin.storage.from(통)
+            .remove(files.map((f) => `${user.id}/${f.name}`));
+      } catch { /* 통이 없거나 이미 비었음 */ }
+    }
 
     // ── 3. 계정 ── 여기서만 서비스 키를 씁니다.
     const { error: authErr } = await admin.auth.admin.deleteUser(user.id);

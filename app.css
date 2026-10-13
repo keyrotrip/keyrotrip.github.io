@@ -7018,3 +7018,25 @@ body.kbup .tabbar{ display:none; }
 #cv_friends .frsum{ border-bottom:0; }
 .crpto{ margin-left:auto; padding:4px 8px; color:var(--ink-48); font-size:calc(13px * var(--ts)); }
 .crpline .f .crpto + .crpmore{ margin-left:0; }
+/* 맛집 사진(b870, db/129) — 줄에선 글 오른쪽 작은 네모 · 추천 글 화면에선 크게(누르면 전체 화면) · 쓰는 칸의 「사진 한 장」 */
+.fdbody{ display:flex; gap:12px; align-items:flex-start; }
+.fdl{ flex:1; min-width:0; }
+.fdph{ width:72px; height:72px; flex:none; object-fit:cover; border-radius:4px; background:var(--pearl); cursor:pointer; margin-top:4px; }
+.fdbig{ display:block; width:100%; max-height:360px; object-fit:cover; border-radius:4px; margin-top:12px; cursor:zoom-in; background:var(--pearl); }
+.cmph{ display:flex; align-items:center; gap:10px; padding:8px 12px; }
+.cvwritebox .cmph{ border-bottom:1px solid var(--line); }
+.cmphpick{ display:flex; align-items:center; gap:10px; cursor:pointer; flex:1; min-width:0; }
+.cmphbox{ width:44px; height:44px; flex:none; border:1px dashed var(--ink-48); display:flex; align-items:center; justify-content:center;
+          background:var(--canvas) center/cover no-repeat; font-size:18px; }
+.cmphtxt{ color:var(--ink-48); font-size:calc(14px * var(--ts)); }
+.cmphx{ padding:4px 6px; min-height:0; font-size:calc(13px * var(--ts)); color:var(--ink-48); }
+.fdedit .cmph{ padding:4px 0; }
+.afwho{ padding:0; min-height:0; font:inherit; color:var(--ink); text-decoration:underline; }
+/* 실시간 숫자(b870) — 「48시간 N」 · 가장 높은 막대 위 숫자 · 누른 막대 */
+.aulrow .hd{ align-items:baseline; gap:8px; }
+.aulrow .hd span{ flex:1; }
+.aucap{ font-style:normal; font-size:var(--f-sm); color:var(--ink-48); font-variant-numeric:tabular-nums; }
+.aucap.on{ color:var(--ink); font-weight:600; }
+.aupk{ font-size:9px; fill:var(--ink); text-anchor:middle; font-weight:700; }
+.aubars rect.sel{ fill:#3b6fe0; }
+.aubars{ touch-action:pan-y; cursor:crosshair; }
