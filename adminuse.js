@@ -19,9 +19,9 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b860';
-import { sb } from './db.js?v=b860';
-import { netTimeout } from './net.js?v=b860';
+import { $, esc, toast } from './dom.js?v=b861';
+import { sb } from './db.js?v=b861';
+import { netTimeout } from './net.js?v=b861';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },
@@ -272,7 +272,7 @@ function 실시간(D){
   const L = D.live || {}, hs = L.hours || [];
   const W = 320, H = 30, 칸폭 = W / Math.max(1, hs.length);
   const 줄들 = [['r', '새 별점', L.ratings], ['s', '가입', L.signups],
-               ['c', '새 한줄평', L.comments], ['j', '새 일기', L.journals]]
+               ['c', '새 한줄평', L.comments], ['j', '새 일기', L.journals], ['m', '새 맛집', L.foods]]
     .filter(([k]) => k === 'r' || k === 's' || hs.some(h => k in h));
   const 줄 = ([k, 이름, 오늘]) => {
     const 최대 = Math.max(1, ...hs.map(h => Number(h[k] || 0)));
@@ -304,6 +304,7 @@ function 쌓인것(D){
               /* 후기·일기·좋아요·답글(b858, db/122) — SQL 전엔 칸이 없어 안 그립니다 */
               ...('comments' in T ? [['한줄평', T.comments, '개'], ['일기', T.journals, '개'],
                                      ['좋아요', T.review_likes, '개'], ['답글', T.review_replies, '개']] : []),
+              ...('foods' in T ? [['맛집 추천', T.foods, '개']] : []),   /* b861 db/124 */
               ['팔로우', T.follows, '건'], ['여행', T.trips, '개'],
               ['지금 여행 중', T.trips_now, '개'], ['함께 쓰는 여행', T.trips_shared, '개']];
   return `<div class="card auc">

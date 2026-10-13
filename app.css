@@ -6675,6 +6675,7 @@ body.cron{ overflow:hidden; }
 .aulrows + .aux{ padding-right:0; }
 .aubars .c{ fill:#3b8a8a; }
 .aubars .j{ fill:#8b6fb5; }
+.aubars .m{ fill:#c2410c; }   /* 새 맛집(b861) */
 .aulg{ display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:8px; font-size:var(--f-xs); color:var(--ink-48); }
 .aulg i{ display:inline-block; width:8px; height:8px; margin-right:5px; }
 .aulg i.r, .aulg i.b, .ausplit .b{ background:var(--ink); }
@@ -6848,3 +6849,76 @@ body:not(.hastab) #a2hs .shwrap{ padding-bottom:calc(var(--sab) + 10px); }
 .gheart{ position:relative; }
 #heartdot{ position:absolute; right:4px; top:5px; width:8px; height:8px; border-radius:50%; background:#e0245e;
            box-shadow:0 0 0 2px var(--bg); }
+
+/* ── 한줄평 · 맛집 묻기(b861, cmtask.js) — 단추 한 줄 · 그 자리에서 열리는 칸 · 도시 화면 맛집 · 「첫 한줄평」 ────────── */
+.cmask{ margin-top:12px; text-align:left; }
+.cmbtns{ display:grid; grid-template-columns:repeat(auto-fit, minmax(0,1fr)); gap:8px; padding-top:12px; border-top:1px dashed var(--line); }
+.cmbtn{ appearance:none; border:1px solid var(--line); background:var(--bg); color:var(--ink); min-height:0;
+        padding:11px 6px; font:inherit; font-size:var(--f-md); font-weight:700; cursor:pointer; }
+.cmbtn.on{ border-color:var(--ink); }
+.cmbtn:active{ transform:none; opacity:.7; }
+.cmbtn.wide{ border-style:dashed; border-color:var(--ink-48); }
+/* 평가 탭 목록용 — 줄 밑 얇은 글자 한 줄(높이를 거의 안 먹게) */
+.rrow + .cmask.thin{ margin:0 0 6px; }
+.cmask.thin .cmbtns{ display:flex; gap:14px; align-items:center; border-top:0; padding:0 0 8px 111px; }   /* 111 = 목록 사진 100px(.rrow:has(> .stars) > .thumb) + 칸 틈 11px — 도시 이름 줄과 나란히 */
+.cmask.thin .cmbtn{ border:0; background:none; padding:4px 0; font-size:var(--f-sm); }
+.cmask.thin .cmform{ padding:0 0 10px; }
+.cmx{ margin-left:auto; border:0; background:none; color:var(--ink-48); font-size:18px; line-height:1; padding:2px 4px; min-height:0; cursor:pointer; }
+.cmform{ display:flex; flex-direction:column; gap:8px; }
+.cmform:not(:empty){ margin-top:12px; }
+.cmq{ font-size:var(--f-md); font-weight:800; color:var(--ink); }
+.cmq small{ display:block; margin-top:2px; font-size:var(--f-xs); font-weight:400; color:var(--ink-48); }
+.cmfield{ width:100%; box-sizing:border-box; border:1px solid var(--line); background:var(--bg); color:var(--ink);
+       padding:11px 12px; font:inherit; font-size:max(var(--in-floor), var(--f-md)); -webkit-appearance:none; appearance:none; }
+.cmfield:focus{ outline:none; border-color:var(--ink-48); font-size:max(var(--in-floor), var(--f-md)); }
+.cmrow{ display:flex; justify-content:space-between; align-items:center; }
+.cmclose{ padding:8px 0; color:var(--ink-48); font-weight:400; }
+.cmsave{ border:0; background:var(--ink); color:var(--canvas); font-weight:700; padding:9px 16px; min-height:0; cursor:pointer; }
+.cmsave:disabled{ opacity:.35; cursor:default; }
+.cmdone{ margin-top:10px; font-size:var(--f-sm); color:var(--ok); }
+.cmdone span{ color:var(--ink); }
+/* 맛집 칸이 열린 동안 지구본 카드의 큰 별을 작은 한 줄로 */
+.gsbody.cmfolded .gsask{ display:none; }
+.cmmini{ display:flex; align-items:center; gap:8px; font-size:var(--f-sm); color:var(--ink-48); padding:2px 0 10px; }
+.cmmini b{ color:var(--ink); } .cmmini i{ font-style:normal; color:var(--star); }
+.cmmini button{ margin-left:auto; padding:0; font-size:var(--f-xs); color:var(--ink-48); text-decoration:underline; min-height:0; font-weight:400; }
+/* 도시 화면 「○○ 맛집 추천」 */
+.fdsec{ margin-top:var(--s-lg); }
+.fdhd b{ font-size:var(--f-lg); } .fdhd span{ font-size:var(--f-sm); color:var(--ink-48); font-weight:400; }
+.fdrow{ display:flex; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }
+.fdrow .n{ width:20px; flex:none; font-weight:800; color:var(--primary); font-variant-numeric:tabular-nums; }
+.fdrow .b{ flex:1; min-width:0; } .fdrow .b b{ font-size:var(--f-md); }
+.fdrow .b small{ color:var(--ink-48); font-size:var(--f-xs); margin-left:4px; }
+.fdrow .b div{ font-size:var(--f-sm); margin-top:3px; overflow-wrap:anywhere; }
+.fdempty{ padding:14px 0 2px; color:var(--ink-48); font-size:var(--f-sm); text-align:center; }
+.fdadd{ margin-top:12px; } .fdadd .cmbtns{ border-top:0; padding-top:0; }
+/* 「첫 한줄평」(cityrev.js — 한줄평이 하나도 없는 도시) */
+.cmfirst{ margin-top:var(--s-lg); padding:16px; border:1px dashed var(--line); background:var(--canvas); text-align:center; }
+.cmfirst b{ display:block; font-size:var(--f-md); color:var(--ink); }
+.cmfirst span{ display:block; margin-top:4px; font-size:var(--f-sm); color:var(--ink-48); }
+/* ⚠ «칸이 열려 있는 동안»(data-open) 으로 겁니다 — :focus 로 걸었더니 「등록」을 누르는 순간 칸이 포커스를 잃어 카드가 바닥으로
+   튀고 그 손가락이 어두운 막(.gsdim)에 떨어질 수 있었습니다(두 번째 검토). */
+/* 지구본 카드 안 칸(한줄평·맛집)에 손가락이 있는 동안 — 카드를 «보이는 창» 바닥에 붙입니다(검토에서 찾음).
+   #gsheet 는 inset:0 + 아래 붙이기라, 아이폰 홈 화면 앱은 키보드가 떠도 화면을 안 밀어서(vv.offsetTop 0, ios-keyboard-sheet 실측)
+   카드가 키보드 뒤에 앉습니다. 새 여행 시트(.assheet.wiz)와 같은 수: 위를 --vvtop, 높이를 --vvh(ui.js 가 잼). */
+#gsheet:has(.cmask[data-open="food"]), #gsheet:has(.cmask[data-open="cmt"]){ top:var(--vvtop, 0px); bottom:auto; height:var(--vvh, 100dvh); }
+#gsheet:has(.cmask[data-open="food"]) .gswrap, #gsheet:has(.cmask[data-open="cmt"]) .gswrap{ padding-bottom:12px; }
+/* 내 맛집 추천 지우기(b861) — 작은 글자, 한 번 더 눌러 정함 */
+.fddel{ margin-left:8px; padding:0; border:0; background:none; min-height:0; font:inherit; font-size:var(--f-xs);
+        color:var(--ink-48); text-decoration:underline; cursor:pointer; }
+/* 도시 화면 「팔로우하는 사람들」 — 한 줄로 묶고 누르면 펼침(b861, 시안 B) */
+.cvfr2{ margin-top:var(--s-md); }
+.frsum{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 0; border:0; border-bottom:1px solid var(--line);
+        background:none; text-align:left; font:inherit; color:var(--ink); min-height:0; cursor:pointer; }
+.frsum:active{ transform:none; opacity:.7; }
+.frsum .t{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.frsum .t b{ font-size:var(--f-md); }
+.frsum .t span{ font-size:var(--f-sm); color:var(--ink-48); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.frsumstar{ font-style:normal; color:var(--star); }
+.frsum .actgo{ transition:transform var(--t) var(--ease); }
+.frsum.open .actgo{ transform:rotate(90deg); }
+.frsumrow{ display:flex; align-items:center; gap:10px; width:100%; padding:10px 0; border-bottom:1px solid var(--line);
+           text-align:left; color:var(--ink); font-weight:400; justify-content:flex-start; }
+.frsumrow b{ flex:1; min-width:0; font-size:var(--f-md); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.frsumrow .crvpill{ margin-top:0; }
+.frsumrow:active{ transform:none; opacity:.7; }

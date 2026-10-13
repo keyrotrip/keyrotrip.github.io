@@ -11,11 +11,11 @@
  *   사진은 첫 글자 동그라미로 — 화면이 안 깨지게.
  * ⚠ 읽음 처리는 열고 1.2초 뒤(notify.js 와 같은 규칙 — 어느 것이 새것인지 눈에 한 번 들어와야).
  */
-import { $, esc, avatarImg } from './dom.js?v=b860';
-import { sb } from './db.js?v=b860';
-import { netTimeout } from './net.js?v=b860';
-import { cities } from './cities.js?v=b860';
-import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b860';
+import { $, esc, avatarImg } from './dom.js?v=b861';
+import { sb } from './db.js?v=b861';
+import { netTimeout } from './net.js?v=b861';
+import { cities } from './cities.js?v=b861';
+import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b861';
 
 let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {}, openCity: () => {},
             loadNotifs: () => {}, loadSocialCounts: () => {} };
@@ -42,7 +42,9 @@ export function closeActivity(fromPop){
 const 점 = { 알림: false, 요청: false };
 export function heartDot(o){
   Object.assign(점, o);
-  $('heartdot')?.classList.toggle('hide', !(점.알림 || 점.요청));
+  const 켬 = 점.알림 || 점.요청;
+  $('heartdot')?.classList.toggle('hide', !켬);
+  $('hometabdot')?.classList.toggle('hide', !켬);   /* 하단바 「기록」 위에도(b861) — 다른 탭에 있어도 보이게 */
 }
 
 const 사진 = (url, id, 이름, px) => avatarImg(url, id, 이름,

@@ -13,15 +13,17 @@
  * 자료를 건드리므로 여기로 가져오면 안 됩니다.
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
-import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b860';
-import { sb } from './db.js?v=b860';
-import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b860';
-import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b860';
-import { starHtml, starValue, starsRo } from './stars.js?v=b860';
-import { localTime } from './calc.js?v=b860';
-import { fail, netIsDown } from './net.js?v=b860';
+import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b861';
+import { sb } from './db.js?v=b861';
+import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b861';
+import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b861';
+import { starHtml, starValue } from './stars.js?v=b861';
+import { localTime } from './calc.js?v=b861';
+import { fail, netIsDown } from './net.js?v=b861';
 /* 후기 줄·후기 화면(b858). cityrev.js 는 이 파일을 안 읽습니다(도시 열기는 ctx 로) — 고리 없음. */
-import { revRowsHtml } from './cityrev.js?v=b860';
+import { revRowsHtml } from './cityrev.js?v=b861';
+/* 「○○ 맛집 추천」 칸(b861, db/124) — cmtask.js 는 이 파일을 안 읽습니다(고리 없음). */
+import { foodsHtml } from './cmtask.js?v=b861';
 
 /* 지금 열려 있는 도시. **app.js 에 있던 것을 여기로 옮겼습니다(b329)** —
    여닫는 것은 이 파일이 하는데 변수만 저쪽에 있어서, 떼어낸 뒤
@@ -79,7 +81,14 @@ export async function refreshCityReviews(){
   const { data } = await sb.rpc('city_comments', { p_city: id });
   if (cityOpen?.id !== id) return;
   const 후기 = data || [];
-  $('cv_comments').innerHTML = revRowsHtml(후기.slice(0, 3), id, Math.max(cityStat[id]?.n_comment ?? 0, 후기.length));
+  if (data) $('cv_comments').innerHTML = revRowsHtml(후기.slice(0, 3), id, Math.max(cityStat[id]?.n_comment ?? 0, 후기.length));
+}
+/* 맛집 추천 칸만 다시(b861) — 내가 추천을 남긴 뒤(cmtask.js 의 onFood). */
+export async function refreshCityFoods(){
+  const id = cityOpen?.id; if (!id) return;
+  const c = cities.find(x => x.id === id);
+  const h = await foodsHtml(id, c?.name || '');
+  if (cityOpen?.id === id) $('cv_foods').innerHTML = h;
 }
 /* 탭을 옮기면(app.js 의 showApp) 도시가 통째로 닫힙니다 — 겹도 같이 버립니다. */
 export function clearCityOpen(){ cityOpen = null; 층 = []; }
@@ -267,19 +276,28 @@ export async function openCity(id, 옵션 = {}){
   if (cityOpen?.id !== id) return;       /* 그사이 다른 도시로 갔습니다 */
   const 친구 = fr || [];
   const 별 = 친구.filter(x => x.stars != null).map(x => Number(x.stars));
+  /* ── 팔로우하는 사람들 — 한 줄로 묶고 누르면 펼침(b861, 사용자: 「한줄평이랑 팔로우한 사람 UI가 이질적이다」 → 시안 B) ──
+     전에는 사람마다 큰 별 다섯 개 줄이라, 바로 아래 한줄평의 「★ 3.0」 네모와 별 모양이 둘이었습니다.
+     접힌 줄: 사진 둘 겹침 · 「팔로우하는 사람 N명이 다녀왔어요」 · 친구 평균 ★ · 이름 셋까지. 펼치면 한 사람 한 줄(사진 · 이름 · 「★ 3.0」 네모). */
+  const 평균 = 별.length ? (별.reduce((a, b) => a + b, 0) / 별.length).toFixed(1) : null;
+  const 이름들 = 친구.slice(0, 3).map(x => esc(x.name || '여행자')).join(' · ') + (친구.length > 3 ? ` 외 ${친구.length - 3}명` : '');
+  const 사진 = (x, px) => avatarImg(x.avatar_url, x.user_id, x.name || '여행자',
+    `width:${px}px; height:${px}px; border-radius:50%; object-fit:cover; flex:none`, 'thumb');
+  /* 펼쳐 둔 채 별을 누르거나 한줄평을 저장하면(다시 그림) 접히지 않게 — 펼친 채로 되돌립니다(두 번째 검토). */
+  const 펼쳐있었나 = 다시 && !!$('cv_friends').querySelector('.frsum.open');
   $('cv_friends').innerHTML = 친구.length
-    ? `<div class="cvfr"><div class="daysep">팔로우하는 사람들${
-          별.length >= 2 ? ` · 친구 평균 ★${(별.reduce((a, b) => a + b, 0) / 별.length).toFixed(1)}` : ''}</div>` +
-      친구.map(x =>
-        `<div class="rrow" style="padding:8px 0">
-           <button class="ghost frwho" data-person="${esc(x.user_id)}">
-             ${avatarImg(x.avatar_url, x.user_id, x.name || '여행자',
-                         'width:36px; height:36px; border-radius:50%; object-fit:cover; flex:none', 'thumb')}
-             <span class="t"><b>${esc(x.name || '여행자')}</b>
-               ${x.stars != null ? starsRo(x.stars) : '<span class="memo">다녀왔어요</span>'}</span>
-           </button>
-         </div>`).join('') + '</div>'
+    ? `<div class="cvfr2">
+        <button type="button" class="frsum" data-frsum aria-expanded="false">
+          <span class="actav${친구.length > 1 ? ' two' : ''}">${친구.slice(0, 2).map(x => 사진(x, 친구.length > 1 ? 32 : 40)).join('')}</span>
+          <span class="t"><b>팔로우하는 사람 ${친구.length}명이 다녀왔어요</b>
+            <span>${평균 ? `친구 평균 <i class="frsumstar">★</i> ${평균} · ` : ''}${이름들}</span></span>
+          <span class="actgo" aria-hidden="true">›</span></button>
+        <div class="frsumlist" hidden>${친구.map(x => `<button type="button" class="ghost frsumrow" data-person="${esc(x.user_id)}">
+            ${사진(x, 36)}<b>${esc(x.name || '여행자')}</b>${
+            x.stars != null ? `<span class="crvpill"><i aria-hidden="true">★</i>${Number(x.stars).toFixed(1)}</span>` : '<span class="memo">다녀왔어요</span>'}</button>`).join('')}</div>
+      </div>`
     : '';
+  if (펼쳐있었나) $('cv_friends').querySelector('[data-frsum]')?.click();
 
   /* 후기(b858, 왓챠처럼) — 좋아요 순 셋 + 「모두 보기」. 별점만 매긴 사람은 안 나옵니다 — 이름이 걸리니까요.
      ⚠ 팔로우하는 사람 후기도 여기 나옵니다(「팔로잉」 딱지) — 그래서 위 친구 칸에서는 한줄평 글을 뺐습니다.
@@ -287,7 +305,19 @@ export async function openCity(id, 옵션 = {}){
      ⚠ 수는 city_stats 의 n_comment(db/122)를 먼저, 없으면(SQL 전) 받은 줄 수. */
   const 후기 = cm || [];
   const 후기수 = Math.max(cityStat[id]?.n_comment ?? 0, 후기.length);
-  $('cv_comments').innerHTML = revRowsHtml(후기.slice(0, 3), id, 후기수);
+  /* 못 받았으면(cm 이 없음) 비워 둡니다 — 「첫 한줄평」은 «정말 없을 때»만(b859). */
+  $('cv_comments').innerHTML = cm ? revRowsHtml(후기.slice(0, 3), id, 후기수) : '';
+  /* 맛집 추천(b861) — 한줄평 칸 아래. 못 받으면(SQL 전) 칸을 안 그립니다.
+     ⚠ 같은 도시를 다시 그릴 때(별 누름·한줄평 저장 — 다시:true)는 비우지 않습니다(검토에서 찾음): 비우면 화면이 줄었다 늘며
+       스크롤이 튀고, 열어 둔 「+ 내 맛집 추천하기」 칸의 쓰던 글이 날아갑니다. 그 칸에 손가락이 있으면 갈아 끼우지도 않습니다. */
+  const 맛칸 = $('cv_foods');
+  /* 같은 도시를 «그 자리에서» 다시 그릴 때(다시·되돌림)만 남깁니다 — 나중에 같은 도시를 새로 열거나 다른 계정으로 들어오면
+     지난번 것(앞 계정의 「내 추천 지우기」까지)이 잠깐 보였습니다(두 번째 검토). */
+  if (맛칸.dataset.city !== id || (!다시 && !되돌림)){ 맛칸.innerHTML = ''; 맛칸.dataset.city = id; }
+  foodsHtml(id, c.name).then(h => {
+    if (cityOpen?.id !== id || 맛칸.contains(document.activeElement)) return;
+    맛칸.innerHTML = h;
+  });
   /* 위 겹에서 돌아왔으면 보던 자리로(b789). 친구·한줄평 칸이 다 그려진
      «뒤»에 옮깁니다 — 먼저 옮기면 페이지가 아직 짧아서 중간에 걸립니다. */
   if (되돌림?.y) window.scrollTo({ top: 되돌림.y });
@@ -333,6 +363,14 @@ export function closeCity(fromPop){
 
 $('cityview').addEventListener('click', async e => {
   /* 한줄평·친구 칸의 이름(b789) — 그 사람 프로필이 도시 화면 «위»에 덮여 열립니다. */
+  /* 팔로우하는 사람들 접힌 줄 → 펼치기·접기(b861) */
+  const 묶음 = e.target.closest('[data-frsum]');
+  if (묶음){
+    const 목록 = 묶음.nextElementSibling, 연다 = 목록.hidden;
+    목록.hidden = !연다; 묶음.setAttribute('aria-expanded', 연다 ? 'true' : 'false');
+    묶음.classList.toggle('open', 연다);
+    return;
+  }
   const 누구 = e.target.closest('[data-person]');
   if (누구){ ctx.openPerson(누구.dataset.person); return; }
 

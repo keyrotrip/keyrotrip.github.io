@@ -14,11 +14,11 @@
  * 밖으로 나가는 길은 `loadNotifPrefs` 하나입니다.
  *
  * 층: dom.js · db.js · net.js 만 씁니다. */
-import { $, esc, toast } from './dom.js?v=b860';
-import { sb } from './db.js?v=b860';
-import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b860';
+import { $, esc, toast } from './dom.js?v=b861';
+import { sb } from './db.js?v=b861';
+import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b861';
 /* 「읽은 알림 지우기」를 한 번 더 눌러 정하는 장치(b799). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm, disarm } from './ui.js?v=b860';
+import { arm, disarm } from './ui.js?v=b861';
 
 let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {} };
 export function setNotifyCtx(o){ ctx = { ...ctx, ...o }; }
@@ -268,14 +268,11 @@ export async function loadNotifs(본것){
     .select('*')
     .order('created_at', { ascending:false }).limit(30);
   const unread = (data || []).filter(n => !n.read_at).length;
-  /* ⚠ 하단바 「프로필」 위의 점입니다(b759). 숫자가 아니라 점인 이유는
-     index.html 의 그 자리에 적어 뒀습니다 — 칸이 71px 이라 숫자를 얹으면
-     글자와 다툽니다. */
-  $('settabdot')?.classList.toggle('hide', !unread);
-  /* 프로필 안의 종에도 같은 점을 찍습니다(b760) — 하단바 점만 보고
-     프로필에 들어오면 「어디에 왔다는 거지」가 됩니다. */
-  $('belldot')?.classList.toggle('hide', !unread);
-  /* 기록 탭 ♡ 의 점에도(b859, activity.js) — 사건으로(그 파일을 읽으면 고리) */
+  /* ⚠ 하단바 「프로필」 점(b759)·프로필 종 점(b760)은 b861 에 껐습니다(사용자: 「프로필은 없애고 하트랑 기록탭 아이콘위에
+     점 뜨는걸로 하자」). 종을 걷어 알림이 기록 탭 ♡ 로 갔는데 프로필에 점이 남으면 거기서는 끌 길이 없었습니다.
+     이제 점은 기록 탭 ♡ 와 하단바 「기록」 두 곳 — activity.js 의 heartDot 이 같이 칠합니다. */
+  $('settabdot')?.classList.add('hide');
+  /* 기록 탭 ♡ · 하단바 「기록」 점(b859 · b861, activity.js) — 사건으로(그 파일을 읽으면 고리) */
   window.dispatchEvent(new CustomEvent('t2:heartdot', { detail: { 알림: !!unread } }));
   if (본것 && unread) 읽음처리();
 

@@ -14,18 +14,20 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b860';
-import { sb } from './db.js?v=b860';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b860';
-import { dateRange } from './calc.js?v=b860';
-import { starHtml, paintStars, starValue } from './stars.js?v=b860';
+import { $, esc, josa, tipOff } from './dom.js?v=b861';
+import { sb } from './db.js?v=b861';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b861';
+import { dateRange } from './calc.js?v=b861';
+import { starHtml, paintStars, starValue } from './stars.js?v=b861';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b860';
+         countryInfo } from './cities.js?v=b861';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b860';
-import { openCity } from './city.js?v=b860';
-import { loadCities } from './citysearch.js?v=b860';
+         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b861';
+import { openCity } from './city.js?v=b861';
+import { loadCities } from './citysearch.js?v=b861';
+/* 한줄평 · 맛집 묻기(b861). cmtask.js 는 rating.js 를 안 읽습니다(저장은 ctx) — 고리 없음. */
+import { 물을까, 묻기Html } from './cmtask.js?v=b861';
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }
@@ -374,8 +376,15 @@ export function drawRatings(){
        그대로 살아 있어 깜빡일 일이 없습니다.
      비교는 우리가 만든 글자끼리 합니다 — `el.innerHTML` 을 도로 읽으면
      브라우저가 따옴표와 속성 순서를 제 식대로 바꿔 놓아서 **늘 다르다고 나옵니다.** */
-  if (html !== lastRateHtml){
+  /* ⚠ 묻기 칸에 쓰는 중이면 이번엔 안 갈아 끼웁니다(두 번째 검토) — 목록을 통째로 바꾸면 쓰던 칸이 화면에서 잠깐 빠지며
+     포커스를 잃고 아이폰 키보드가 닫힙니다(#ratemore 가 바닥 근처에서 저절로 다시 그림). 더 그릴 줄은 다음 스크롤에. */
+  if (html !== lastRateHtml && document.activeElement?.closest?.('#ratelist .cmask')){ /* 쓰는 중 */ }
+  else if (html !== lastRateHtml){
+    /* 한줄평·맛집 묻기 줄(b861, cmtask.js)은 목록 글자 밖에서 끼운 것이라 다시 그리면 날아갑니다 — 쓰던 글까지(검토에서 찾음:
+       별을 누르면 lastRateHtml 을 비우고, 바닥에 가까우면 #ratemore 가 곧바로 다시 그림). 요소째 들어 두었다가 같은 줄 뒤에 도로 붙입니다. */
+    const 묻던 = [...$('ratelist').querySelectorAll('.cmask')];
     $('ratelist').innerHTML = html;
+    묻던.forEach(m => $('ratelist').querySelector(`.rrow[data-cityopen="${CSS.escape(m.dataset.city || '')}"]`)?.after(m));
     lastRateHtml = html;
   }
   /* 바닥에 닿으면 더 그립니다. 스크롤 값을 재는 것보다 어긋날 자리가 적습니다. */
@@ -384,6 +393,11 @@ export function drawRatings(){
     rateObs?.disconnect();
     rateObs = new IntersectionObserver(es => {
       if (!es[0].isIntersecting) return;
+      /* ⚠ 쓰는 중이면 늘리지 않습니다(세 번째 검토) — 위에서 안 갈아 끼우니 옛 #ratemore 를 또 지켜보고, 지켜보기는 시작할 때
+         한 번 꼭 알려 와서 「늘림 → 다시 그림 → 또 지켜봄」이 매 장면 돌았습니다. 칸에서 나가면 조금 뒤 한 번 그립니다
+         (바로 그리면 「등록」 누르는 사이에 줄이 바뀌어 누름이 빠질 수 있음). */
+      const 쓰던 = document.activeElement?.closest?.('#ratelist .cmask') && document.activeElement;
+      if (쓰던){ rateObs.disconnect(); 쓰던.addEventListener('blur', () => setTimeout(drawRatings, 400), { once:true }); return; }
       rateShown += 60; rateObs.disconnect(); drawRatings();
     }, { rootMargin:'400px' });
     rateObs.observe(more);
@@ -533,7 +547,15 @@ $('ratelist').addEventListener('click', async e => {
     /* 줄을 직접 손댔습니다(별 칠하기). 만든 글자는 칠하기 전 모습이므로, 여기서
        무효로 해두지 않으면 다음 그리기가 "같다"고 건너뛰어 화면과 어긋난 채로 남습니다. */
     lastRateHtml = '';
-    await saveRate(cityId, { stars: next }, true);
+    const 됐나 = await saveRate(cityId, { stars: next }, true);
+    /* 한줄평 · 맛집 묻기(b861, cmtask.js) — ★4.5 이상이면 그 줄 «바로 밑»에 얇은 글자 한 줄(줄 높이를 거의 안 먹게).
+       줄 안에 넣으면 칸을 누를 때 줄의 data-cityopen 이 도시 화면을 엽니다 — 그래서 형제로 붙입니다. 기준 밖이 되면 걷습니다. */
+    /* 저장을 기다리는 사이 목록이 다시 그려졌을 수 있어 줄을 새로 찾습니다(세 번째 검토 — 떨어진 줄에 붙이면 오류). */
+    const 행 = $('ratelist')?.querySelector(`.rrow[data-cityopen="${CSS.escape(cityId)}"]`) || (st.isConnected ? st.closest('.rrow') : null), 묻던 = 행?.nextElementSibling?.classList.contains('cmask') ? 행.nextElementSibling : null;
+    const 도시 = (cities || []).find(x => x.id === cityId);
+    if (됐나 !== false && 행 && 도시 && 물을까(cityId, next, myRates[cityId]?.comment)){
+      if (!묻던) 행.insertAdjacentHTML('afterend', 묻기Html(cityId, 도시.name, myRates[cityId]?.comment, true));
+    } else 묻던?.remove();
     return;
   }
   const w = e.target.closest('button[data-want]');

@@ -43,7 +43,7 @@ import { readFileSync, readdirSync } from 'node:fs';
    그대로 죽었을 것입니다. app.js 는 자기가 선언한 것이 대부분이라
    여기 들어가도 조용합니다. 말할 때는 진짜입니다. */
 const 모듈 = ['persona.js', 'map.js', 'shelf.js', 'city.js', 'aiui.js',
-              'report.js', 'cards.js', 'expense.js', 'prep.js', 'member.js', 'planmap.js', 'citysearch.js', 'profile.js', 'review.js', 'rating.js', 'notify.js', 'newtrip.js', 'home.js', 'cands.js', 'selfcheck.js', 'bring.js', 'trash.js', 'plancheck.js', 'aiscreen.js', 'account.js', 'draft.js', 'triplist.js', 'tabs.js', 'planline.js', 'planview.js', 'geocode.js', 'legs.js', 'tripview.js', 'today.js', 'opentrip.js', 'flags.js', 'swreg.js', 'people.js', 'friends.js', 'pshift.js', 'setnav.js', 'myrecord.js', 'pmore.js', 'install.js', 'crop.js', 'cityrev.js', 'activity.js', 'app.js'];
+              'report.js', 'cards.js', 'expense.js', 'prep.js', 'member.js', 'planmap.js', 'citysearch.js', 'profile.js', 'review.js', 'rating.js', 'notify.js', 'newtrip.js', 'home.js', 'cands.js', 'selfcheck.js', 'bring.js', 'trash.js', 'plancheck.js', 'aiscreen.js', 'account.js', 'draft.js', 'triplist.js', 'tabs.js', 'planline.js', 'planview.js', 'geocode.js', 'legs.js', 'tripview.js', 'today.js', 'opentrip.js', 'flags.js', 'swreg.js', 'people.js', 'friends.js', 'pshift.js', 'setnav.js', 'myrecord.js', 'pmore.js', 'install.js', 'crop.js', 'cityrev.js', 'cmtask.js', 'activity.js', 'app.js'];
 
 /* 이름을 내보낼 수 있는 파일 전부. 여기 없는 파일이 내보내는 이름은
    후보에 안 들어가므로 검사가 그냥 조용합니다 — 틀린 말은 안 합니다. */

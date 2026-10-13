@@ -21,11 +21,11 @@
  *   `visited_on` 칸은 b536 에 만들었다가 화면을 걷어서 지금 비어 있습니다.
  *   나중에 다녀온 날짜를 다시 받게 되면 그때 이 순서를 바꾸십시오.
  */
-import { $, esc, toTop, coverDeck, backLabel, emptyDo } from './dom.js?v=b860';
-import { sb } from './db.js?v=b860';
-import { cities, countryName, cityCountry, search } from './cities.js?v=b860';
-import { starsRo } from './stars.js?v=b860';
-import { openPhotos } from './photoview.js?v=b860';
+import { $, esc, toTop, coverDeck, backLabel, emptyDo } from './dom.js?v=b861';
+import { sb } from './db.js?v=b861';
+import { cities, countryName, cityCountry, search } from './cities.js?v=b861';
+import { starsRo } from './stars.js?v=b861';
+import { openPhotos } from './photoview.js?v=b861';
 
 let ctx = { me: () => null, loadCities: async () => {}, openCity: () => {} };
 export function setDiaryCtx(o){ ctx = { ...ctx, ...o }; }
