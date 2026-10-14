@@ -1,6 +1,6 @@
 /* ── 평가 탭 「나라별」(b874) ───────────────────────────────────────────
  * 사용자(10-14): 「사용자들이 직접 '언제 다 매기냐'고 했다」 — 도시 700곳이 한 줄로 늘어서 끝이 안 보였습니다.
- *   ① 가 본 나라 고르기(도시 많은 나라 순 · 한국 포함 · 「다른 나라 찾기」는 그 자리에서 펼침 + 이름 찾기)
+ *   ① 가 본 나라 고르기(b877 대륙별 한 화면 · 대륙마다 두 줄 + 더 보기 · 한국 포함) — 옛 설명: (도시 많은 나라 순 · 「다른 나라 찾기」는 그 자리에서 펼침 + 이름 찾기)
  *   ② 고른 나라 도시만 — 안 매긴 곳 위(유명한 곳부터), 매긴 곳은 아래 묶음(별 높은 순)
  *      별을 누르면 2초 보여 준 뒤 아래로 내려갑니다 — 그 사이 또 누르면 처음부터 다시 셉니다(고치는 중엔 안 내려감).
  *      0.7초는 「수정하고 싶은데 들어가는 게 빠르다」(사용자 시연 10-14). 내려간 뒤에도 「매긴 곳」에서 고칠 수 있습니다.
@@ -9,10 +9,10 @@
  * ⚠ 평가 탭은 «늘 나라별로» 열립니다(사용자). 「전체 도시」는 예전 화면 그대로입니다.
  * ⚠ 저장·도시 열기·성향 열기는 ctx 로 받습니다 — 이 파일이 rating.js 를 안 읽어야 시연 페이지(_demo_ratecc.html)에서
  *   가짜 저장으로 돌릴 수 있습니다. 고른 나라는 이 기기에만 기억합니다(localStorage, 못 쓰면 매번 고르기). */
-import { $, esc, flagSprite } from './dom.js?v=b876';
-import { cities, countryName, chosung, onlyCho } from './cities.js?v=b876';
-import { starHtml, paintStars, starValue } from './stars.js?v=b876';
-import { 인기, 별받음 } from './rate.js?v=b876';
+import { $, esc, flagSprite } from './dom.js?v=b877';
+import { cities, countryName, continentOf, chosung, onlyCho } from './cities.js?v=b877';
+import { starHtml, paintStars, starValue } from './stars.js?v=b877';
+import { 인기, 별받음 } from './rate.js?v=b877';
 
 let ctx = {
   별: () => null,              /* 도시 id → 내 별점(없으면 null) */
@@ -32,11 +32,10 @@ const 쓰기 = v => { try { localStorage.setItem(열쇠, JSON.stringify(v)); } c
 let 고른 = 읽기();          /* 고른 나라 코드(cc) */
 let 칩 = null;              /* 지금 보는 나라 */
 let 고르는중 = false;       /* 「나라 다시 고르기」 */
-let 펼침 = false, 찾기 = '';
+/* (대륙 펼침 · 찾는 글자는 아래 고르기그리기 옆 — 펼친대륙 · 찾기) */
 let 끝판 = false;           /* ③ 을 보여 주는 중 */
 let 끝봤음 = false;         /* ③ 은 한 번만 — 방금확정은 성향을 보러 갈 때까지 참으로 남아서, 「더 매기기」 뒤 별마다 또 뜨면 안 됨 */
 let 내려보낼 = null;        /* 2초 뒤 다시 그리기 */
-const 처음칸 = 12;
 
 const 나라들 = () => {
   const n = {};
@@ -63,7 +62,7 @@ export function rateCcHome(){
   segPaint();
   고른 = []; 쓰기(고른); 칩 = null;
   if (history.state?.t2 === 'ratecc') history.replaceState(null, '');   /* 처음으로 갔으니 목록 기록은 버림 */
-  고르는중 = true; 끝판 = false; 펼침 = false; 찾기 = '';
+  고르는중 = true; 끝판 = false; 펼친대륙 = new Set(); 찾기 = '';
   clearTimeout(내려보낼);
   draw();
 }
@@ -95,27 +94,49 @@ export async function draw(받은끝 = false){
 }
 
 /* ── ① 가 본 나라 고르기 ── */
+/* 대륙별로 한 화면(b877, 사용자: 「대륙별로 보여 주고 펼쳐서 더 찾자」 → 「4×2 로 · 나머지는 펼쳐서 · 맨 위엔 그래도 찾는 칸」).
+   대륙마다 도시 많은 나라부터 8개국(4×2), 그 아래 「○○ N개국 더 보기」로 그 대륙만 펼침. 골라 둔 나라는 접혀 있어도 보임.
+   찾는 칸: 치면 모든 대륙에서 맞는 나라만(접힌 것까지). 저절로 키보드를 띄우지 않음(b875 사용자).
+   ⚠ 찾는 칸은 다시 그리지 않습니다 — 한글을 치는 도중에 칸을 갈아 끼우면 글자 조합이 끊깁니다. 껍데기(제목·칸)는 한 번,
+     그 아래 #rcc_cts 와 「다음」 자리만 다시 그립니다. */
+const 대륙차례 = ['아시아', '유럽', '북아메리카', '오세아니아', '남아메리카', '아프리카'];
+const 대륙칸 = 8;
+let 펼친대륙 = new Set(), 찾기 = '';
 function 고르기그리기(판){
-  const 다 = 나라들();
+  if (!판.querySelector('#rcc_q')){
+    판.innerHTML = `<div class="rcc-top"><div class="rcc-h">가 본 나라를 골라 주세요</div><span id="rcc_next"></span></div>
+      <p class="rcc-s">고른 나라 도시만 보여 드려요. 여러 개 골라도 돼요.</p>
+      <input type="search" class="rcc-q" id="rcc_q" placeholder="나라 이름 찾기 (스위스 / ㅅㅇㅅ)" autocomplete="off" enterkeyhint="search">
+      <div id="rcc_cts"></div>`;
+    $('rcc_q').value = 찾기;
+  }
+  /* 「다음」은 제목 옆 하나뿐(b876) — 안 골랐으면 아예 안 띄움(회색 막힌 단추를 남기지 않음). */
+  $('rcc_next').innerHTML = 고른.length ? `<button type="button" class="primary rcc-next" data-rccnext>${고른.length}개 · 다음 ›</button>` : '';
   const q = 찾기.trim();
   const 맞나 = cc => { const 이름 = String(countryName[cc] || ''); return !q || (onlyCho(q) ? chosung(이름).includes(q) : 이름.includes(q)); };
-  /* 찾을 때는 그 글자로 «시작하는» 나라 먼저(「ㅌㄱ」→ 태국이 포르투갈보다 위) */
-  const 시작 = cc => { const 이름 = String(countryName[cc] || ''); return q && (onlyCho(q) ? chosung(이름).startsWith(q) : 이름.startsWith(q)) ? 1 : 0; };
-  const 보일 = 펼침 ? 다.filter(([cc]) => 맞나(cc)).sort((a, b) => 시작(b[0]) - 시작(a[0])) 
-    /* 접혀 있어도 «골라 둔 나라»는 다 보입니다 — 12칸 밖(태국 11곳 등)을 골랐으면 다시 고를 때 안 보여서 못 뺐음(b874 점검) */
-    : [...다.slice(0, 처음칸), ...다.slice(처음칸).filter(([cc]) => 고른.includes(cc))];
+  const 묶음 = {};
+  for (const [cc, n] of 나라들()) if (맞나(cc)) (묶음[continentOf[cc] || '기타'] ||= []).push([cc, n]);
+  /* 찾을 때는 대륙 안에서 그 글자로 «시작하는» 나라 먼저(「스」→ 스페인·스위스가 라오스보다 위) */
+  if (q){
+    const 시작 = cc => { const 이름 = String(countryName[cc] || ''); return (onlyCho(q) ? chosung(이름).startsWith(q) : 이름.startsWith(q)) ? 1 : 0; };
+    for (const k in 묶음) 묶음[k].sort((x, y) => 시작(y[0]) - 시작(x[0]));
+  }
+  const 차례 = [...대륙차례.filter(k => 묶음[k]), ...Object.keys(묶음).filter(k => !대륙차례.includes(k))];
   const 칸 = ([cc, n]) => `<button type="button" class="rcc-c${고른.includes(cc) ? ' on' : ''}" data-rccpick="${esc(cc)}" aria-pressed="${고른.includes(cc)}">
       ${깃발(cc)}<b>${esc(countryName[cc])}</b><span>${n}곳</span></button>`;
-  /* 「다음」은 제목 옆 하나뿐(b876) — 바닥에 붙였더니 사파리에서 탭바 뒤로 숨었고(b875), 목록 끝에도 두니 중복이었음.
-     안 골랐으면 아예 안 띄움(회색 막힌 단추를 남기지 않음). */
-  const 다음 = 고른.length ? `${고른.length}개 · 다음 ›` : '';
-  판.innerHTML = `<div class="rcc-top"><div class="rcc-h">가 본 나라를 골라 주세요</div>${
-      다음 ? `<button type="button" class="primary rcc-next" data-rccnext>${다음}</button>` : ''}</div>
-    <p class="rcc-s">고른 나라 도시만 보여 드려요. 여러 개 골라도 돼요.</p>
-    ${펼침 ? `<input type="search" class="rcc-q" id="rcc_q" placeholder="나라 이름 찾기 (스위스 / ㅅㅇㅅ)" value="${esc(찾기)}" autocomplete="off" enterkeyhint="search">` : ''}
-    <div class="rcc-grid">${보일.map(칸).join('') || `<p class="rcc-none">「${esc(q)}」에 맞는 나라가 없어요.</p>`}</div>
-    ${펼침 ? '' : `<button type="button" class="ghost rcc-more" data-rccmore>다른 나라 찾기</button>`}
-`;   /* 목록 끝 「N개 나라 · 도시 보기」는 걷음(b876, 사용자: 제목 옆 「다음」과 중복) */
+  const 대륙 = k => {
+    const 다 = 묶음[k], 펼 = !!q || 펼친대륙.has(k);
+    const 보일 = 펼 ? 다 : [...다.slice(0, 대륙칸), ...다.slice(대륙칸).filter(([cc]) => 고른.includes(cc))];
+    const 남음 = 다.length - 보일.length;
+    const 고른수 = 다.filter(([cc]) => 고른.includes(cc)).length;
+    return `<section class="rcc-ct">
+      <div class="rcc-cth"><b>${esc(k)}</b>${고른수 ? `<span class="on">${고른수}개 고름</span>` : ''}</div>
+      <div class="rcc-grid rcc-g4">${보일.map(칸).join('')}</div>
+      ${q ? '' : 남음 > 0 ? `<button type="button" class="ghost rcc-more" data-rccct="${esc(k)}">${esc(k)} ${남음}개국 더 보기 ⌄</button>`
+        : 펼 && 다.length > 대륙칸 ? `<button type="button" class="ghost rcc-more" data-rccct="${esc(k)}">접기 ⌃</button>` : ''}
+    </section>`;
+  };
+  $('rcc_cts').innerHTML = 차례.length ? 차례.map(대륙).join('') : `<p class="rcc-none">「${esc(q)}」에 맞는 나라가 없어요.</p>`;
 }
 
 /* ── ② 고른 나라 도시 ── */
@@ -179,11 +200,11 @@ document.addEventListener('click', async e => {
     고르는중 = true;                    /* 기억은 「다음」을 누를 때(쓰기) */
     return draw();
   }
-  /* 펼치기만 합니다 — 찾는 칸에 저절로 손을 대지 않습니다(b875, 사용자: 「그냥 스크롤하면서 보고 싶은데 키보드는 검색창을 누를 때」). */
-  if (e.target.closest('[data-rccmore]')){ 펼침 = true; return draw(); }
+  const ct = e.target.closest('[data-rccct]');
+  if (ct){ const k = ct.dataset.rccct; 펼친대륙.has(k) ? 펼친대륙.delete(k) : 펼친대륙.add(k); return draw(); }
   if (e.target.closest('[data-rccnext]')){
     if (!고른.length) return;
-    고르는중 = false; 펼침 = false; 찾기 = ''; 쓰기(고른);
+    고르는중 = false; 찾기 = ''; 쓰기(고른);
     if (history.state?.t2 !== 'ratecc') history.pushState({ t2: 'ratecc' }, '');   /* 뒤로가기 = 나라 고르기(b876) */
     칩 = [...고른].sort((a, b) => 수(b) - 수(a))[0];
     await draw(); 판.scrollIntoView({ block: 'start' }); return;
@@ -215,12 +236,13 @@ document.addEventListener('click', async e => {
   if (row) ctx.도시열기(row.dataset.rcccity);
 });
 
+/* 찾는 칸(b877) — 칸은 그대로 두고 아래 목록만 다시(위 ⚠). 한글은 조합 중에도 input 이 오지만 칸을 안 건드리니 안 끊깁니다. */
 document.addEventListener('input', e => {
   if (e.target.id !== 'rcc_q') return;
   찾기 = e.target.value;
-  const 커서 = e.target.selectionStart;
-  draw().then(() => { const 칸 = $('rcc_q'); if (칸){ 칸.focus(); try { 칸.setSelectionRange(커서, 커서); } catch {} } });
+  draw();
 });
+document.addEventListener('keydown', e => { if (e.target.id === 'rcc_q' && e.key === 'Enter' && !e.isComposing) e.target.blur(); });
 
 /* 뒤로가기(b876, 사용자: 「도시 고르고 나서 다시 고르고 싶어서 뒤로가기 하는데 안 됨」) — 목록 기록(t2:ratecc)에서 벗어나면 고르기로.
    도시 화면 등 위에 얹힌 것을 닫는 뒤로가기는 tripview.js 사슬이 먼저 받고, 그때 기록은 다시 ratecc 라 여기선 아무것도 안 함. */
