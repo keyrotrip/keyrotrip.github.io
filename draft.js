@@ -20,14 +20,14 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · trip.js 와 이미 떼어낸
  *     citysearch.js · newtrip.js · plancheck.js 를 씁니다. */
-import { $, esc } from './dom.js?v=b873';
-import { sb } from './db.js?v=b873';
-import { fail } from './net.js?v=b873';
-import { D1, asDate, todayYmd, dayLabel } from './calc.js?v=b873';
-import { plans, legs } from './trip.js?v=b873';
-import { loadCities } from './citysearch.js?v=b873';
-import { openNew, movePrefs } from './newtrip.js?v=b873';
-import { review } from './plancheck.js?v=b873';
+import { $, esc } from './dom.js?v=b874';
+import { sb } from './db.js?v=b874';
+import { fail } from './net.js?v=b874';
+import { D1, asDate, todayYmd, dayLabel } from './calc.js?v=b874';
+import { plans, legs } from './trip.js?v=b874';
+import { loadCities } from './citysearch.js?v=b874';
+import { openNew, movePrefs } from './newtrip.js?v=b874';
+import { review } from './plancheck.js?v=b874';
 
 let ctx = { me: () => null, fillCityList: () => {},
             showApp: () => {}, openTrip: async () => {} };
@@ -65,7 +65,12 @@ const dropDraft = id => { try { localStorage.removeItem(DKEY(id)); } catch {} };
 /* preselect 를 주면 그 여행을 고른 채로 엽니다 — 새 여행 마지막 단계에서
    'AI 가 짜줄게요' 로 들어올 때 씁니다.
    lean 이면 묻는 칸(d_ask)을 접습니다. 거기서 방금 다 고르고 왔으니까요. */
+/* 닫으면 «연 곳»으로 돌아갑니다(b874, 사용자: 「여행 탭에서 일정 추가 누르고 뒤로가기하면 직전 화면이 나와야 하는데 홈으로 돌아가 버려」).
+   전에는 닫을 때 늘 showApp('home') 이었습니다. 여행 화면 안(일정 짜기 단추)에서 열었으면 그 여행이 아래에 그대로 있으니
+   덮개만 걷고, 탭에서 열었으면 그 탭으로. 열 때 정해 둡니다 — 닫을 때는 이미 이 화면이 덮고 있어서 알 수 없습니다. */
+let 돌아갈 = 'home';
 export async function openDraft(preselect, lean){
+  돌아갈 = !$('tripview').classList.contains('hide') ? '여행' : (ctx.appTab?.() || 'home');
   const today = todayYmd();
   const { data } = await sb.from('trips')
     .select('id,title,destination,start_date,end_date')
@@ -118,7 +123,8 @@ export function closeDraft(fromPop){
   if (!fromPop && history.state?.t2 === 'draft'){ history.back(); return; }
   $('draftview').classList.add('hide');
   $('reviewview').classList.add('hide');
-  ctx.showApp('home');
+  if (돌아갈 === '여행' && !$('tripview').classList.contains('hide')) return;   /* 여행 화면이 아래에 그대로 */
+  ctx.showApp(돌아갈 === '여행' ? 'trips' : 돌아갈);
 }
 $('draftback').addEventListener('click', () => closeDraft());
 

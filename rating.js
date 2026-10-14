@@ -14,20 +14,20 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b873';
-import { sb } from './db.js?v=b873';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b873';
-import { dateRange } from './calc.js?v=b873';
-import { starHtml, paintStars, starValue } from './stars.js?v=b873';
+import { $, esc, josa, tipOff } from './dom.js?v=b874';
+import { sb } from './db.js?v=b874';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b874';
+import { dateRange } from './calc.js?v=b874';
+import { starHtml, paintStars, starValue } from './stars.js?v=b874';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b873';
+         countryInfo } from './cities.js?v=b874';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b873';
-import { openCity } from './city.js?v=b873';
-import { loadCities } from './citysearch.js?v=b873';
+         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b874';
+import { openCity } from './city.js?v=b874';
+import { loadCities } from './citysearch.js?v=b874';
 /* 한줄평 · 맛집 묻기(b861). cmtask.js 는 rating.js 를 안 읽습니다(저장은 ctx) — 고리 없음. */
-import { 물을까, 묻기Html } from './cmtask.js?v=b873';
+import { 물을까, 묻기Html } from './cmtask.js?v=b874';
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }
@@ -181,10 +181,10 @@ const 대륙of = c => continentOf[모국(c)] || '기타';
  *   잡음: 바로 밑 목록에서 별을 다섯 번 눌러도 줄이 「가본 곳엔 별을…」 그대로였습니다).
  *   조용할 때는 **숨기지 않습니다** — 누르는 도중에 줄이 사라지면 목록이 한 줄 위로 올라가 다음 별을 잘못 누릅니다.
  *   문턱이 되면 「확정됐어요」로 말만 바꿔 두고, 다음에 목록을 새로 그릴 때(탭 다시 열기·검색) 사라집니다. */
-const 성향문턱 = 10;
+export const 성향문턱 = 10;
 /* v2: 성향은 **해외** 도시로만 셉니다(card.js personaAxes 머리) — 여기 세는 것도 해외만.
    제자리 안내와 아래 「확정된 순간」이 같이 씁니다. 두 벌로 세면 언젠가 갈립니다. */
-function 해외매긴수(){
+export function 해외매긴수(){   /* ratecc.js(나라별) 막대도 이 셈 하나로(b874) */
   const 국내 = new Set((cities || []).filter(c => c.country === 'KR').map(c => c.id));
   return Object.entries(myRates || {}).filter(([id, r]) => r?.stars != null && !국내.has(id)).length;
 }

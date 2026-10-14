@@ -7069,3 +7069,67 @@ body.kbup .tabbar{ display:none; }
 .auplat .ios{ background:#3b6fe0; } .auplat .and{ background:#2f9e5b; }
 .auplat .k{ margin-top:10px; font-size:var(--f-xs, 12px); color:var(--ink-48); display:flex; align-items:center; gap:4px; }
 .auplat .k i{ display:inline-block; width:8px; height:8px; } .auplat .k i.and{ margin-left:8px; }
+
+/* ── 평가 탭 「나라별」(b874, ratecc.js) ─────────────────────────────── rcc-start
+ * 「나라별 | 전체 도시」 전환 · 나라별일 때는 예전 칸(찾기·빠르게 매기기·지구본·목록)을 숨깁니다. */
+.rtseg{ display:flex; background:var(--gray-tint); border-radius:10px; padding:3px; margin:0 0 14px; }   /* --sunk 는 화면 바탕과 같은 색이라 칸이 안 보였음(재 봄) */
+.rtseg button{ flex:1; padding:8px 0; border:0; background:transparent; border-radius:8px;
+  font-size:var(--f-lg); color:var(--ink-48); }
+.rtseg button.on{ background:var(--canvas); color:var(--ink); font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+#rateview.ccmode > :not(#rtseg):not(#ratecc){ display:none; }
+#rateview:not(.ccmode) > #ratecc{ display:none; }
+#ratecc{ padding:4px 0 24px; }
+.rcc-h{ font-size:var(--f-2xl); font-weight:700; letter-spacing:-.4px; margin:10px 0 4px; color:var(--ink); }
+.rcc-s{ font-size:var(--f-lg); color:var(--ink-48); margin:0 0 14px; }
+.rcc-q{ width:100%; box-sizing:border-box; margin:0 0 12px; font-size:max(var(--in-floor, 16px), 16px); }
+.rcc-grid{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; }
+.rcc-c{ border:1.5px solid var(--hairline); border-radius:12px; padding:12px 4px 10px; background:var(--canvas);
+  display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0; }
+.rcc-c svg{ width:34px; height:34px; }
+.rcc-c b{ font-size:var(--f-lg); font-weight:600; color:var(--ink); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rcc-c span{ font-size:var(--f-sm); color:var(--ink-48); }
+.rcc-c.on{ border-color:var(--ink); background:var(--ink); }
+.rcc-c.on b{ color:var(--canvas); } .rcc-c.on span{ color:var(--canvas); opacity:.65; }
+.rcc-more{ display:block; margin:14px auto 0; }
+.rcc-none{ grid-column:1 / -1; color:var(--ink-48); font-size:var(--f-lg); text-align:center; padding:18px 0; margin:0; }
+.rcc-go{ position:sticky; bottom:calc(10px - var(--tabh, 58px) - 20px);   /* 판 아래 여백(.tabpane = tabh+20)을 되돌려 판 바닥 10px 위에 붙임 — sticky 는 여백 안쪽에서 셈(재 봄 b874: 여백만큼 떠서 화면 가운데에 있었음) */ margin-top:16px; z-index:2; }
+.rcc-go button{ width:100%; height:52px; font-size:var(--f-lg); box-shadow:0 4px 14px rgba(0,0,0,.12); }
+.rcc-goal{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; background:var(--sunk); }
+.rcc-goal .t{ flex:1; font-size:var(--f-lg); color:var(--ink); }
+.rcc-goal .n{ font-variant-numeric:tabular-nums; }
+.rcc-bar{ height:6px; border-radius:3px; background:var(--divider-soft); margin:8px 0 0; overflow:hidden; }
+.rcc-bar i{ display:block; height:100%; background:var(--star); border-radius:3px; transition:width .4s; }
+.rcc-chips{ display:flex; gap:8px; margin:14px 0 2px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+.rcc-chips::-webkit-scrollbar{ display:none; }
+.rcc-chip{ flex:none; padding:7px 13px; border-radius:18px; border:1px solid var(--hairline); background:var(--canvas);
+  font-size:var(--f-lg); color:var(--ink-80); }
+.rcc-chip.on{ background:var(--ink); color:var(--canvas); border-color:var(--ink); }
+.rcc-kr{ font-size:var(--f-md); color:var(--warn); background:var(--warn-bg); border-radius:8px; padding:8px 10px; margin:10px 0 0; }
+.rcc-hint{ font-size:var(--f-md); color:var(--ink-48); margin:10px 0 2px; }
+.rcc-list .rcc-row{ cursor:pointer; }
+.rcc-list .rcc-row + .rcc-row{ border-top:1px solid var(--divider-soft); }
+.rcc-list .rcc-row .t{ flex:1; min-width:0; }
+.rcc-list .rcc-row .stars{ font-size:min(var(--f-2xl), 6vw); flex:none; }
+.rcc-sub{ margin:22px 0 4px; padding-top:14px; border-top:6px solid var(--sunk);
+  font-size:var(--f-lg); font-weight:700; color:var(--ink); }
+.rcc-sub span{ color:var(--ink-48); font-weight:400; margin-left:4px; }
+.rcc-again{ display:block; margin:18px auto 0; }
+.rcc-end{ text-align:center; padding:56px 8px 20px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.rcc-end .big{ font-size:56px; }
+.rcc-end h2{ margin:4px 0 0; font-size:var(--f-2xl); }
+.rcc-end p{ color:var(--ink-48); font-size:var(--f-lg); line-height:1.6; margin:0 0 14px; }
+.rcc-end button{ width:100%; max-width:320px; }
+/* ── 「전체 도시」 정리(b874, 사용자: 「디자인이 너무 엉망 · 다 제각각」 → 추천안) ──
+ * 재 보니 찾기 칸만 12px 안쪽(29px · 다른 줄 17px)이었고, 큰 「빠르게 매기기」(부채+검은 단추)·지구본 줄·「도시」 제목이
+ * 같은 말을 되풀이했습니다. 빠르게 매기기는 얇은 한 줄로, 지구본 줄(기록 탭 칩과 같은 안내)과 「도시」 제목(위 전환이 「전체 도시」)은 숨깁니다.
+ * ⚠ 지우지 않고 숨깁니다 — app.js 가 #globego, rating.js 가 #r_head·#spreefan 을 만집니다. */
+.rqcard{ padding:14px 0 6px; }
+#rateview #globego, #rateview #r_head{ display:none; }
+#rateview #spreego{ padding:12px 2px; gap:10px; border-bottom:1px solid var(--line); }
+#rateview #spreego .ic{ flex:none; color:var(--ink-48); }
+#rateview #spreego .fan{ display:none; }
+#rateview #spreego .t b{ display:inline; font-size:var(--f-lg); }
+#rateview #spreego .t span{ display:inline; margin:0 0 0 6px; }
+#rateview #spreego .go{ padding:0; background:none; color:var(--ink-48); font-weight:600; }
+#rateview #spreego .go::after{ content:' ›'; }
+/* rcc-end */
