@@ -138,27 +138,27 @@ addEventListener('beforeinstallprompt', function(e){
        그냥 흰 화면을 냅니다 — 비슷한 것으로 늘려주지 않습니다.
        새 아이폰이 나오면 여기 한 줄과 그림 한 장이 더 필요합니다.
        기기당 한 장(15~33KB)만 받습니다. -->
-<link rel="apple-touch-startup-image" href="splash/440x956@3x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/440x956@3x.png?v=b875"
       media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 16 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/430x932@3x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/430x932@3x.png?v=b875"
       media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 15/14 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/428x926@3x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/428x926@3x.png?v=b875"
       media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 12~14 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/402x874@3x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/402x874@3x.png?v=b875"
       media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 16 Pro -->
-<link rel="apple-touch-startup-image" href="splash/393x852@3x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/393x852@3x.png?v=b875"
       media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 15/14 Pro -->
-<link rel="apple-touch-startup-image" href="splash/390x844@3x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/390x844@3x.png?v=b875"
       media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 12~14 · 16e -->
-<link rel="apple-touch-startup-image" href="splash/375x812@3x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/375x812@3x.png?v=b875"
       media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- X/XS/11 Pro · 13 mini -->
-<link rel="apple-touch-startup-image" href="splash/414x896@3x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/414x896@3x.png?v=b875"
       media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- XS Max/11 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/414x896@2x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/414x896@2x.png?v=b875"
       media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">  <!-- XR/11 -->
-<link rel="apple-touch-startup-image" href="splash/375x667@2x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/375x667@2x.png?v=b875"
       media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">  <!-- SE 2·3 · 8 -->
-<link rel="apple-touch-startup-image" href="splash/414x736@3x.png?v=b874"
+<link rel="apple-touch-startup-image" href="splash/414x736@3x.png?v=b875"
       media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 8 Plus -->
 
 <!-- ── 링크를 보냈을 때 상대가 보는 것 ──────────────────────────────
@@ -227,93 +227,94 @@ document.fonts?.load('700 1em Dongle').then(() => {
      스크립트와 모듈은 문서 순서대로 실행되므로 unpkg 가 매달리면 뒤에 있는
      app.js 가 **아예 실행되지 않았습니다** — 앱이 통째로 안 켜지고 부팅 실패
      상자만 남았습니다. 지도 하나 때문에 그럴 이유가 없습니다. -->
-<link rel="stylesheet" href="app.css?v=b874">
+<link rel="stylesheet" href="app.css?v=b875">
 <!-- app.js 가 아래 모듈들을 정적 import 합니다(?v= 로 버전 고정). 여기서도 참조를
      남겨야 checkBuild(app.js)·서비스워커(sw.js)의 "새 파일 다 받아진 뒤에만
      새로고침" 스캔이 index.html 글자만 훑어도 이것들을 놓치지 않습니다.
      **모듈을 새로 만들 때마다 여기 한 줄을 같이 더하세요.** -->
-<link rel="modulepreload" href="supabase.js?v=b874">
-<link rel="modulepreload" href="dom.js?v=b874">
-<link rel="modulepreload" href="db.js?v=b874">
-<link rel="modulepreload" href="calc.js?v=b874">
-<link rel="modulepreload" href="rec.js?v=b874">
-<link rel="modulepreload" href="persona.js?v=b874">
-<link rel="modulepreload" href="pmore.js?v=b874">
-<link rel="modulepreload" href="map.js?v=b874">
-<link rel="modulepreload" href="shelf.js?v=b874">
-<link rel="modulepreload" href="city.js?v=b874">
-<link rel="modulepreload" href="aiui.js?v=b874">
-<link rel="modulepreload" href="report.js?v=b874">
-<link rel="modulepreload" href="cards.js?v=b874">
-<link rel="modulepreload" href="expense.js?v=b874">
-<link rel="modulepreload" href="prep.js?v=b874">
-<link rel="modulepreload" href="member.js?v=b874">
-<link rel="modulepreload" href="planmap.js?v=b874">
-<link rel="modulepreload" href="citysearch.js?v=b874">
-<link rel="modulepreload" href="profile.js?v=b874">
-<link rel="modulepreload" href="review.js?v=b874">
-<link rel="modulepreload" href="rating.js?v=b874">
-<link rel="modulepreload" href="notify.js?v=b874">
-<link rel="modulepreload" href="newtrip.js?v=b874">
-<link rel="modulepreload" href="home.js?v=b874">
-<link rel="modulepreload" href="install.js?v=b874">
-<link rel="modulepreload" href="cands.js?v=b874">
-<link rel="modulepreload" href="selfcheck.js?v=b874">
-<link rel="modulepreload" href="bring.js?v=b874">
-<link rel="modulepreload" href="sheetimp.js?v=b874">
-<link rel="modulepreload" href="trash.js?v=b874">
-<link rel="modulepreload" href="plancheck.js?v=b874">
-<link rel="modulepreload" href="aiscreen.js?v=b874">
-<link rel="modulepreload" href="account.js?v=b874">
-<link rel="modulepreload" href="myrecord.js?v=b874">
-<link rel="modulepreload" href="draft.js?v=b874">
-<link rel="modulepreload" href="triplist.js?v=b874">
-<link rel="modulepreload" href="tabs.js?v=b874">
-<link rel="modulepreload" href="planline.js?v=b874">
-<link rel="modulepreload" href="planview.js?v=b874">
-<link rel="modulepreload" href="geocode.js?v=b874">
-<link rel="modulepreload" href="legs.js?v=b874">
-<link rel="modulepreload" href="tripview.js?v=b874">
-<link rel="modulepreload" href="today.js?v=b874">
-<link rel="modulepreload" href="opentrip.js?v=b874">
-<link rel="modulepreload" href="flags.js?v=b874">
-<link rel="modulepreload" href="swreg.js?v=b874">
-<link rel="modulepreload" href="stars.js?v=b874">
-<link rel="modulepreload" href="net.js?v=b874">
-<link rel="modulepreload" href="admin.js?v=b874">
-<link rel="modulepreload" href="adminuse.js?v=b874">
-<link rel="modulepreload" href="dayseen.js?v=b874">
-<link rel="modulepreload" href="glogin.js?v=b874">
-<link rel="modulepreload" href="ui.js?v=b874">
-<link rel="modulepreload" href="card.js?v=b874">
-<link rel="modulepreload" href="trip.js?v=b874">
-<link rel="modulepreload" href="citymap.js?v=b874">
-<link rel="modulepreload" href="rate.js?v=b874">
-<link rel="modulepreload" href="cities.js?v=b874">
-<link rel="modulepreload" href="ai.js?v=b874">
-<link rel="modulepreload" href="un.js?v=b874">
-<link rel="modulepreload" href="world.js?v=b874">
-<link rel="modulepreload" href="rateui.js?v=b874">
-<link rel="modulepreload" href="globe.js?v=b874">
-<link rel="modulepreload" href="anal.js?v=b874">
-<link rel="modulepreload" href="diary.js?v=b874">
-<link rel="modulepreload" href="mate.js?v=b874">
-<link rel="modulepreload" href="photoview.js?v=b874">
-<link rel="modulepreload" href="crop.js?v=b874">
-<link rel="modulepreload" href="cityrev.js?v=b874">
-<link rel="modulepreload" href="ratecc.js?v=b874">
-<link rel="modulepreload" href="cmtask.js?v=b874">
-<link rel="modulepreload" href="activity.js?v=b874">
-<link rel="modulepreload" href="p16.js?v=b874">
-<link rel="modulepreload" href="pshift.js?v=b874">
-<link rel="modulepreload" href="visits.js?v=b874">
-<link rel="modulepreload" href="mycity.js?v=b874">
-<link rel="modulepreload" href="spree.js?v=b874">
-<link rel="modulepreload" href="try.js?v=b874">
-<link rel="modulepreload" href="people.js?v=b874">
-<link rel="modulepreload" href="friends.js?v=b874">
-<link rel="modulepreload" href="setnav.js?v=b874">
-<link rel="modulepreload" href="app.js?v=b874">
+<link rel="modulepreload" href="supabase.js?v=b875">
+<link rel="modulepreload" href="dom.js?v=b875">
+<link rel="modulepreload" href="db.js?v=b875">
+<link rel="modulepreload" href="calc.js?v=b875">
+<link rel="modulepreload" href="rec.js?v=b875">
+<link rel="modulepreload" href="persona.js?v=b875">
+<link rel="modulepreload" href="pmore.js?v=b875">
+<link rel="modulepreload" href="map.js?v=b875">
+<link rel="modulepreload" href="shelf.js?v=b875">
+<link rel="modulepreload" href="city.js?v=b875">
+<link rel="modulepreload" href="aiui.js?v=b875">
+<link rel="modulepreload" href="report.js?v=b875">
+<link rel="modulepreload" href="cards.js?v=b875">
+<link rel="modulepreload" href="expense.js?v=b875">
+<link rel="modulepreload" href="prep.js?v=b875">
+<link rel="modulepreload" href="member.js?v=b875">
+<link rel="modulepreload" href="planmap.js?v=b875">
+<link rel="modulepreload" href="citysearch.js?v=b875">
+<link rel="modulepreload" href="profile.js?v=b875">
+<link rel="modulepreload" href="review.js?v=b875">
+<link rel="modulepreload" href="rating.js?v=b875">
+<link rel="modulepreload" href="notify.js?v=b875">
+<link rel="modulepreload" href="newtrip.js?v=b875">
+<link rel="modulepreload" href="home.js?v=b875">
+<link rel="modulepreload" href="install.js?v=b875">
+<link rel="modulepreload" href="cands.js?v=b875">
+<link rel="modulepreload" href="selfcheck.js?v=b875">
+<link rel="modulepreload" href="bring.js?v=b875">
+<link rel="modulepreload" href="sheetimp.js?v=b875">
+<link rel="modulepreload" href="trash.js?v=b875">
+<link rel="modulepreload" href="plancheck.js?v=b875">
+<link rel="modulepreload" href="aiscreen.js?v=b875">
+<link rel="modulepreload" href="account.js?v=b875">
+<link rel="modulepreload" href="myrecord.js?v=b875">
+<link rel="modulepreload" href="draft.js?v=b875">
+<link rel="modulepreload" href="triplist.js?v=b875">
+<link rel="modulepreload" href="tabs.js?v=b875">
+<link rel="modulepreload" href="planline.js?v=b875">
+<link rel="modulepreload" href="planview.js?v=b875">
+<link rel="modulepreload" href="geocode.js?v=b875">
+<link rel="modulepreload" href="legs.js?v=b875">
+<link rel="modulepreload" href="tripview.js?v=b875">
+<link rel="modulepreload" href="today.js?v=b875">
+<link rel="modulepreload" href="opentrip.js?v=b875">
+<link rel="modulepreload" href="flags.js?v=b875">
+<link rel="modulepreload" href="swreg.js?v=b875">
+<link rel="modulepreload" href="stars.js?v=b875">
+<link rel="modulepreload" href="net.js?v=b875">
+<link rel="modulepreload" href="admin.js?v=b875">
+<link rel="modulepreload" href="adminuse.js?v=b875">
+<link rel="modulepreload" href="dayseen.js?v=b875">
+<link rel="modulepreload" href="glogin.js?v=b875">
+<link rel="modulepreload" href="ui.js?v=b875">
+<link rel="modulepreload" href="card.js?v=b875">
+<link rel="modulepreload" href="trip.js?v=b875">
+<link rel="modulepreload" href="citymap.js?v=b875">
+<link rel="modulepreload" href="rate.js?v=b875">
+<link rel="modulepreload" href="cities.js?v=b875">
+<link rel="modulepreload" href="ai.js?v=b875">
+<link rel="modulepreload" href="un.js?v=b875">
+<link rel="modulepreload" href="world.js?v=b875">
+<link rel="modulepreload" href="rateui.js?v=b875">
+<link rel="modulepreload" href="globe.js?v=b875">
+<link rel="modulepreload" href="anal.js?v=b875">
+<link rel="modulepreload" href="diary.js?v=b875">
+<link rel="modulepreload" href="mate.js?v=b875">
+<link rel="modulepreload" href="photoview.js?v=b875">
+<link rel="modulepreload" href="crop.js?v=b875">
+<link rel="modulepreload" href="cityrev.js?v=b875">
+<link rel="modulepreload" href="ratecc.js?v=b875">
+<link rel="modulepreload" href="live.js?v=b875">
+<link rel="modulepreload" href="cmtask.js?v=b875">
+<link rel="modulepreload" href="activity.js?v=b875">
+<link rel="modulepreload" href="p16.js?v=b875">
+<link rel="modulepreload" href="pshift.js?v=b875">
+<link rel="modulepreload" href="visits.js?v=b875">
+<link rel="modulepreload" href="mycity.js?v=b875">
+<link rel="modulepreload" href="spree.js?v=b875">
+<link rel="modulepreload" href="try.js?v=b875">
+<link rel="modulepreload" href="people.js?v=b875">
+<link rel="modulepreload" href="friends.js?v=b875">
+<link rel="modulepreload" href="setnav.js?v=b875">
+<link rel="modulepreload" href="app.js?v=b875">
 </head>
 <body>
 <!-- ── 스플래시(런치 스크린) ────────────────────────────────────────
@@ -2315,7 +2316,7 @@ document.fonts?.load('700 1em Dongle').then(() => {
         <div class="frtabs admtabs" id="adm_tabs" role="tablist" aria-label="대시보드 나누기">
           <button type="button" role="tab" data-adm="use" class="on" aria-selected="true">사용</button>
           <button type="button" role="tab" data-adm="cost" aria-selected="false">비용</button>
-          <button type="button" role="tab" data-adm="prob" aria-selected="false">문제</button>
+          <button type="button" role="tab" data-adm="prob" aria-selected="false">관리</button>
         </div>
 
         </div><!-- /adm_main -->
@@ -2326,176 +2327,7 @@ document.fonts?.load('700 1em Dongle').then(() => {
            하는 일이 다릅니다. 코드에 박아두면 바꿀 때마다 개발 도구를
            열어야 하므로 값은 db/047 의 app_settings 에 있고
            admin_setting_set 이 모양을 검사합니다. -->
-      <div id="setadmpane" class="hide">
-        <div class="card" style="padding:10px 12px">
-          <button class="ghost" id="adm_setback" style="padding-left:0">← 대시보드</button>
-        </div>
-
-        <!-- ── 상태 한 줄 (b387) ────────────────────────────────────────
-             스위치 여덟 개가 다 초록이라, 하나가 꺼져 있어도 훑어서는
-             몰랐습니다. **꺼져 있으면 그게 사고인데** 눈에 안 띄었습니다.
-             기본과 다른 것이 있을 때만 뜹니다 — 늘 떠 있으면 배경이 됩니다. -->
-        <div class="card hide" id="s_statecard">
-          <div class="srow">
-            <span class="label"><b id="s_statetitle">—</b>
-              <div class="memo" id="s_statelist"></div></span>
-            <button class="small" id="s_reset">전부 되돌리기</button>
-          </div>
-        </div>
-
-        <!-- ⚠ **저장 단추를 없앴습니다 (b387).** 한 화면에서 어떤 것은 즉시
-             나가고 어떤 것은 저장을 눌러야 나갔습니다. 한도를 고치고 저장을
-             안 누르면 안 바뀌는데, 바로 옆 점검 모드는 손끝이 스치면 전원이
-             읽기 전용이 됐습니다. **규칙이 하나여야 합니다 — 고르는 즉시.**
-             (공지만 예외입니다. 글은 '다 썼다'를 기계가 알 수 없어서
-              띄우기를 눌러야 합니다. 그 카드에 그렇게 적어 뒀습니다.) -->
-        <!-- 이 폰에서만(b863, 사용자: 「눈금자 키고 끄는걸 관리자 탭안에다 넣어줘 내가 키고 끄게」).
-             서버 설정(아래 「조절」)과 달리 이 기기에만 남습니다(localStorage t2:kbdbg). 홈 화면 앱은 사파리와 저장 공간이 따로라
-             주소 ?kb=1 로는 못 켜서 여기 둡니다. -->
-        <div class="card" id="adm_devcard">
-          <h2>이 폰에서만</h2>
-          <div class="srow">
-            <span class="label"><b>키보드 눈금자</b>
-              <div class="memo">입력칸을 누를 때 화면이 깨지면 켜고 그 화면을 찍어 보내 주세요. 왼쪽 위에 숫자가 떠요.</div></span>
-            <label class="sw"><input type="checkbox" id="s_ruler"><span></span></label>
-          </div>
-        </div>
-        <div class="card" id="adm_setcard">
-          <h2>조절</h2>
-
-          <div class="srow">
-            <span class="label"><b>AI 하루 한도</b>
-              <div class="memo">끄면 아무도 안 막힙니다. 관리자는 켜도 무제한이에요.</div></span>
-            <label class="sw"><input type="checkbox" id="s_ailimit"><span></span></label>
-          </div>
-          <!-- 한도를 끈 상태에서는 숫자 칸이 의미가 없어 흐려집니다. -->
-          <div class="row" id="s_ailimit_nums">
-            <span class="label">한도 횟수</span>
-            <span class="v" style="display:flex; gap:6px; align-items:center">
-              <input type="number" id="s_ai_day" min="1" max="10000"
-                     style="width:72px" aria-label="평소 하루 한도">
-              <span class="memo">평소</span>
-              <input type="number" id="s_ai_trip" min="1" max="10000"
-                     style="width:72px" aria-label="여행 중 하루 한도">
-              <span class="memo">여행 중</span>
-            </span>
-          </div>
-
-          <div class="srow">
-            <span class="label"><b>웹 검색</b>
-              <div class="memo">끄면 검색 크레딧이 안 나갑니다. 답은 검색 없이 계속해요.</div></span>
-            <label class="sw"><input type="checkbox" id="s_web"><span></span></label>
-          </div>
-
-          <div class="row">
-            <span class="label"><b>AI 모델</b>
-              <div class="memo">가벼운 쪽은 싸지만 불러오기에서 일정을 빠뜨린 적이 있어요.</div></span>
-            <span class="v"><select id="s_model" style="width:auto">
-              <option value="gemini-3.6-flash">기본 (정확)</option>
-              <option value="gemini-3.5-flash-lite">가벼움 (쌈)</option>
-            </select></span>
-          </div>
-
-          <div class="snote" id="s_note">설정을 읽는 중…</div>
-          <pre id="serr" class="hide"></pre>
-        </div>
-
-        <!-- ── 비상 스위치 ── 일이 터졌을 때 **배포를 기다리지 않아도 되는**
-             것들입니다. 배포는 몇 분 걸리고 그 사이에도 돈이 나가거나
-             잘못된 알림이 계속 갑니다. 누르는 즉시 나갑니다.
-             ⚠ **평소에는 접어 둡니다 (b387).** 몇 달에 한 번 쓰는 자리가
-                화면 한 판을 차지하고 있었습니다. 제목 옆 요약만 보면
-                정상인지 아닌지 알 수 있으니, 이상할 때만 펴면 됩니다. -->
-        <div class="card">
-          <h2 class="sfold" data-fold="s_embody" style="cursor:pointer">
-            <span class="grow">비상 스위치</span>
-            <span class="val" id="s_emsum">—</span>
-            <span class="val" id="s_emcaret">›</span></h2>
-          <div id="s_embody" class="hide">
-          <!-- ⚠ **위험한 셋은 한 번 묻습니다 (b387).** 초록 스위치 여덟 개가
-               다 똑같이 생겼는데 '여행 서류'는 작은 기능이고 '점검 모드'는
-               서비스 정지입니다. 무게가 같아 보이면 안 됩니다. -->
-          <div class="awarn hide" id="s_confirm">
-            <b id="s_confirmq">—</b>
-            <div style="margin-top:10px; display:flex; gap:8px">
-              <button class="small" id="s_confirmyes">할게요</button>
-              <button class="ghost" id="s_confirmno">취소</button>
-            </div>
-          </div>
-          <div class="srow">
-            <span class="label"><b>AI 켜기</b>
-              <div class="memo">끄면 모든 AI 기능이 멈춥니다. 요금이 새는 것을 즉시 막는 자리예요.</div></span>
-            <label class="sw"><input type="checkbox" id="s_aion" data-now="ai_on"><span></span></label>
-          </div>
-          <div class="srow">
-            <span class="label"><b>가입 받기</b>
-              <div class="memo">끄면 새로 가입만 막힙니다. 쓰던 사람은 그대로예요.</div></span>
-            <label class="sw"><input type="checkbox" id="s_signup" data-now="signup_on"><span></span></label>
-          </div>
-          <div class="srow">
-            <span class="label"><b>알림 보내기</b>
-              <div class="memo">끄면 잠금화면 알림이 안 나갑니다. 서버에서 아예 안 만들어요.</div></span>
-            <label class="sw"><input type="checkbox" id="s_push" data-now="push_on"><span></span></label>
-          </div>
-          <div class="srow">
-            <span class="label"><b>점검 모드</b>
-              <div class="memo">켜면 모두가 읽기만 됩니다. SQL 을 돌리는 동안 쓰세요.</div></span>
-            <label class="sw"><input type="checkbox" id="s_readonly" data-now="readonly"><span></span></label>
-          </div>
-          <div class="snote" id="s_swnote">누르면 바로 적용됩니다.</div>
-          </div>
-        </div>
-
-        <!-- ── 공지 ── 사용자에게 말을 걸 유일한 수단입니다.
-             지금까지는 무슨 일이 생겨도 알려줄 방법이 아예 없었습니다.
-             ⚠ **여기만 단추가 남습니다.** 글은 '다 썼다'를 기계가 알 수 없어
-                한 글자마다 내보낼 수가 없습니다. 왜 다른지 아래에 적었습니다. -->
-        <div class="card">
-          <h2><span class="grow">공지 한 줄</span>
-            <button class="small" id="s_noticesave">띄우기</button></h2>
-          <input id="s_notice" maxlength="200"
-                 placeholder="예: 오늘 밤 12시에 잠깐 멈춰요">
-          <div class="days" id="s_tone" style="margin:10px 0 0">
-            <button class="day on" data-tone="info">안내</button>
-            <button class="day" data-tone="warn">경고</button>
-          </div>
-          <div class="snote">여기만 <b>띄우기</b>를 눌러야 나갑니다 — 쓰다 만 글이
-            모두에게 보이면 안 되니까요. 비우고 띄우면 내려갑니다.</div>
-        </div>
-
-        <!-- ── 기능 스위치 ── 배포한 기능에 문제가 생겼을 때 배포 없이
-             그것만 끕니다. 평소에는 접어 둡니다(위와 같은 이유). -->
-        <div class="card">
-          <h2 class="sfold" data-fold="s_featbody" style="cursor:pointer">
-            <span class="grow">기능 스위치</span>
-            <span class="val" id="s_featsum">—</span>
-            <span class="val" id="s_featcaret">›</span></h2>
-          <div id="s_featbody" class="hide">
-          <div class="srow">
-            <span class="label"><b>잠금화면 알림</b>
-              <div class="memo">프로필 → 알림의 스위치 자체를 감춥니다.</div></span>
-            <label class="sw"><input type="checkbox" id="f_push" data-feat="push"><span></span></label>
-          </div>
-          <div class="srow">
-            <span class="label"><b>여행 서류</b>
-              <div class="memo">준비 탭의 '서류' 단추.</div></span>
-            <label class="sw"><input type="checkbox" id="f_docs" data-feat="docs"><span></span></label>
-          </div>
-          <div class="srow">
-            <span class="label"><b>끌어서 순서 바꾸기</b>
-              <div class="memo">일정 줄 오른쪽 손잡이.</div></span>
-            <label class="sw"><input type="checkbox" id="f_reorder" data-feat="reorder"><span></span></label>
-          </div>
-          <div class="srow">
-            <span class="label"><b>지도 링크 읽기</b>
-              <div class="memo">일정 폼에 붙여넣은 구글 지도 주소를 서버가 폅니다.</div></span>
-            <label class="sw"><input type="checkbox" id="f_maplink" data-feat="maplink"><span></span></label>
-          </div>
-          <!-- 「탭 좌우 스와이프」 스위치가 여기 있었습니다(b491 — 취향을 견줘 보려고 둔 것).
-               b781 에 사용자가 스와이프를 끄기로 정해서 스위치째 걷었습니다(app.css 의 #tabdeck). -->
-          </div>
-        </div>
-      </div><!-- /setadmpane -->
+      <!-- 「조절」 한 겹(setadmpane)은 걷었습니다(b875, 사용자) — AI 한도·검색·모델은 「비용」, 나머지 스위치·공지·눈금자는 「관리」(옛 「문제」) 칸. -->
 
         <!-- 조절이 이 사이에 끼어 있어서 묶음이 둘로 갈립니다.
              둘 다 같이 감췄다 폈다 합니다. -->
@@ -2503,56 +2335,113 @@ document.fonts?.load('700 1em Dongle').then(() => {
         <!-- ── 사용(b815) — 유튜브 스튜디오 「분석 › 개요」처럼. 속은 adminuse.js 가 그립니다(db/112 admin_usage). -->
         <div id="adm_use"></div>
 
-        <!-- ── 비용(b815) — 한도를 바꾸는 「조절」과 이번 달 쓴 양. -->
+        <!-- ── 비용(b875 다시 짬, 사용자: 「기능끼리 묶고 부연 설명 줄이자」 · 시안 승인) ──
+             위: AI · 웹 검색 쓴 양(admin.js 가 adm_stats 에 그림) / 아래: AI 조절(값은 db/047 app_settings · 고르는 즉시 나감). -->
         <div id="adm_cost" class="hide">
-        <!-- ── 조절 ── 코드에 박아두면 바꿀 때마다 개발 도구를 열어야 합니다.
-             돈에 직결된 셋만 여기 둡니다. 값은 db/047 의 app_settings 에 있고
-             admin_setting_set 이 모양을 검사합니다.
-             **조절은 한 겹 안으로 넣었습니다.** 실제로 바꾸는 일은 몇 달에 한 번입니다 —
-             보러 오는 것(숫자)이 먼저 보이고, 바꾸러 왔으면 한 번 더 누릅니다. -->
-        <div class="card" id="adm_setopen" style="cursor:pointer">
-          <h2><span class="grow">조절</span>
-            <span class="val" id="adm_setsum">AI 한도 · 웹 검색 · 모델</span>
-            <span class="val">›</span></h2>
-        </div>
-        <div class="card">
-          <h2><span class="grow">한도와 쓴 양</span>
-            <button class="small" id="adm_refresh">새로고침</button></h2>
-          <div id="adm_stats"><div class="empty"><span class="load">세는 중…</span></div></div>
+        <div class="adtop"><button class="ghost small" id="adm_refresh">새로고침</button></div>
+        <div id="adm_stats"><div class="empty"><span class="load">세는 중…</span></div></div>
+        <div class="adsec">AI 조절</div>
+        <div class="adbox" id="adm_setcard">
+          <div class="srow">
+            <span class="label"><b>AI 하루 한도</b></span>
+            <label class="sw"><input type="checkbox" id="s_ailimit"><span></span></label>
+          </div>
+          <div class="srow" id="s_ailimit_nums">
+            <span class="label"><b>한도 횟수</b></span>
+            <span class="adnum">
+              <input type="number" id="s_ai_day" min="1" max="10000" aria-label="평소 하루 한도"><span>평소</span>
+              <input type="number" id="s_ai_trip" min="1" max="10000" aria-label="여행 중 하루 한도"><span>여행 중</span>
+            </span>
+          </div>
+          <div class="srow">
+            <span class="label"><b>웹 검색</b></span>
+            <label class="sw"><input type="checkbox" id="s_web"><span></span></label>
+          </div>
+          <div class="srow">
+            <span class="label"><b>AI 모델</b></span>
+            <select id="s_model" class="adsel">
+              <option value="gemini-3.6-flash">기본 (정확)</option>
+              <option value="gemini-3.5-flash-lite">가벼움 (쌈)</option>
+            </select>
+          </div>
+          <div class="snote" id="s_note">설정을 읽는 중…</div>
+          <pre id="serr" class="hide"></pre>
         </div>
         </div><!-- /adm_cost -->
 
-        <!-- ── 문제(b815) — 사람 신고 · 최근 신고와 오류 · 숫자 · 로그인 시험. -->
+        <!-- ── 관리(옛 「문제」, b875 다시 짬) — 스위치 상태 한 줄 · 할 일 · 공지 · 스위치(비상·기능) · 시험.
+             ⚠ 저장 단추는 없습니다(b387) — 스위치는 누르는 즉시, 공지만 「띄우기」. -->
         <div id="adm_prob" class="hide">
-        <!-- 신고와 오류. 없으면 카드째 숨깁니다 — 빈 카드는 자리만 먹습니다.
-             ⚠ **맨 위로 올렸습니다(b380).** 전에는 숫자 카드(1,800px) 뒤에
-             있었는데, 대시보드를 여는 이유 중 제일 급한 것이 이겁니다 —
-             2026-08-19 에 이 목록만 읽고 라이브 버그 둘을 잡았습니다.
-             숫자는 추세라 나중에 봐도 되지만 오류는 지금 나고 있는 것입니다. -->
-        <!-- 사람 신고(b789, db/101·102). 처리 안 한 것만 — 「처리함」을 누르면 빠집니다.
-             ⚠ 누가 신고했는지는 여기(관리자)에만 나옵니다. -->
-        <div class="card hide" id="adm_repcard">
+        <div class="adstate hide" id="s_statecard">
+          <span class="t"><b id="s_statetitle">—</b><span id="s_statelist"></span></span>
+          <button class="small" id="s_reset">전부 되돌리기</button>
+        </div>
+
+        <div class="adsec"><span class="grow">할 일</span><button class="ghost small" id="adm_probrefresh">새로고침</button></div>
+        <div class="adbox"><div id="adm_probnum"><div class="empty"><span class="load">세는 중…</span></div></div></div>
+        <!-- 사람 신고(b789) · 최근 신고와 오류 — 없으면 카드째 숨김(admin.js). 누가 신고했는지는 관리자에게만. -->
+        <div class="card hide adlist" id="adm_repcard">
           <h2><span class="grow">사람 신고 <span class="memo" id="adm_repn"></span></span></h2>
           <div id="adm_reports"></div>
         </div>
-        <div class="card hide" id="adm_feedcard">
+        <div class="card hide adlist" id="adm_feedcard">
           <h2>최근 신고와 오류</h2>
           <div id="adm_feed"></div>
         </div>
-        <div class="card">
-          <h2><span class="grow">숫자</span>
-            <button class="small" id="adm_probrefresh">새로고침</button></h2>
-          <div id="adm_probnum"><div class="empty"><span class="load">세는 중…</span></div></div>
+
+        <div class="adsec">공지</div>
+        <div class="adbox adpad">
+          <input id="s_notice" maxlength="200" placeholder="예: 오늘 밤 12시에 잠깐 멈춰요">
+          <div class="adnotice">
+            <div class="days" id="s_tone">
+              <button class="day on" data-tone="info">안내</button>
+              <button class="day" data-tone="warn">경고</button>
+            </div>
+            <button class="small" id="s_noticesave">띄우기</button>
+          </div>
         </div>
-        <!-- (「구글 로그인 시험 ›」 링크와 gsitest.html 은 b819 에 걷었습니다 — 시험으로 고른 길(② 화면 넘기기)이
-             b816 에 첫 화면 로그인이 됐고(glogin.js · login.html), 사용자: 「이것도 걷자」.) -->
-        <!-- 시험(b855) — 관리자만 봅니다(이 화면이 관리자에게만 열림). 사용자: 「관리자 계정만 다시 뜨게 해줘봐 난 확인해봐야지」.
-             누르면 이 기기에서만 「본 성향」을 지난 것으로 되돌리고 기록 탭을 엽니다 — 그 자리에서 진짜 계산으로 팝업이 뜹니다
-             (pshift.js 성향팝업다시 · app.js). 서버 값은 안 바뀝니다. -->
-        <div class="card">
-          <h2>시험</h2>
-          <button type="button" class="small" id="adm_pshift">성향 바뀜 팝업 다시 보기 ›</button>
-          <p class="memo" style="margin-top:8px">이 기기에서만 「지난 성향」을 되돌려 기록 탭에서 팝업을 다시 띄워요. 서버 값은 안 바뀌어요.</p>
+
+        <div class="adsec">스위치</div>
+        <div class="adbox">
+          <div class="adgrp">비상 <span id="s_emsum">—</span><span id="s_emcaret" class="hide"></span></div>
+          <div id="s_embody">
+          <div class="awarn hide" id="s_confirm">
+            <b id="s_confirmq">—</b>
+            <div style="margin-top:10px; display:flex; gap:8px">
+              <button class="small" id="s_confirmyes">할게요</button>
+              <button class="ghost" id="s_confirmno">취소</button>
+            </div>
+          </div>
+          <div class="srow"><span class="label"><b>AI</b></span>
+            <label class="sw"><input type="checkbox" id="s_aion" data-now="ai_on"><span></span></label></div>
+          <div class="srow"><span class="label"><b>가입</b></span>
+            <label class="sw"><input type="checkbox" id="s_signup" data-now="signup_on"><span></span></label></div>
+          <div class="srow"><span class="label"><b>알림</b></span>
+            <label class="sw"><input type="checkbox" id="s_push" data-now="push_on"><span></span></label></div>
+          <div class="srow"><span class="label"><b>점검 모드</b><div class="memo">켜면 모두 읽기만</div></span>
+            <label class="sw"><input type="checkbox" id="s_readonly" data-now="readonly"><span></span></label></div>
+          <div class="snote" id="s_swnote"></div>
+          </div>
+          <div class="adgrp">기능 <span id="s_featsum">—</span><span id="s_featcaret" class="hide"></span></div>
+          <div id="s_featbody">
+          <div class="srow"><span class="label"><b>잠금화면 알림</b></span>
+            <label class="sw"><input type="checkbox" id="f_push" data-feat="push"><span></span></label></div>
+          <div class="srow"><span class="label"><b>여행 서류</b></span>
+            <label class="sw"><input type="checkbox" id="f_docs" data-feat="docs"><span></span></label></div>
+          <div class="srow"><span class="label"><b>끌어서 순서 바꾸기</b></span>
+            <label class="sw"><input type="checkbox" id="f_reorder" data-feat="reorder"><span></span></label></div>
+          <div class="srow"><span class="label"><b>지도 링크 읽기</b></span>
+            <label class="sw"><input type="checkbox" id="f_maplink" data-feat="maplink"><span></span></label></div>
+          </div>
+        </div>
+
+        <!-- 시험 — 성향 팝업(b855, 이 기기에서만 지난 성향으로 되돌림) · 키보드 눈금자(b863, 이 기기에만 · localStorage t2:kbdbg). -->
+        <div class="adsec">시험</div>
+        <div class="adbox" id="adm_devcard">
+          <div class="srow"><span class="label"><b>성향 바뀜 팝업</b></span>
+            <button type="button" class="ghost small" id="adm_pshift">다시 보기 ›</button></div>
+          <div class="srow"><span class="label"><b>키보드 눈금자</b><div class="memo">이 폰에서만</div></span>
+            <label class="sw"><input type="checkbox" id="s_ruler"><span></span></label></div>
         </div>
         </div><!-- /adm_prob -->
 
@@ -2564,7 +2453,7 @@ document.fonts?.load('700 1em Dongle').then(() => {
            **여기 프로필 맨 아래에만 둡니다.** 전에는 </main> 바로 앞에 있어서,
            보고 있는 탭이 무엇이든 그 아래에 곧장 붙어 목록 한가운데 떠 있는
            것처럼 보였습니다. 관리자가 일부러 찾아봐야 하는 자리로 옮깁니다. -->
-      <p class="foot hide" id="foot">화면 <code id="build">b874</code> · <span id="ms">—</span></p>
+      <p class="foot hide" id="foot">화면 <code id="build">b875</code> · <span id="ms">—</span></p>
     </div><!-- /setview -->
 
     <!-- ── 친구(b789, friends.js) · 남의 프로필(b789, people.js) ──────────────
@@ -3489,7 +3378,7 @@ document.fonts?.load('700 1em Dongle').then(() => {
   </div>
 </div>
 
-<script type="module" src="app.js?v=b874"></script>
+<script type="module" src="app.js?v=b875"></script>
 </body>
 </html>
 

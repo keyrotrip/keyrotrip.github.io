@@ -13,17 +13,17 @@
  * 자료를 건드리므로 여기로 가져오면 안 됩니다.
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
-import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b874';
-import { sb } from './db.js?v=b874';
-import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b874';
-import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b874';
-import { starHtml, starValue } from './stars.js?v=b874';
-import { localTime } from './calc.js?v=b874';
-import { fail, netIsDown } from './net.js?v=b874';
+import { $, esc, avatarImg, emptyDo, fitImage, toast } from './dom.js?v=b875';
+import { sb } from './db.js?v=b875';
+import { cities, countryName, countryInfo, continentOf, cityCountry } from './cities.js?v=b875';
+import { myRates, cityStat, visited, 별받음 } from './rate.js?v=b875';
+import { starHtml, starValue } from './stars.js?v=b875';
+import { localTime } from './calc.js?v=b875';
+import { fail, netIsDown } from './net.js?v=b875';
 /* 후기 줄·후기 화면(b858). cityrev.js 는 이 파일을 안 읽습니다(도시 열기는 ctx 로) — 고리 없음. */
-import { revRowsHtml } from './cityrev.js?v=b874';
+import { revRowsHtml } from './cityrev.js?v=b875';
 /* 「○○ 맛집 추천」 칸(b861, db/124) — cmtask.js 는 이 파일을 안 읽습니다(고리 없음). */
-import { foodsHtml } from './cmtask.js?v=b874';
+import { foodsHtml } from './cmtask.js?v=b875';
 
 /* 지금 열려 있는 도시. **app.js 에 있던 것을 여기로 옮겼습니다(b329)** —
    여닫는 것은 이 파일이 하는데 변수만 저쪽에 있어서, 떼어낸 뒤

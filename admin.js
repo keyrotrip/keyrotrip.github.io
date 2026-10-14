@@ -11,19 +11,20 @@
  * 화면을 뜯어도 남의 자료는 안 나옵니다. 서버 쪽 함수가 is_admin() 을
  * 확인하므로 여기서 막는 것은 그저 안 보여주는 것뿐입니다.
  */
-import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b874';
-import { sb } from './db.js?v=b874';
-import { fail, netTimeout } from './net.js?v=b874';
+import { $, esc, toast, copyText, toTop, coverDeck, emptyDo } from './dom.js?v=b875';
+import { sb } from './db.js?v=b875';
+import { fail, netTimeout } from './net.js?v=b875';
 /* 사람 신고의 「보기」(b789) — 그 사람 화면을 대시보드 위에 엽니다. */
-import { openPerson } from './people.js?v=b874';
+import { openPerson } from './people.js?v=b875';
 /* 기능 스위치를 바꾸면 그 자리에서 화면에 먹입니다(b491) — flags.js 머리말. */
-import { reapplyFeatures } from './flags.js?v=b874';
+import { reapplyFeatures } from './flags.js?v=b875';
 /* 「사용」 칸(b815) — 유튜브 스튜디오처럼. 관리자 화면을 열 때 받습니다(로그인마다 세지 않게). */
-import { loadUsage } from './adminuse.js?v=b874';
+import { loadUsage } from './adminuse.js?v=b875';
 
 /* ── 칸 셋 「사용 | 비용 | 문제」(b815, 사용자가 고름) ─────────────────────────
  * 분석 탭의 「성향 | 별점 | 어워즈」(anal.js)와 같은 모양·같은 규칙 — 고른 칸은 앱이 켜져 있는 동안 기억합니다.
- * 사용 = 가입·쓴 사람·별점·흐름(adminuse.js) · 비용 = AI·검색 한도와 「조절」 · 문제 = 오류·신고·로그인 시험. */
+ * 사용 = 가입·쓴 사람·별점·흐름(adminuse.js) · 비용 = AI·검색 쓴 양과 AI 조절 · 관리(옛 「문제」, b875) = 오류·신고·로그인 시험 + 공지·비상·기능 스위치·눈금자.
+ * ⚠ 칸 열쇠는 그대로 'prob' 입니다 — 이름만 바꿈. */
 let 지금칸 = 'use';
 function 칸보이기(){
   for (const [k, id] of [['use', 'adm_use'], ['cost', 'adm_cost'], ['prob', 'adm_prob']])
@@ -97,100 +98,47 @@ export async function loadAdmin(){
      쓰는 데가 없어진 함수는 남겨두면 다음 사람이 "왜 안 쓰지" 를 한 번
      생각하게 됩니다. `.atiles`·`.atile` CSS 도 같이 걷었습니다. */
 
-  /* 예산 막대. 숫자만 늘어놓으면 "많은 건가?"를 판단 못 합니다.
-     80% 를 넘으면 색이 바뀝니다 — 그때부터는 손을 써야 합니다. */
-  const bar = (title, used, budget, pct, foot) => {
-    if (!budget) return '';
-    const p = Math.min(num(pct), 100);
-    const tone = p >= 90 ? 'bad' : p >= 70 ? 'warn' : '';
-    return `<div class="abar ${tone}">
-      <div class="t"><span>${esc(title)}</span>
-        <span class="p">${n(used)} / ${n(budget)} · ${p}%</span></div>
-      <div class="track"><i style="width:${p}%"></i></div>
-      ${foot ? `<div class="f">${esc(foot)}</div>` : ''}</div>`;
-  };
-
-  /* 표는 .row 를 쓰다가 글자가 너무 커서 한 줄이 화면을 다 먹었습니다.
-     여기는 숫자를 훑는 자리라 촘촘해야 합니다. 전용 줄을 씁니다. */
-  const grp = (title, rows) =>
-    `<div class="agrp">${esc(title)}</div>` +
-    rows.filter(Boolean).map(([k, v, m]) => `<div class="arow">
-      <span class="k">${esc(k)}${m ? `<span class="m">${esc(m)}</span>` : ''}</span>
-      <span class="v">${esc(v)}</span></div>`).join('');
-
-  /* 예산이 며칠 남았는지. 최근 7일 평균으로 나눈 값이라 어제 갑자기 몰렸으면
-     짧게 나옵니다. 정확한 예언이 아니라 "슬슬 봐야 하나"의 신호입니다. */
-  const days = d.ai_days_left == null ? '아직 쓴 기록이 없어 계산할 수 없습니다'
-    : num(d.ai_days_left) > 60 ? `하루 평균 ${n(d.ai_avg)}회. 여유 있습니다`
-    : `하루 평균 ${n(d.ai_avg)}회 · 이 속도면 ${n(d.ai_days_left)}일 뒤에 예산을 다 씁니다`;
+  /* (예산 막대 bar · 표 grp · 남은 날 days 는 b875 에 걷음 — 아래 세칸·줄·예산이 대신) */
 
   const blocked = num(d.ai_blocked_7d);
   const saved   = num(d.se_hits_month);
 
+  /* 세 칸 · 예산 막대 · 줄 — 비용·관리 칸이 같이 씁니다(b875, 사용자: 「기능끼리 묶고 부연 설명 줄이자」). */
+  const 세칸 = xs => `<div class="adcnt">${xs.map(([l, v, bad]) => `<div><span>${esc(l)}</span><b class="${bad ? 'bad' : ''}">${esc(v)}</b></div>`).join('')}</div>`;
+  const 숫자줄 = (k, v) => `<div class="adrow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`;
+  const 예산 = (used, budget, pct) => {
+    if (!budget) return '';
+    const p = Math.min(num(pct), 100), tone = p >= 90 ? 'bad' : p >= 70 ? 'warn' : '';
+    return `<div class="admeter ${tone}"><div class="t"><span>이번 달 예산</span><span><b>${n(used)}</b> / ${n(budget)}</span></div>
+      <div class="track"><i style="width:${p}%"></i></div></div>`;
+  };
   $('adm_stats').innerHTML =
-    /* 손을 써야 하는 것이 있으면 맨 위입니다. 표 안에 묻으면 안 봅니다. */
-    /* **"아래 조절에서 바꾸세요"라고만 하고 갈 길을 안 줬습니다.** 조절이
-       한 겹 안으로 들어갔으니 더 그렇습니다 — 눌러서 바로 가게 합니다.
-       그리고 한 번 보고 판단했으면 닫을 수 있어야 합니다. 안 그러면 늘
-       빨간 상자가 떠 있어서, 정말 급할 때도 배경처럼 지나칩니다.
-       숫자가 늘면 다시 뜹니다(닫은 값과 다르면). */
+    /* 한도에 막힌 사람이 있으면 맨 위 — 닫으면 숫자가 늘 때까지 안 뜸(t2:adm:seenblk). */
     (blocked && String(blocked) !== localStorage.getItem('t2:adm:seenblk')
-      ? `<div class="awarn">최근 7일 동안 <b>${n(blocked)}번</b> 한도에 막혔습니다.
-       ${num(d.ai_blocked_today) ? `오늘만 ${n(d.ai_blocked_today)}번입니다. ` : ''}
-       더 쓰고 싶은데 못 쓴 사람이 있다는 뜻이라 자주 막히면 다시 안 옵니다.
+      ? `<div class="awarn">최근 7일 <b>${n(blocked)}번</b> 한도에 막혔어요${num(d.ai_blocked_today) ? ` · 오늘 ${n(d.ai_blocked_today)}번` : ''}
        <div style="margin-top:10px; display:flex; gap:8px">
          <button class="small" id="adm_goset">한도 바꾸기</button>
-         <button class="ghost" id="adm_hideblk" data-blk="${esc(String(blocked))}">
-           알겠어요</button>
+         <button class="ghost" id="adm_hideblk" data-blk="${esc(String(blocked))}">알겠어요</button>
        </div></div>` : '') +
-
-    /* ⚠ 여기 요약 띠(`.atiles`) 넉 장이 있었습니다 — **b380 에서 걷었습니다.**
-       가입자 · 최근 7일 쓴 사람 · 만들어진 여행 · 오늘 AI. 재보니 **넷 다 아래
-       상세에 그대로 또 나옵니다**(`최근 30일 203회` 는 세 번 나왔습니다).
-       요약이 아래를 줄여주는 것이 아니라 같은 말을 한 번 더 하는 것이라,
-       빼도 잃는 정보가 0 입니다. 대시보드가 2,848px 이었던 이유의 한 몫입니다. */
-    `<div class="agrp">이번 달 얼마나 썼나</div>` +
-    bar('AI · Gemini', d.ai_month, d.ai_budget, d.ai_pct, days) +
-    bar('웹 검색 · Tavily', d.se_month, d.se_budget, d.se_pct,
-        saved ? `보관함이 ${n(saved)}번 막아줘서 그만큼 크레딧을 안 썼습니다`
-              : '아직 보관함이 막아준 검색이 없습니다') +
-    `<div class="anote">여기 예산은 <b>직접 정해둔 값</b>이에요.
-      구글·Tavily가 알려주는 실제 잔여량이 아닙니다 — 그건 각 콘솔에서만 볼 수 있어서,
-      거기서 확인한 뒤 <code>app_config</code> 에 옮겨 적어야 맞습니다.</div>` +
-
-    /* ⚠⚠ **「쓰는 사람」·「쌓인 자료」 두 묶음을 걷었습니다(b815).** ⚠⚠
-       「사용」 칸(adminuse.js · db/112)이 더 정확히 말합니다. 여기 숫자는 틀린 데가 있었습니다 —
-       「최근 7일 쓴 사람」은 일정·지출·별점을 «고친» 사람만(보기만 한 사람 0), 「가입만 하고 안 쓴 사람」은
-       여행 0개로 셌습니다(별점만 매긴 사람도 «안 쓴 사람»). 이제 이 칸은 **돈 드는 것**(AI·검색)만 봅니다.
-       여행 쪽 숫자(지금 여행 중 · 일행과 함께 쓰는 여행)는 사용 칸 「지금까지 쌓인 것」으로 갔습니다. */
-    grp('AI · Gemini', [
-      ['오늘', n(d.ai_today) + '회', `어제는 ${n(d.ai_yday)}회였습니다`],
-      ['최근 7일', n(d.ai_7d) + '회', `하루 평균 ${n(d.ai_avg)}회`],
-      ['최근 30일', n(d.ai_30d) + '회'],
-      ['이번 달 누적', n(d.ai_month) + '회',
-       `예산 ${n(d.ai_budget)}회 가운데 ${n(d.ai_left)}회 남았습니다`],
-      ['그중 일정 검토 (7일)', n(d.ai_review_7d) + '회',
-       '일반 대화와 따로 셉니다. 아까워서 안 쓰게 되면 안 되니까요'],
-      ['오늘 가장 많이 쓴 사람', n(d.ai_top_today) + '회', '한 사람 기준'],
-      ['한도에 막힌 횟수', `오늘 ${n(d.ai_blocked_today)}회 · 7일 ${n(d.ai_blocked_7d)}회`,
-       '0이 아니면 더 쓰고 싶은데 못 쓴 사람이 있다는 뜻입니다'],
-    ]) +
-    grp('웹 검색 · Tavily', [
-      ['오늘 나간 검색', n(d.se_today) + '회', '실제로 크레딧을 쓴 횟수입니다'],
-      ['최근 7일', n(d.se_7d) + '회'],
-      ['이번 달 누적', n(d.se_month) + '회',
-       `예산 ${n(d.se_budget)}회 가운데 ${n(d.se_left)}회 남았습니다`],
-      ['보관함이 막아준 검색', n(d.se_hits_month) + '회',
-       '같은 검색을 다시 안 해서 아낀 크레딧입니다'],
-      ['지금 담아둔 검색', n(d.se_cached) + '건',
-       '6시간이 지나면 지웁니다. 누적이 아니라 현재 보관량입니다'],
-    ]);
+    `<div class="adsec">AI</div><div class="adbox">` +
+      세칸([['오늘', n(d.ai_today)], ['7일', n(d.ai_7d)], ['이번 달', n(d.ai_month)]]) +
+      예산(d.ai_month, d.ai_budget, d.ai_pct) +
+      숫자줄('일정 검토 (7일)', n(d.ai_review_7d) + '회') +
+      숫자줄('오늘 가장 많이 쓴 사람', n(d.ai_top_today) + '회') +
+      숫자줄('한도에 막힘', `오늘 ${n(d.ai_blocked_today)} · 7일 ${n(d.ai_blocked_7d)}`) +
+    `</div>` +
+    `<div class="adsec">웹 검색</div><div class="adbox">` +
+      세칸([['오늘', n(d.se_today)], ['7일', n(d.se_7d)], ['이번 달', n(d.se_month)]]) +
+      예산(d.se_month, d.se_budget, d.se_pct) +
+      숫자줄('보관함이 막아 준 검색', n(saved) + '건') +
+      숫자줄('지금 담아 둔 검색', n(d.se_cached) + '건') +
+    `</div>` +
+    `<p class="adfoot">예산은 직접 정한 값이에요(app_config).</p>`;
   /* 「문제」 칸의 숫자 둘(b815 — 대시보드를 「사용 | 비용 | 문제」로 나누며 비용 칸에서 옮김). */
   const 문제칸 = $('adm_probnum');
-  if (문제칸) 문제칸.innerHTML = grp('오류와 신고', [
-      ['앱이 터진 횟수', `오늘 ${n(d.errors_today)}건 · 7일 ${n(d.errors_7d)}건`],
-      ['아직 안 읽은 신고', n(d.reports_open) + '건', `지금까지 받은 신고 ${n(d.reports_total)}건`],
-    ]);
+  if (문제칸) 문제칸.innerHTML = 세칸([['오늘 오류', n(d.errors_today), num(d.errors_today) > 0],
+                                   ['안 읽은 신고', n(d.reports_open), num(d.reports_open) > 0],
+                                   ['7일 오류', n(d.errors_7d)]]);
   /* 문제가 있으면 칸 이름에 점 하나 — 다른 칸을 보고 있어도 «여기 볼 것이 있다»가 보이게. */
   $('adm_tabs')?.querySelector('[data-adm="prob"]')?.classList.toggle('hasdot',
     num(d.errors_today) > 0 || num(d.reports_open) > 0);
@@ -299,7 +247,7 @@ async function 사람신고(){
   const r = await netTimeout(sb.rpc('admin_people_reports'), 8000);
   if (!r || r.error){ 카드.classList.add('hide'); $('dashdot')?.classList.add('hide'); return; }
   const 목록 = r.data || [];
-  카드.classList.remove('hide');
+  카드.classList.toggle('hide', !목록.length);   /* 없으면 숨김(b875 — 「할 일」의 「안 읽은 신고」 숫자가 이미 말함) */
   $('adm_repn').textContent = 목록.length ? String(목록.length) : '';
   $('dashdot')?.classList.toggle('hide', !목록.length);
   칸.innerHTML = 목록.length ? 목록.map(x => `<div class="arow">
@@ -420,8 +368,8 @@ const 물음말 = {
    둘이 갈라집니다. */
 const 스위치값 = () => {
   const v = {};
-  document.querySelectorAll('#setadmpane [data-now]').forEach(el => v[el.dataset.now] = el.checked);
-  document.querySelectorAll('#setadmpane [data-feat]').forEach(el => v[el.dataset.feat] = el.checked);
+  document.querySelectorAll('#admpane [data-now]').forEach(el => v[el.dataset.now] = el.checked);
+  document.querySelectorAll('#admpane [data-feat]').forEach(el => v[el.dataset.feat] = el.checked);
   return v;
 };
 
@@ -446,8 +394,10 @@ function syncSetState(){
   $('s_featsum').style.color = 기능다름.length ? 'var(--bad)' : '';
 
   const 전부 = [...비상다름, ...기능다름];
-  $('s_statecard').classList.toggle('hide', !전부.length);
-  if (전부.length){
+  $('s_statecard').classList.remove('hide');
+  $('s_statecard').classList.toggle('ok', !전부.length);
+  if (!전부.length){ $('s_statetitle').textContent = '✓ 스위치 모두 정상'; $('s_statelist').textContent = ''; }
+  else {
     $('s_statetitle').textContent = `기본과 다른 것 ${전부.length}개`;
     $('s_statelist').textContent =
       전부.map(k => `${스위치이름[k]} ${정상[k] ? '꺼짐' : '켜짐'}`).join(' · ');
@@ -455,7 +405,7 @@ function syncSetState(){
 }
 
 /* 접기. 이상하면 저절로 펴 둡니다 — 접힌 채로 두면 못 보고 지나갑니다. */
-$('setadmpane').addEventListener('click', e => {
+$('admpane').addEventListener('click', e => {
   const h = e.target.closest('.sfold'); if (!h) return;
   const body = $(h.dataset.fold);
   const 접힘 = body.classList.toggle('hide');
@@ -467,7 +417,7 @@ $('setadmpane').addEventListener('click', e => {
 async function 스위치보내기(key, want){
   $('s_swnote').textContent = '보내는 중…';
   const r = await sb.rpc('admin_setting_set', { p_key:key, p_value:{ on:want } });
-  const el = document.querySelector(`#setadmpane [data-now="${key}"]`);
+  const el = document.querySelector(`#admpane [data-now="${key}"]`);
   if (r.error){
     if (el) el.checked = !want;
     $('s_swnote').textContent = '못 바꿨어요: ' + (r.error.message || '');
@@ -500,7 +450,7 @@ $('s_confirmyes').addEventListener('click', async () => {
   if (j) await 스위치보내기(j.key, j.want);
 });
 
-$('setadmpane').addEventListener('change', async e => {
+$('admpane').addEventListener('change', async e => {
   const el = e.target.closest('[data-now]'); if (!el) return;
   const key = el.dataset.now, want = el.checked;
   /* ⚠ **묻는 동안에는 스위치를 원래 자리로 되돌려 둡니다.** 옮겨 놓고 물으면
@@ -511,7 +461,7 @@ $('setadmpane').addEventListener('change', async e => {
 });
 
 /* 기능 스위치는 하나의 값(객체) 안에 같이 삽니다. 통째로 보냅니다. */
-$('setadmpane').addEventListener('change', async e => {
+$('admpane').addEventListener('change', async e => {
   if (!e.target.closest('[data-feat]')) return;
   const row = {};
   document.querySelectorAll('[data-feat]').forEach(el => row[el.dataset.feat] = el.checked);
@@ -630,17 +580,11 @@ $('dashbtn').addEventListener('click', () => {
    먹었는데, 실제로 바꾸는 일은 몇 달에 한 번입니다.
    다른 카드를 다 감추지는 않습니다 — 한 화면 안에서 자리만 바꿉니다.
    그래야 '뒤로'가 앱을 나가는 것과 안 헷갈립니다. */
+/* 「조절」 한 겹은 걷었습니다(b875, 사용자) — 「한도 바꾸기」(빨간 상자)는 이제 「비용」 칸을 엽니다. 이름은 그대로 둡니다(부르는 곳 둘). */
 const setPane = on => {
-  $('setadmpane').classList.toggle('hide', !on);
-  /* 나머지를 **묶음째** 감춥니다. 카드를 하나씩 감추면, 원래 숨어 있던 것
-     (신고가 없을 때의 adm_feedcard)까지 되살아납니다.
-     조절이 사이에 끼어 있어 묶음이 둘입니다. */
-  $('adm_main').classList.toggle('hide', on);
-  $('adm_dash').classList.toggle('hide', on);
+  if (on){ 지금칸 = 'cost'; 칸보이기(); }
   toTop($('admpane'));
 };
-$('adm_setopen').addEventListener('click', () => setPane(true));
-$('adm_setback').addEventListener('click', () => setPane(false));
 
 $('admback').addEventListener('click', () => {
   coverDeck(false);

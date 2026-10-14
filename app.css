@@ -7092,7 +7092,10 @@ body.kbup .tabbar{ display:none; }
 .rcc-c.on b{ color:var(--canvas); } .rcc-c.on span{ color:var(--canvas); opacity:.65; }
 .rcc-more{ display:block; margin:14px auto 0; }
 .rcc-none{ grid-column:1 / -1; color:var(--ink-48); font-size:var(--f-lg); text-align:center; padding:18px 0; margin:0; }
-.rcc-go{ position:sticky; bottom:calc(10px - var(--tabh, 58px) - 20px);   /* 판 아래 여백(.tabpane = tabh+20)을 되돌려 판 바닥 10px 위에 붙임 — sticky 는 여백 안쪽에서 셈(재 봄 b874: 여백만큼 떠서 화면 가운데에 있었음) */ margin-top:16px; z-index:2; }
+.rcc-go{ margin-top:16px; }   /* 바닥에 안 붙임(b875 — 사파리에서 탭바 뒤로 숨었음) */
+.rcc-top{ display:flex; align-items:center; gap:10px; margin:10px 0 4px; }
+.rcc-top .rcc-h{ flex:1; min-width:0; margin:0; }
+.rcc-next{ flex:none; padding:8px 14px; font-size:var(--f-md); }
 .rcc-go button{ width:100%; height:52px; font-size:var(--f-lg); box-shadow:0 4px 14px rgba(0,0,0,.12); }
 .rcc-goal{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; background:var(--sunk); }
 .rcc-goal .t{ flex:1; font-size:var(--f-lg); color:var(--ink); }
@@ -7133,3 +7136,74 @@ body.kbup .tabbar{ display:none; }
 #rateview #spreego .go{ padding:0; background:none; color:var(--ink-48); font-weight:600; }
 #rateview #spreego .go::after{ content:' ›'; }
 /* rcc-end */
+
+/* ── 대시보드 「지금 앱을 켜 둔 사람」(b875, adminuse.js 지금칠 · live.js) ── */
+.aunow{ display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid var(--hairline);
+  background:var(--canvas); margin:0 0 12px; }
+.aunow .dot{ width:10px; height:10px; border-radius:50%; background:#2f9e5b; flex:none; animation:aunowp 1.6s infinite; }
+@keyframes aunowp{ 0%{ box-shadow:0 0 0 0 rgba(47,158,91,.45); } 70%{ box-shadow:0 0 0 8px rgba(47,158,91,0); } 100%{ box-shadow:0 0 0 0 rgba(47,158,91,0); } }
+.aunow .t{ flex:1; min-width:0; }
+.aunow .l{ font-size:var(--f-md); color:var(--ink); }
+.aunow .l b{ font-size:var(--f-xl); font-variant-numeric:tabular-nums; }
+.aunow .d{ display:block; font-size:var(--f-sm); color:var(--ink-48); margin-top:2px; }
+.aunow .d b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+.aunow .ago{ font-size:var(--f-sm); color:var(--ink-48); flex:none; }
+
+/* ── 대시보드 비용·관리 칸(b875 다시 짬, 사용자: 「기능끼리 묶고 부연 설명 줄이자」 · 시안 승인) ──
+ * 묶음 제목(.adsec) + 테두리 한 상자(.adbox) 안에 줄들. 설명 글은 거의 없음. admin.js 의 세칸·줄·예산이 같은 이름을 씀. */
+.adtop{ display:flex; justify-content:flex-end; margin:4px 0 -6px; }
+.adsec{ display:flex; align-items:center; gap:8px; margin:20px 0 8px; font-size:var(--f-md); font-weight:700; color:var(--ink); }
+.adsec .grow{ flex:1; }
+.adsec:first-child{ margin-top:6px; }
+.adbox{ border:1px solid var(--hairline); background:var(--canvas); }
+.adbox > .srow, .adbox > div > .srow{ padding:12px 14px; border-top:1px solid var(--divider-soft); }
+.adbox > .srow:first-child{ border-top:0; padding-top:12px; }
+.adbox .srow:last-child{ padding-bottom:12px; }
+.adbox .srow .label b{ font-weight:500; font-size:var(--f-lg); }
+.adbox .snote{ padding:0 14px 10px; margin:0; font-size:var(--f-sm); color:var(--ink-48); }
+.adbox .snote:empty{ display:none; }
+.adbox pre{ margin:0 14px 10px; }
+.adpad{ padding:12px 14px; }
+.adcnt{ display:flex; }
+.adcnt > div{ flex:1; padding:12px 14px; min-width:0; }
+.adcnt > div + div{ border-left:1px solid var(--divider-soft); }
+.adcnt span{ display:block; font-size:var(--f-sm); color:var(--ink-48); }
+.adcnt b{ display:block; margin-top:2px; font-size:var(--f-xl); font-variant-numeric:tabular-nums; color:var(--ink); }
+.adcnt b.bad{ color:var(--bad, #c0392b); }
+.adrow{ display:flex; align-items:baseline; gap:10px; padding:11px 14px; border-top:1px solid var(--divider-soft); font-size:var(--f-md); }
+.adrow span{ flex:1; color:var(--ink-80); }
+.adrow b{ font-variant-numeric:tabular-nums; color:var(--ink); }
+.admeter{ padding:10px 14px 12px; border-top:1px solid var(--divider-soft); }
+.admeter .t{ display:flex; justify-content:space-between; font-size:var(--f-sm); color:var(--ink-48); }
+.admeter .t b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+.admeter .track{ height:6px; margin-top:6px; background:var(--divider-soft); }
+.admeter .track i{ display:block; height:100%; background:var(--ink); }
+.admeter.warn .track i{ background:var(--warn); } .admeter.bad .track i{ background:var(--bad, #c0392b); }
+.adfoot{ margin:8px 0 0; font-size:var(--f-xs); color:var(--ink-48); }
+.adnum{ display:flex; align-items:center; gap:6px; flex:none; }
+.adnum input{ width:64px; padding:6px 8px; text-align:center; font-size:max(var(--in-floor, 16px), var(--f-md)); }
+.adnum span{ font-size:var(--f-sm); color:var(--ink-48); }
+.adsel{ width:auto; flex:none; font-size:max(var(--in-floor, 16px), var(--f-md)); }
+.adgrp{ padding:10px 14px 4px; border-top:1px solid var(--divider-soft); font-size:var(--f-xs); font-weight:700;
+  letter-spacing:.05em; color:var(--ink-48); display:flex; gap:8px; }
+.adgrp:first-child{ border-top:0; }
+.adgrp span{ font-weight:400; letter-spacing:0; margin-left:auto; }
+.adnotice{ display:flex; align-items:center; gap:8px; margin-top:10px; }
+.adnotice .days{ margin:0; flex:1; }
+#s_notice{ width:100%; box-sizing:border-box; font-size:max(var(--in-floor, 16px), var(--f-md)); }
+.adstate{ display:flex; align-items:center; gap:10px; padding:10px 12px; margin:4px 0 0;
+  background:var(--warn-bg); color:var(--warn); font-size:var(--f-md); }
+.adstate .t{ flex:1; min-width:0; } .adstate .t span{ display:block; font-size:var(--f-sm); }
+.adstate.ok{ background:#e7f2ea; color:#24643f; } .adstate.ok #s_reset{ display:none; }
+.adlist{ margin-top:10px; }
+#adm_stats > .awarn{ margin:6px 0 0; }
+/* 사용 칸 「지금까지 쌓인 것」 — 두 줄 표(이름 왼쪽 · 숫자 오른쪽, b875 시안). 다른 .autot(3칸 등)는 그대로. */
+.autot2{ grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--hairline); margin-top:8px; }
+.autot2 > div{ flex-direction:row-reverse; justify-content:space-between; align-items:baseline; gap:8px;
+  padding:10px 12px; border-top:1px solid var(--divider-soft); }
+.autot2 > div:nth-child(-n+2){ border-top:0; }
+.autot2 > div:nth-child(odd){ border-right:1px solid var(--divider-soft); }
+.autot2 b{ font-size:var(--f-lg); font-weight:700; }
+.autot2 span{ font-size:var(--f-md); color:var(--ink-80); }
+.adlist{ margin-top:10px; padding:12px 14px; border:1px solid var(--hairline); }
+.adlist h2{ font-size:var(--f-md); font-weight:700; margin:0 0 6px; }

@@ -19,9 +19,10 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b874';
-import { sb } from './db.js?v=b874';
-import { netTimeout } from './net.js?v=b874';
+import { $, esc, toast } from './dom.js?v=b875';
+import { sb } from './db.js?v=b875';
+import { netTimeout } from './net.js?v=b875';
+import { liveWatch } from './live.js?v=b875';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },
@@ -35,7 +36,7 @@ const 지표들 = [
 ];
 const 기간들 = [[1, '1일'], [7, '7일'], [28, '28일'], [90, '90일'], [365, '365일'], [0, '전체']];   /* 1일 = 오늘 하루(b870, 사용자) — 앞 기간(어제)과 견줌 */
 const 칸들 = [['ov', '개요'], ['en', '참여'], ['au', '사람들'], ['ad', '고급']];
-let 기간 = 28, 보는칸 = 'ov', 지표 = 'a', 깔때기 = 'all';
+let 기간 = 7, 보는칸 = 'ov', 지표 = 'a', 깔때기 = 'all';
 let 자료 = null, 받은기간 = null, 받은때 = 0, 차례 = 0;
 let 실시간자료 = [];   /* 실시간 막대 누르기용(b870) */
 /* 「1일」 보기의 날짜(b871, 사용자 시안 승인) — null 이면 오늘. ‹ › 로 하루씩 · 날짜를 누르면 달력. 다른 기간을 고르면 오늘로. */
@@ -96,7 +97,17 @@ function 그리기(){
            : 보는칸 === 'ad' ? 표(D)
            : 개요(D) + 실시간(D) + 쌓인것(D);
   판.innerHTML = 머리() + 몸;
-  if (보는칸 === 'ov') 그래프잇기();
+  if (보는칸 === 'ov'){ 그래프잇기(); liveWatch(지금칠); }
+}
+/* 지금 앱을 켜 둔 사람(b875, live.js) — 개요 맨 위 한 줄. 아무도 없으면 줄을 안 띄웁니다(사용자). 관리자·로기는 안 셈. */
+function 지금칠(s){
+  const el = $('au_now'); if (!el) return;
+  el.classList.toggle('hide', !s.n);
+  if (!s.n) return;
+  el.innerHTML = `<span class="dot" aria-hidden="true"></span>
+    <span class="t"><span class="l">지금 <b>${수(s.n)}</b>명이 앱을 켜 두고 있어요</span>
+      <span class="d">홈 화면 앱 <b>${수(s.앱)}</b> · 웹 <b>${수(s.웹)}</b> · 애플 <b>${수(s.ios)}</b> · 안드로이드 <b>${수(s.and)}</b></span></span>
+    <span class="ago">실시간</span>`;
 }
 
 /* 칸 줄 + 기간 + 새로고침. 기간은 넷이 같이 씁니다.
@@ -184,16 +195,15 @@ function 개요(D){
       <b>${없음 ? '–' : 수(cur)}<small>${esc(x.단위)}</small></b><span class="dt ${견줌.c}">${esc(견줌.t)}</span></button>`;
   }).join('');
   return `<div class="card auc auov">
+    <div class="aunow hide" id="au_now" aria-live="polite"></div>
     <p class="ausum">${요약}</p>
     <div class="aukpi aukpi6" role="tablist" aria-label="지표">${카드}</div>
-    <p class="aunote">${D.all ? '전체 기간은 견줄 앞 기간이 없어요' : D.days === 1 ? '▲▼ 는 바로 전날과 견준 값이에요' : `▲▼ 는 바로 앞 ${D.days}일과 견준 값이에요`}
-      · 탈퇴 = 계정을 지운 사람${D.del_since ? `(${긴날(D.del_since).replace(/ \(.\)$/, '')}부터 셈)` : ''}${늦게시작 || !기록중
-      ? ` · 「쓴 사람」은 ${기록중 ? 긴날(D.since).replace(/ \(.\)$/, '') : '오늘'}부터 세요` : ''}</p>
-    ${어떻게(D)}
+    <p class="aunote">${D.all ? '' : D.days === 1 ? '▲▼ 전날과 견줌' : `▲▼ 앞 ${D.days}일과 견줌`}</p>
     <div class="aucap" id="au_cap" aria-live="polite"></div>
     <div class="auchartwrap" id="au_chartwrap">${그래프(D)}</div>
     <div class="aux"><span>${짧은날(D.from)}</span><span>${짧은날(D.series?.[Math.floor((D.series.length - 1) / 2)]?.d || D.from)}</span><span>${짧은날(D.today)}</span></div>
     <div id="au_cmp">${평소(D)}</div>
+    ${어떻게(D)}${/* 「어떻게 열었나」는 그래프 아래(b874, 사용자 캡처 — 지표 카드와 그래프 사이를 끊었음) */''}
   </div>`;
 }
 
@@ -223,7 +233,7 @@ function 평소(D){
   if (!xs.length) return '';
   const 합 = xs.reduce((a, p) => a + Number(p[지표] || 0), 0);
   const 띠말 = T.hi > 0 ? `<div class="aulg"><span><i class="band"></i>평소 하루 값의 가운데 절반</span></div>` : '';
-  const 뜻 = `<p class="aunote">평소 = 이 기간 바로 앞 ${T.n}일${기록지표() ? '(앱 연 날 기록이 있는 날)' : 지표 === 'x' ? '(탈퇴를 센 날)' : ''}</p>`;
+  const 뜻 = '';   /* 「평소 = …」 풀이는 걷음(b875 — 설명이 너무 많음) */
   if (T.avg == null) return 띠말 + 뜻;              /* avg 없는 114 첫 판 — 판정은 114 를 다시 돌리면 나옵니다 */
   const 기대 = T.avg * xs.length;
   const [말, c] = Math.max(합, 기대) < 5 ? ['아직 숫자가 작아 견주지 않아요', 'na']
@@ -379,7 +389,7 @@ function 쌓인것(D){
               ['지금 여행 중', T.trips_now, '개'], ['함께 쓰는 여행', T.trips_shared, '개']];
   return `<div class="card auc">
     <h2>지금까지 쌓인 것</h2>
-    <div class="autot">${칸.map(([l, v, u]) => `<div><b>${수(v)}<small>${u}</small></b><span>${l}</span></div>`).join('')}</div>
+    <div class="autot autot2">${칸.map(([l, v, u]) => `<div><b>${수(v)}<small>${u}</small></b><span>${l}</span></div>`).join('')}</div>
   </div>`;
 }
 
@@ -399,7 +409,6 @@ function 깊이(D){
     <h2>얼마나 깊이</h2>
     <p class="aunote" style="margin-top:0">가입한 ${수(합)}명이 별점을 몇 개씩 매겼나(지금까지 · 국내 포함)</p>
     <div class="aufun">${구간.map(([l, v]) => 막대줄(l, v, 최대, `${수(v)}명<small>${합 ? Math.round(v / 합 * 100) : 0}%</small>`)).join('')}</div>
-    <p class="aunote">성향은 해외 도시 열 곳부터 확정돼요(이 칸은 국내도 센 개수) — 0개·1~4개에 많으면 첫 별점이 막힌 거예요</p>
   </div>`;
 }
 
@@ -427,7 +436,6 @@ function 기능(D){
     <h2>기능별 쓰임</h2>
     <p class="aunote" style="margin-top:0">${기간말(D)} 쓴 사람(막대)과 횟수</p>
     <div class="aufun">${fs.map(f => 막대줄(f.k, f.u, 최대, `${수(f.u)}명<small>${수(f.n)}${f.k === '별점' ? '개' : '번'}</small>`)).join('')}</div>
-    <p class="aunote">별점은 새로 매긴 개수 · 한줄평·일기는 그 기간에 손댄 곳 수예요</p>
   </div>`;
 }
 
@@ -479,7 +487,6 @@ function 자주(D){
     <p class="aunote" style="margin-top:0">${기간말(D)} 앱을 연 ${수(합)}명이 며칠 열었나</p>
     ${합 ? `<div class="aufun">${구간.map(([l, v]) => 막대줄(l, v, 최대, `${수(v)}명<small>${Math.round(v / 합 * 100)}%</small>`)).join('')}</div>`
         : `<div class="empty">${D.since ? '이 기간에 앱을 연 기록이 없어요.' : '앱을 연 날은 오늘부터 쌓여요.'}</div>`}
-    <p class="aunote">꾸준함 = 하루 평균 쓴 사람 ÷ 이 기간 쓴 사람 · 높을수록 같은 사람이 자주 와요(매일 오면 100%)</p>
   </div>`;
 }
 
@@ -527,7 +534,6 @@ function 재방문(D){
     <h2>가입한 주마다 — 다시 왔나</h2>
     ${줄 ? `<div class="autw"><table class="aucoh"><thead><tr><th>가입 주</th><th>가입</th><th>1주 안</th><th>한 달 안</th></tr></thead>
       <tbody>${줄}</tbody></table></div>` : `<div class="empty">최근 8주에 가입한 사람이 없어요.</div>`}
-    <p class="aunote">1주 안 = 가입 다음 날부터 7일 안에 다시 연 사람 · 한 달 안 = 8~30일 사이에 연 사람 · 초대한 주를 여기서 따로 봅니다</p>
   </div>`;
 }
 
@@ -569,7 +575,6 @@ function 표(D){
     <div class="autw"><table class="aucoh autbl"><thead><tr><th>${주마다 ? '주' : '날'}</th>${열.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead>
       <tbody><tr class="sum"><th scope="row">이 기간</th>${열.map(([k]) => 칸(k, 위[k] ?? null)).join('')}</tr>
       ${줄.map(r => `<tr><th scope="row">${esc(r.글)}</th>${열.map(([k]) => 칸(k, r[k])).join('')}</tr>`).join('')}</tbody></table></div>
-    <p class="aunote">「이 기간」의 쓴 사람은 기간 안에 한 번이라도 연 사람(한 사람은 한 번) · – 는 기록 전(쓴 사람은 앱 연 날 기록 · 탈퇴는 db/117 전)</p>
   </div>`;
 }
 /* CSV — 엑셀에서 한글이 안 깨지게 BOM 을 붙입니다. 날짜는 오래된 것부터(표는 최근이 위).
