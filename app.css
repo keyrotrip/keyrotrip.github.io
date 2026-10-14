@@ -7092,11 +7092,9 @@ body.kbup .tabbar{ display:none; }
 .rcc-c.on b{ color:var(--canvas); } .rcc-c.on span{ color:var(--canvas); opacity:.65; }
 .rcc-more{ display:block; margin:14px auto 0; }
 .rcc-none{ grid-column:1 / -1; color:var(--ink-48); font-size:var(--f-lg); text-align:center; padding:18px 0; margin:0; }
-.rcc-go{ margin-top:16px; }   /* 바닥에 안 붙임(b875 — 사파리에서 탭바 뒤로 숨었음) */
 .rcc-top{ display:flex; align-items:center; gap:10px; margin:10px 0 4px; }
 .rcc-top .rcc-h{ flex:1; min-width:0; margin:0; }
 .rcc-next{ flex:none; padding:8px 14px; font-size:var(--f-md); }
-.rcc-go button{ width:100%; height:52px; font-size:var(--f-lg); box-shadow:0 4px 14px rgba(0,0,0,.12); }
 .rcc-goal{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; background:var(--sunk); }
 .rcc-goal .t{ flex:1; font-size:var(--f-lg); color:var(--ink); }
 .rcc-goal .n{ font-variant-numeric:tabular-nums; }

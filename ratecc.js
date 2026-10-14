@@ -9,10 +9,10 @@
  * ⚠ 평가 탭은 «늘 나라별로» 열립니다(사용자). 「전체 도시」는 예전 화면 그대로입니다.
  * ⚠ 저장·도시 열기·성향 열기는 ctx 로 받습니다 — 이 파일이 rating.js 를 안 읽어야 시연 페이지(_demo_ratecc.html)에서
  *   가짜 저장으로 돌릴 수 있습니다. 고른 나라는 이 기기에만 기억합니다(localStorage, 못 쓰면 매번 고르기). */
-import { $, esc, flagSprite } from './dom.js?v=b875';
-import { cities, countryName, chosung, onlyCho } from './cities.js?v=b875';
-import { starHtml, paintStars, starValue } from './stars.js?v=b875';
-import { 인기, 별받음 } from './rate.js?v=b875';
+import { $, esc, flagSprite } from './dom.js?v=b876';
+import { cities, countryName, chosung, onlyCho } from './cities.js?v=b876';
+import { starHtml, paintStars, starValue } from './stars.js?v=b876';
+import { 인기, 별받음 } from './rate.js?v=b876';
 
 let ctx = {
   별: () => null,              /* 도시 id → 내 별점(없으면 null) */
@@ -62,6 +62,7 @@ export function rateCcHome(){
   $('rateview')?.classList.add('ccmode');
   segPaint();
   고른 = []; 쓰기(고른); 칩 = null;
+  if (history.state?.t2 === 'ratecc') history.replaceState(null, '');   /* 처음으로 갔으니 목록 기록은 버림 */
   고르는중 = true; 끝판 = false; 펼침 = false; 찾기 = '';
   clearTimeout(내려보낼);
   draw();
@@ -105,8 +106,8 @@ function 고르기그리기(판){
     : [...다.slice(0, 처음칸), ...다.slice(처음칸).filter(([cc]) => 고른.includes(cc))];
   const 칸 = ([cc, n]) => `<button type="button" class="rcc-c${고른.includes(cc) ? ' on' : ''}" data-rccpick="${esc(cc)}" aria-pressed="${고른.includes(cc)}">
       ${깃발(cc)}<b>${esc(countryName[cc])}</b><span>${n}곳</span></button>`;
-  /* 「다음」은 바닥에 붙이지 않습니다(b875) — sticky 로 붙였더니 사파리에서 탭바 뒤로 숨어 회색 띠만 보였음(사용자 캡처).
-     고르면 제목 옆에 하나, 목록 끝에 하나. 안 골랐으면 아예 안 띄움(회색 막힌 단추를 남기지 않음). */
+  /* 「다음」은 제목 옆 하나뿐(b876) — 바닥에 붙였더니 사파리에서 탭바 뒤로 숨었고(b875), 목록 끝에도 두니 중복이었음.
+     안 골랐으면 아예 안 띄움(회색 막힌 단추를 남기지 않음). */
   const 다음 = 고른.length ? `${고른.length}개 · 다음 ›` : '';
   판.innerHTML = `<div class="rcc-top"><div class="rcc-h">가 본 나라를 골라 주세요</div>${
       다음 ? `<button type="button" class="primary rcc-next" data-rccnext>${다음}</button>` : ''}</div>
@@ -114,7 +115,7 @@ function 고르기그리기(판){
     ${펼침 ? `<input type="search" class="rcc-q" id="rcc_q" placeholder="나라 이름 찾기 (스위스 / ㅅㅇㅅ)" value="${esc(찾기)}" autocomplete="off" enterkeyhint="search">` : ''}
     <div class="rcc-grid">${보일.map(칸).join('') || `<p class="rcc-none">「${esc(q)}」에 맞는 나라가 없어요.</p>`}</div>
     ${펼침 ? '' : `<button type="button" class="ghost rcc-more" data-rccmore>다른 나라 찾기</button>`}
-    ${다음 ? `<div class="rcc-go"><button type="button" class="primary" data-rccnext>${고른.length}개 나라 · 도시 보기</button></div>` : ''}`;
+`;   /* 목록 끝 「N개 나라 · 도시 보기」는 걷음(b876, 사용자: 제목 옆 「다음」과 중복) */
 }
 
 /* ── ② 고른 나라 도시 ── */
@@ -183,10 +184,14 @@ document.addEventListener('click', async e => {
   if (e.target.closest('[data-rccnext]')){
     if (!고른.length) return;
     고르는중 = false; 펼침 = false; 찾기 = ''; 쓰기(고른);
+    if (history.state?.t2 !== 'ratecc') history.pushState({ t2: 'ratecc' }, '');   /* 뒤로가기 = 나라 고르기(b876) */
     칩 = [...고른].sort((a, b) => 수(b) - 수(a))[0];
     await draw(); 판.scrollIntoView({ block: 'start' }); return;
   }
-  if (e.target.closest('[data-rccagain]')){ 고르는중 = true; await draw(); 판.scrollIntoView({ block: 'start' }); return; }
+  if (e.target.closest('[data-rccagain]')){
+    if (history.state?.t2 === 'ratecc'){ history.back(); return; }   /* 기록을 되감으면 아래 popstate 가 고르기로 */
+    고르는중 = true; await draw(); 판.scrollIntoView({ block: 'start' }); return;
+  }
   const chip = e.target.closest('[data-rccchip]');
   if (chip){ 칩 = chip.dataset.rccchip; clearTimeout(내려보낼); return draw(); }
   if (e.target.closest('[data-rccpersona]')){ 끝판 = false; return ctx.성향열기(); }
@@ -215,4 +220,12 @@ document.addEventListener('input', e => {
   찾기 = e.target.value;
   const 커서 = e.target.selectionStart;
   draw().then(() => { const 칸 = $('rcc_q'); if (칸){ 칸.focus(); try { 칸.setSelectionRange(커서, 커서); } catch {} } });
+});
+
+/* 뒤로가기(b876, 사용자: 「도시 고르고 나서 다시 고르고 싶어서 뒤로가기 하는데 안 됨」) — 목록 기록(t2:ratecc)에서 벗어나면 고르기로.
+   도시 화면 등 위에 얹힌 것을 닫는 뒤로가기는 tripview.js 사슬이 먼저 받고, 그때 기록은 다시 ratecc 라 여기선 아무것도 안 함. */
+window.addEventListener('popstate', () => {
+  if (history.state?.t2 === 'ratecc' || 고르는중 || 끝판 || !rateCcOn()) return;
+  고르는중 = true; clearTimeout(내려보낼);
+  draw().then(() => $('ratecc')?.scrollIntoView({ block: 'start' }));
 });
