@@ -18,17 +18,19 @@
  *
  * 층: dom.js · net.js · calc.js · trip.js 와 이미 떼어낸
  *     planline.js · planmap.js · plancheck.js 를 씁니다. */
-import { $, esc, emptyDo } from './dom.js?v=b878';
-import { featOn, flags } from './flags.js?v=b878';
-import { fail, write } from './net.js?v=b878';
-import { dayLabel, hm, hop, money, legNear, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b878';
-import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b878';
-import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b878';
-import { drawPlanMap, mapLinks } from './planmap.js?v=b878';
-import { STAY_MIN, mins } from './plancheck.js?v=b878';
+import { $, esc, emptyDo } from './dom.js?v=b879';
+import { featOn, flags } from './flags.js?v=b879';
+import { fail, write } from './net.js?v=b879';
+import { dayLabel, hm, hop, money, legNear, dateRange, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b879';
+import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b879';
+import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b879';
+import { drawPlanMap, mapLinks } from './planmap.js?v=b879';
+import { STAY_MIN, mins } from './plancheck.js?v=b879';
 /* 좌표 없는 줄에서 그 한 곳만 찾습니다. **cands.js 는 이 파일을 안 부르므로
    고리가 안 생깁니다**(b375 에 확인). */
-import { fillOnePlan } from './cands.js?v=b878';
+import { fillOnePlan } from './cands.js?v=b879';
+/* 일정을 그림 카드로 보냅니다(b879) — 아래 `일정카드`. */
+import { shareCard } from './card.js?v=b879';
 
 let ctx = { loadPlans: async () => {} };
 export function setPlanViewCtx(o){ ctx = { ...ctx, ...o }; }
@@ -265,9 +267,104 @@ const endPointer = e => { cancelHold(); dropOrder(e); };
 $('plans').addEventListener('pointerup', endPointer, false);
 $('plans').addEventListener('pointercancel', endPointer, false);
 
+/* ── 일정을 «글»로 (b879) ─────────────────────────────────────────────
+ * 사용자: 「3박 4일 후쿠오카 일정을 달라고 하거나 카톡으로 공유하고 싶을 때」.
+ *
+ * ⚠⚠ **링크가 아니라 글입니다.** 받는 사람이 앱이 없어도, 가입하지 않아도
+ *   그 자리에서 읽힙니다. 「달라」는 사람 대부분은 이걸로 끝납니다.
+ *   보기 전용 링크와 「나도 이대로 가기」는 다음 단계입니다.
+ * ⚠⚠ **`navigator.share` 에 `url` 을 따로 주면 안 됩니다** — 카톡이 우리 글을
+ *   버리고 제 미리보기 카드만 보여줍니다(member.js 의 `i_share` 주석에 그
+ *   사연이 적혀 있습니다). 그래서 여기서는 글만 넘깁니다.
+ * ⚠ **안 나가는 것**: 지출·일행 이름·일기·메모. 여행에는 «일행의 것»이 섞여
+ *   있어서, 내가 남의 것까지 내보내면 안 됩니다. 메모는 그와 별개로 주소·링크가
+ *   들어 있어 글이 길어집니다 — 장소와 시각만 남깁니다.
+ * ⚠ **고른 날짜·분류 거르개는 무시합니다.** 보내는 것은 「이 여행」이지
+ *   「지금 보고 있는 화면」이 아닙니다.
+ * ⚠ 날짜가 없는 일정은 맨 뒤에 「날짜 미정」으로 모읍니다 — 빠뜨리면 받는
+ *   사람 일정에 구멍이 납니다. */
+/* 「3박 4일」. 글과 그림 카드가 **같은 말**을 써야 해서 함수로 둡니다. */
+function 밤글(){
+  const a = new Date(trip.start_date + 'T00:00:00Z'), b = new Date(trip.end_date + 'T00:00:00Z');
+  const 일 = Math.round((b - a) / 86400000) + 1;
+  return 일 > 1 ? `${일 - 1}박 ${일}일` : '당일';
+}
+
+export function 일정글(){
+  const 밤 = 밤글();
+  const 머리 = [`${trip.title} · ${밤}`,
+                [trip.destination, dateRange(trip.start_date, trip.end_date)].filter(Boolean).join(' · ')]
+               .filter(Boolean).join('\n');
+
+  const 날 = [...new Set(plans.map(p => p.date).filter(Boolean))].sort();
+  const 토막 = [];
+  for (const d of 날){
+    const 그날 = plans.filter(p => p.date === d)
+      .sort((a, b) => String(a.start_time || '99').localeCompare(String(b.start_time || '99')));
+    토막.push(`[${dayLabel(d, trip)}]\n` + 그날.map(줄글).join('\n'));
+  }
+  const 미정 = plans.filter(p => !p.date);
+  if (미정.length) 토막.push(`[날짜 미정]\n` + 미정.map(줄글).join('\n'));
+
+  return `${머리}\n\n${토막.join('\n\n')}\n\n기로에서 짠 일정이에요`;
+}
+/* 한 줄 — 「10:20 하카타역 도착」. 시각이 없으면 시각 칸을 비웁니다(점으로 맞춤). */
+function 줄글(p){
+  const t = hm(p.start_time);
+  return `${t ? t + ' ' : '· '}${nice(p.title || '').trim()}`;
+}
+
+/* ── 일정을 «그림 카드»로 (b879) ──────────────────────────────────────
+ * 처음에는 글만 보냈는데, 사용자가 「걍 단순 텍스트야?」 — 시안 셋을 그려
+ * 보이고 **「종이 일정표 + 밝은 탑승권 머리띠」**를 골랐습니다.
+ * 그리는 곳은 card.js 의 `drawPlan` 입니다(높이가 자유로운 유일한 카드).
+ *
+ * ⚠ **글(`일정글`)은 그대로 삽니다** — 그림을 못 보내는 기기에서 `shareText`
+ *   로 대신 나갑니다(card.js 의 `sendCardBlob`). 지우면 그런 기기에서 보내기가
+ *   통째로 막힙니다.
+ * ⚠ 날 이름은 `dayLabel` 이 만든 것을 쪼개 씁니다 — 「Day 1 · 11월 12일 목요일」.
+ *   카드에서는 좁아서 「목요일」을 「목」으로 줄입니다. 규칙을 새로 적지 않습니다.
+ * ⚠ 안 나가는 것은 글과 같습니다: 지출·일행 이름·일기·메모. 거르는 곳은
+ *   **여기 하나**입니다 — card.js 는 받은 것만 그립니다. */
+function 일정카드(){
+  const 날 = [...new Set(plans.map(p => p.date).filter(Boolean))].sort();
+  const 줄 = p => ({ t: hm(p.start_time), n: nice(p.title || '').trim() });
+  const 때순 = (a, b) => String(a.start_time || '99').localeCompare(String(b.start_time || '99'));
+  const days = 날.map(d => {
+    const [라벨, 날짜] = String(dayLabel(d, trip)).split(' · ');
+    return { label: 라벨, date: (날짜 || '').replace(/요일$/, ''),
+             items: plans.filter(x => x.date === d).sort(때순).map(줄) };
+  });
+  const 미정 = plans.filter(x => !x.date);
+  if (미정.length) days.push({ label: '날짜 미정', date: '', items: 미정.map(줄) });
+
+  return {
+    kind: 'plan',
+    title: trip.title || '내 여행',
+    meta: [밤글(), dateRange(trip.start_date, trip.end_date),
+           `일정 ${plans.length}개`].filter(Boolean).join(' · '),
+    days,
+    /* 바코드 무늬를 여행마다 다르게, 같은 여행이면 늘 같게 (바코드그리기). */
+    seed: trip.id,
+    /* 시트에 띄울 말 — 「보내기」로 들어왔으니 시트도 보내기라고 말해야 합니다. */
+    sheetTitle: '일정 카드',
+    goText: '보내기',
+    /* 받은 사람이 링크를 누를 까닭(b822 의 `shareLine` 과 같은 자리). */
+    shareLine: `${trip.title} 일정이에요. 기로에서 짰어요.`,
+    shareText: 일정글(),
+  };
+}
+
+$('sendplanbtn')?.addEventListener('click', () => {
+  if (!trip || !plans.length) return;
+  shareCard(일정카드(), `기로-${String(trip.destination || trip.title || '일정').replace(/\s+/g, '')}-일정`);
+});
+
 export function drawPlans(){
   let show = pickedDay ? plans.filter(p => p.date === pickedDay) : plans;
   if (catFilter) show = show.filter(p => p.category === catFilter);
+  /* 「보내기」는 보낼 것이 있을 때만(b879) — 빈 일정을 보내면 받는 사람이 머리만 봅니다. */
+  $('sendplanbtn')?.classList.toggle('hide', !plans.length);
   if (!show.length){
     /* 날을 골라 둔 채로 비어 있는 것은 **여행에 일정이 없는 것과 다릅니다** —
        다른 날에는 있을 수 있습니다. 그래서 단추를 안 답니다(달면 머리말의
