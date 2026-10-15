@@ -9,10 +9,13 @@
  * ⚠ 평가 탭은 «늘 나라별로» 열립니다(사용자). 「전체 도시」는 예전 화면 그대로입니다.
  * ⚠ 저장·도시 열기·성향 열기는 ctx 로 받습니다 — 이 파일이 rating.js 를 안 읽어야 시연 페이지(_demo_ratecc.html)에서
  *   가짜 저장으로 돌릴 수 있습니다. 고른 나라는 이 기기에만 기억합니다(localStorage, 못 쓰면 매번 고르기). */
-import { $, esc, flagSprite } from './dom.js?v=b877';
-import { cities, countryName, continentOf, chosung, onlyCho } from './cities.js?v=b877';
-import { starHtml, paintStars, starValue } from './stars.js?v=b877';
-import { 인기, 별받음 } from './rate.js?v=b877';
+import { $, esc, flagSprite } from './dom.js?v=b878';
+import { cities, countryName, continentOf, chosung, onlyCho } from './cities.js?v=b878';
+import { starHtml, paintStars, starValue } from './stars.js?v=b878';
+import { 인기, 별받음, cityStat, myRates, avgTail } from './rate.js?v=b878';
+/* ★4.5 묻기(b861) — 전체 도시 목록(rating.js)은 쓰고 있는데 **나라별 화면만 안 쓰고
+   있었습니다**(b878, 사용자 신고: 「별 4.5 이상이면 한줄평이랑 맛집추천도 떠야 하는데 안 떠」). */
+import { 물을까, 묻기Html } from './cmtask.js?v=b878';
 
 let ctx = {
   별: () => null,              /* 도시 id → 내 별점(없으면 null) */
@@ -110,8 +113,16 @@ function 고르기그리기(판){
       <div id="rcc_cts"></div>`;
     $('rcc_q').value = 찾기;
   }
-  /* 「다음」은 제목 옆 하나뿐(b876) — 안 골랐으면 아예 안 띄움(회색 막힌 단추를 남기지 않음). */
-  $('rcc_next').innerHTML = 고른.length ? `<button type="button" class="primary rcc-next" data-rccnext>${고른.length}개 · 다음 ›</button>` : '';
+  /* 「다음」은 제목 옆 하나뿐(b876) — 안 골랐으면 아예 안 띄움(회색 막힌 단추를 남기지 않음).
+     ⚠ **고르기 시작하면 큰 제목을 「N개 고름」으로 바꿉니다(b878).** 「전체 해제」가 붙으면서
+       375px 에서 제목·해제·다음 셋이 한 줄에 안 들어갑니다. 고르는 중에는 안내보다 **지금 몇 개인지**가
+       쓸모 있고, 안내는 바로 아래 부제가 계속 하고 있습니다.
+     ⚠ 「전체 해제」는 고른 것이 있을 때만(사용자: 「전체해제 버튼도 없어서 하나씩 눌러야해」). */
+  const 제목 = 판.querySelector('.rcc-h');
+  if (제목) 제목.textContent = 고른.length ? `${고른.length}개 고름` : '가 본 나라를 골라 주세요';
+  $('rcc_next').innerHTML = 고른.length
+    ? `<button type="button" class="ghost rcc-clear" data-rccclear>전체 해제</button>` +
+      `<button type="button" class="primary rcc-next" data-rccnext>다음 ›</button>` : '';
   const q = 찾기.trim();
   const 맞나 = cc => { const 이름 = String(countryName[cc] || ''); return !q || (onlyCho(q) ? chosung(이름).includes(q) : 이름.includes(q)); };
   const 묶음 = {};
@@ -144,7 +155,15 @@ function 줄(c){
   const s = ctx.별(c.id);
   return `<div class="rrow rcc-row" data-rcccity="${esc(c.id)}">
       ${c.image_url ? `<img class="thumb" src="${esc(c.image_url)}" alt="" loading="lazy">` : `<span class="thumb ph">${esc(c.name.slice(0, 1))}</span>`}
-      <div class="t"><b>${esc(c.name)}</b><span class="memo">${esc(c.name_en || '')}</span></div>
+      <div class="t"><b>${esc(c.name)}</b>${
+        /* 영문 이름은 걷었습니다(b878, 사용자: 「영어는 지워버려 도시명 영어가 왜 나온거야」) —
+           우리말 이름 옆에 영문이 또 있을 이유가 없고, 그 자리를 평균·한줄평이 씁니다. */''}${
+        /* 평균·한줄평 수(b878, 사용자: 「도시마다 평균별점이랑 후기 몇개인지 보여줘야 하는데 안 뜨네」).
+           ⚠ **새로 만들지 않습니다** — 전체 도시 목록이 쓰는 `avgTail` 그대로입니다(rate.js).
+             거기서 「나를 뺀 평균」과 「한줄평 N」 규칙이 이미 정해져 있어, 여기서 따로 세면 두 화면 숫자가 갈립니다.
+           ⚠ 도시 이름 **아래 줄**입니다 — 이름 옆에 붙이면 긴 이름(「보스니아 헤르체고비나」)에서 잘립니다. */
+        (() => { const t = avgTail(cityStat[c.id], myRates[c.id]); return t ? `<span class="memo rcc-avg">${esc(t.slice(3))}</span>` : ''; })()
+      }</div>
       <span class="stars" data-rccstar="${esc(c.id)}">${starHtml(s)}</span></div>`;
 }
 function 목록그리기(판){
@@ -193,6 +212,10 @@ document.addEventListener('click', async e => {
     return;
   }
   if (!판 || !판.contains(e.target)) return;
+  if (e.target.closest('[data-rccclear]')){
+    고른 = []; 고르는중 = true;        /* 기억은 「다음」을 누를 때(아래 rccnext 와 같은 규칙) */
+    return draw();
+  }
   const pick = e.target.closest('[data-rccpick]');
   if (pick){
     const cc = pick.dataset.rccpick;
@@ -229,6 +252,23 @@ document.addEventListener('click', async e => {
     const 됐나 = await ctx.저장(id, next);
     if (됐나 === false){ paintStars(wrap, cur ?? null, true); return; }
     if (ctx.방금확정() && !끝봤음){ 끝판 = 끝봤음 = true; clearTimeout(내려보낼); return draw(); }
+    /* ── ★4.5 이상이면 그 줄 «바로 밑»에 한줄평·맛집 묻기(b878) ──────────────
+     * ⚠ 줄 «안»에 넣으면 안 됩니다 — 줄 전체가 `data-rcccity` 라 누르면 도시 화면이 열립니다.
+     *   형제로 붙입니다(rating.js 가 같은 이유로 그렇게 합니다).
+     * ⚠⚠ **붙였으면 2초 뒤 다시 그리기를 «끕니다».** 안 끄면 묻는 줄이 2초 만에
+     *   사라집니다 — 그 다시 그리기는 매긴 도시를 「매긴 곳」 칸으로 내려보내는
+     *   것이라, 줄이 통째로 새로 만들어지면서 형제로 붙인 것도 같이 날아갑니다.
+     *   (고치기 전에 붙여 보고 2초 뒤 사라지는 것을 봤습니다.)
+     *   사용자가 ×(그만 묻기)를 누르거나 글을 남기면 그때 다시 그려집니다. */
+    const 행 = wrap.closest('.rcc-row');
+    const 묻던 = 행?.nextElementSibling?.classList.contains('cmask') ? 행.nextElementSibling : null;
+    const 도시 = (cities || []).find(x => x.id === id);
+    if (행 && 도시 && 물을까(id, next, myRates[id]?.comment)){
+      if (!묻던) 행.insertAdjacentHTML('afterend', 묻기Html(id, 도시.name, myRates[id]?.comment, true));
+      clearTimeout(내려보낼);
+      return;
+    }
+    묻던?.remove();
     다시그리기곧();
     return;
   }
