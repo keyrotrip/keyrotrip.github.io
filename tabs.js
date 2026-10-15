@@ -16,9 +16,9 @@
  * 아닙니다(b345·b347·b350 과 같은 자리).
  *
  * 층: dom.js · trip.js · ui.js 와 이미 떼어낸 trash.js 를 씁니다. */
-import { $ } from './dom.js?v=b879';
-import { plans, tab, setTab, settleOn, todayOn } from './trip.js?v=b879';
-import { TAB_TRASH, loadTrash } from './trash.js?v=b879';
+import { $ } from './dom.js?v=b880';
+import { plans, tab, setTab, settleOn, todayOn } from './trip.js?v=b880';
+import { TAB_TRASH, loadTrash } from './trash.js?v=b880';
 
 let ctx = { appTab: () => '', showApp: () => {} };
 export function setTabsCtx(o){ ctx = { ...ctx, ...o }; }
@@ -140,7 +140,9 @@ export function showTab(t, 이미덱에){
        제일 위로 갑니다 — 결과는 머리 · 후기 · 수정 순서입니다.
      ⚠ 이미 그 칸에 있어도 그냥 다시 꽂습니다. 제자리로 넣는 것은 브라우저가
        알아서 아무 일도 안 합니다 — 「지금 어디 있나」를 따질 필요가 없습니다. */
-  if (칸) for (const id of ['editcard', 'reviewbox', 'thead']){
+  /* ⚠ 「후기」 카드는 b880 에 걷었습니다 — 탭마다 따라다니던 것이 그것입니다
+     (사용자 지적). 지금 남은 머리는 둘입니다. */
+  if (칸) for (const id of ['editcard', 'thead']){
     const e = $(id);
     if (e) 칸.insertBefore(e, 칸.firstChild);
   }

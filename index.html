@@ -138,27 +138,27 @@ addEventListener('beforeinstallprompt', function(e){
        그냥 흰 화면을 냅니다 — 비슷한 것으로 늘려주지 않습니다.
        새 아이폰이 나오면 여기 한 줄과 그림 한 장이 더 필요합니다.
        기기당 한 장(15~33KB)만 받습니다. -->
-<link rel="apple-touch-startup-image" href="splash/440x956@3x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/440x956@3x.png?v=b880"
       media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 16 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/430x932@3x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/430x932@3x.png?v=b880"
       media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 15/14 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/428x926@3x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/428x926@3x.png?v=b880"
       media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 12~14 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/402x874@3x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/402x874@3x.png?v=b880"
       media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 16 Pro -->
-<link rel="apple-touch-startup-image" href="splash/393x852@3x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/393x852@3x.png?v=b880"
       media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 15/14 Pro -->
-<link rel="apple-touch-startup-image" href="splash/390x844@3x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/390x844@3x.png?v=b880"
       media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 12~14 · 16e -->
-<link rel="apple-touch-startup-image" href="splash/375x812@3x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/375x812@3x.png?v=b880"
       media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- X/XS/11 Pro · 13 mini -->
-<link rel="apple-touch-startup-image" href="splash/414x896@3x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/414x896@3x.png?v=b880"
       media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- XS Max/11 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/414x896@2x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/414x896@2x.png?v=b880"
       media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">  <!-- XR/11 -->
-<link rel="apple-touch-startup-image" href="splash/375x667@2x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/375x667@2x.png?v=b880"
       media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">  <!-- SE 2·3 · 8 -->
-<link rel="apple-touch-startup-image" href="splash/414x736@3x.png?v=b879"
+<link rel="apple-touch-startup-image" href="splash/414x736@3x.png?v=b880"
       media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 8 Plus -->
 
 <!-- ── 링크를 보냈을 때 상대가 보는 것 ──────────────────────────────
@@ -227,94 +227,96 @@ document.fonts?.load('700 1em Dongle').then(() => {
      스크립트와 모듈은 문서 순서대로 실행되므로 unpkg 가 매달리면 뒤에 있는
      app.js 가 **아예 실행되지 않았습니다** — 앱이 통째로 안 켜지고 부팅 실패
      상자만 남았습니다. 지도 하나 때문에 그럴 이유가 없습니다. -->
-<link rel="stylesheet" href="app.css?v=b879">
+<link rel="stylesheet" href="app.css?v=b880">
 <!-- app.js 가 아래 모듈들을 정적 import 합니다(?v= 로 버전 고정). 여기서도 참조를
      남겨야 checkBuild(app.js)·서비스워커(sw.js)의 "새 파일 다 받아진 뒤에만
      새로고침" 스캔이 index.html 글자만 훑어도 이것들을 놓치지 않습니다.
      **모듈을 새로 만들 때마다 여기 한 줄을 같이 더하세요.** -->
-<link rel="modulepreload" href="supabase.js?v=b879">
-<link rel="modulepreload" href="dom.js?v=b879">
-<link rel="modulepreload" href="db.js?v=b879">
-<link rel="modulepreload" href="calc.js?v=b879">
-<link rel="modulepreload" href="rec.js?v=b879">
-<link rel="modulepreload" href="persona.js?v=b879">
-<link rel="modulepreload" href="pmore.js?v=b879">
-<link rel="modulepreload" href="map.js?v=b879">
-<link rel="modulepreload" href="shelf.js?v=b879">
-<link rel="modulepreload" href="city.js?v=b879">
-<link rel="modulepreload" href="aiui.js?v=b879">
-<link rel="modulepreload" href="report.js?v=b879">
-<link rel="modulepreload" href="cards.js?v=b879">
-<link rel="modulepreload" href="expense.js?v=b879">
-<link rel="modulepreload" href="prep.js?v=b879">
-<link rel="modulepreload" href="member.js?v=b879">
-<link rel="modulepreload" href="planmap.js?v=b879">
-<link rel="modulepreload" href="citysearch.js?v=b879">
-<link rel="modulepreload" href="profile.js?v=b879">
-<link rel="modulepreload" href="review.js?v=b879">
-<link rel="modulepreload" href="rating.js?v=b879">
-<link rel="modulepreload" href="notify.js?v=b879">
-<link rel="modulepreload" href="newtrip.js?v=b879">
-<link rel="modulepreload" href="home.js?v=b879">
-<link rel="modulepreload" href="install.js?v=b879">
-<link rel="modulepreload" href="cands.js?v=b879">
-<link rel="modulepreload" href="selfcheck.js?v=b879">
-<link rel="modulepreload" href="bring.js?v=b879">
-<link rel="modulepreload" href="sheetimp.js?v=b879">
-<link rel="modulepreload" href="trash.js?v=b879">
-<link rel="modulepreload" href="plancheck.js?v=b879">
-<link rel="modulepreload" href="aiscreen.js?v=b879">
-<link rel="modulepreload" href="account.js?v=b879">
-<link rel="modulepreload" href="myrecord.js?v=b879">
-<link rel="modulepreload" href="draft.js?v=b879">
-<link rel="modulepreload" href="triplist.js?v=b879">
-<link rel="modulepreload" href="tabs.js?v=b879">
-<link rel="modulepreload" href="planline.js?v=b879">
-<link rel="modulepreload" href="planview.js?v=b879">
-<link rel="modulepreload" href="geocode.js?v=b879">
-<link rel="modulepreload" href="legs.js?v=b879">
-<link rel="modulepreload" href="tripview.js?v=b879">
-<link rel="modulepreload" href="today.js?v=b879">
-<link rel="modulepreload" href="opentrip.js?v=b879">
-<link rel="modulepreload" href="flags.js?v=b879">
-<link rel="modulepreload" href="swreg.js?v=b879">
-<link rel="modulepreload" href="stars.js?v=b879">
-<link rel="modulepreload" href="net.js?v=b879">
-<link rel="modulepreload" href="admin.js?v=b879">
-<link rel="modulepreload" href="adminuse.js?v=b879">
-<link rel="modulepreload" href="dayseen.js?v=b879">
-<link rel="modulepreload" href="glogin.js?v=b879">
-<link rel="modulepreload" href="ui.js?v=b879">
-<link rel="modulepreload" href="card.js?v=b879">
-<link rel="modulepreload" href="trip.js?v=b879">
-<link rel="modulepreload" href="citymap.js?v=b879">
-<link rel="modulepreload" href="rate.js?v=b879">
-<link rel="modulepreload" href="cities.js?v=b879">
-<link rel="modulepreload" href="ai.js?v=b879">
-<link rel="modulepreload" href="un.js?v=b879">
-<link rel="modulepreload" href="world.js?v=b879">
-<link rel="modulepreload" href="rateui.js?v=b879">
-<link rel="modulepreload" href="globe.js?v=b879">
-<link rel="modulepreload" href="anal.js?v=b879">
-<link rel="modulepreload" href="diary.js?v=b879">
-<link rel="modulepreload" href="mate.js?v=b879">
-<link rel="modulepreload" href="photoview.js?v=b879">
-<link rel="modulepreload" href="crop.js?v=b879">
-<link rel="modulepreload" href="cityrev.js?v=b879">
-<link rel="modulepreload" href="ratecc.js?v=b879">
-<link rel="modulepreload" href="live.js?v=b879">
-<link rel="modulepreload" href="cmtask.js?v=b879">
-<link rel="modulepreload" href="activity.js?v=b879">
-<link rel="modulepreload" href="p16.js?v=b879">
-<link rel="modulepreload" href="pshift.js?v=b879">
-<link rel="modulepreload" href="visits.js?v=b879">
-<link rel="modulepreload" href="mycity.js?v=b879">
-<link rel="modulepreload" href="spree.js?v=b879">
-<link rel="modulepreload" href="try.js?v=b879">
-<link rel="modulepreload" href="people.js?v=b879">
-<link rel="modulepreload" href="friends.js?v=b879">
-<link rel="modulepreload" href="setnav.js?v=b879">
-<link rel="modulepreload" href="app.js?v=b879">
+<link rel="modulepreload" href="supabase.js?v=b880">
+<link rel="modulepreload" href="dom.js?v=b880">
+<link rel="modulepreload" href="db.js?v=b880">
+<link rel="modulepreload" href="calc.js?v=b880">
+<link rel="modulepreload" href="rec.js?v=b880">
+<link rel="modulepreload" href="persona.js?v=b880">
+<link rel="modulepreload" href="pmore.js?v=b880">
+<link rel="modulepreload" href="map.js?v=b880">
+<link rel="modulepreload" href="shelf.js?v=b880">
+<link rel="modulepreload" href="city.js?v=b880">
+<link rel="modulepreload" href="aiui.js?v=b880">
+<link rel="modulepreload" href="report.js?v=b880">
+<link rel="modulepreload" href="cards.js?v=b880">
+<link rel="modulepreload" href="expense.js?v=b880">
+<link rel="modulepreload" href="prep.js?v=b880">
+<link rel="modulepreload" href="member.js?v=b880">
+<link rel="modulepreload" href="planmap.js?v=b880">
+<link rel="modulepreload" href="citysearch.js?v=b880">
+<link rel="modulepreload" href="profile.js?v=b880">
+<link rel="modulepreload" href="review.js?v=b880">
+<link rel="modulepreload" href="rating.js?v=b880">
+<link rel="modulepreload" href="notify.js?v=b880">
+<link rel="modulepreload" href="newtrip.js?v=b880">
+<link rel="modulepreload" href="home.js?v=b880">
+<link rel="modulepreload" href="install.js?v=b880">
+<link rel="modulepreload" href="cands.js?v=b880">
+<link rel="modulepreload" href="selfcheck.js?v=b880">
+<link rel="modulepreload" href="bring.js?v=b880">
+<link rel="modulepreload" href="sheetimp.js?v=b880">
+<link rel="modulepreload" href="trash.js?v=b880">
+<link rel="modulepreload" href="plancheck.js?v=b880">
+<link rel="modulepreload" href="aiscreen.js?v=b880">
+<link rel="modulepreload" href="account.js?v=b880">
+<link rel="modulepreload" href="myrecord.js?v=b880">
+<link rel="modulepreload" href="draft.js?v=b880">
+<link rel="modulepreload" href="triplist.js?v=b880">
+<link rel="modulepreload" href="tabs.js?v=b880">
+<link rel="modulepreload" href="planline.js?v=b880">
+<link rel="modulepreload" href="planview.js?v=b880">
+<link rel="modulepreload" href="geocode.js?v=b880">
+<link rel="modulepreload" href="legs.js?v=b880">
+<link rel="modulepreload" href="tripview.js?v=b880">
+<link rel="modulepreload" href="today.js?v=b880">
+<link rel="modulepreload" href="opentrip.js?v=b880">
+<link rel="modulepreload" href="flags.js?v=b880">
+<link rel="modulepreload" href="swreg.js?v=b880">
+<link rel="modulepreload" href="stars.js?v=b880">
+<link rel="modulepreload" href="net.js?v=b880">
+<link rel="modulepreload" href="admin.js?v=b880">
+<link rel="modulepreload" href="adminuse.js?v=b880">
+<link rel="modulepreload" href="dayseen.js?v=b880">
+<link rel="modulepreload" href="glogin.js?v=b880">
+<link rel="modulepreload" href="ui.js?v=b880">
+<link rel="modulepreload" href="card.js?v=b880">
+  <link rel="modulepreload" href="share.js?v=b880">
+  <link rel="modulepreload" href="shared.js?v=b880">
+<link rel="modulepreload" href="trip.js?v=b880">
+<link rel="modulepreload" href="citymap.js?v=b880">
+<link rel="modulepreload" href="rate.js?v=b880">
+<link rel="modulepreload" href="cities.js?v=b880">
+<link rel="modulepreload" href="ai.js?v=b880">
+<link rel="modulepreload" href="un.js?v=b880">
+<link rel="modulepreload" href="world.js?v=b880">
+<link rel="modulepreload" href="rateui.js?v=b880">
+<link rel="modulepreload" href="globe.js?v=b880">
+<link rel="modulepreload" href="anal.js?v=b880">
+<link rel="modulepreload" href="diary.js?v=b880">
+<link rel="modulepreload" href="mate.js?v=b880">
+<link rel="modulepreload" href="photoview.js?v=b880">
+<link rel="modulepreload" href="crop.js?v=b880">
+<link rel="modulepreload" href="cityrev.js?v=b880">
+<link rel="modulepreload" href="ratecc.js?v=b880">
+<link rel="modulepreload" href="live.js?v=b880">
+<link rel="modulepreload" href="cmtask.js?v=b880">
+<link rel="modulepreload" href="activity.js?v=b880">
+<link rel="modulepreload" href="p16.js?v=b880">
+<link rel="modulepreload" href="pshift.js?v=b880">
+<link rel="modulepreload" href="visits.js?v=b880">
+<link rel="modulepreload" href="mycity.js?v=b880">
+<link rel="modulepreload" href="spree.js?v=b880">
+<link rel="modulepreload" href="try.js?v=b880">
+<link rel="modulepreload" href="people.js?v=b880">
+<link rel="modulepreload" href="friends.js?v=b880">
+<link rel="modulepreload" href="setnav.js?v=b880">
+<link rel="modulepreload" href="app.js?v=b880">
 </head>
 <body>
 <!-- ── 스플래시(런치 스크린) ────────────────────────────────────────
@@ -1598,13 +1600,9 @@ document.fonts?.load('700 1em Dongle').then(() => {
                 <path d="M7 3v7.5M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 10.5V21"/>
                 <path d="M17 21V3c-2.2 1.2-3.5 3.6-3.5 6.5V13H17"/>
               </svg><span>맛집 추천</span><b id="s_food">0</b></button>
-          <!-- 여행 후기(b873, 사용자: 일기 옆 칸) — b549 에 걷었던 줄을 되살림. 화면(shelf.js openReviewShelf)은 그대로 남아 있었음. -->
-          <button data-shelf="review">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3.5" y="5" width="17" height="14" rx="1.5"/>
-                <circle cx="9" cy="10" r="1.6"/><path d="M20.5 15.5l-5-4.5-8 8"/>
-              </svg><span>여행 후기</span><b id="s_review">0</b></button>
+          <!-- (「여행 후기」 칸은 b880 에 걷었습니다 — 더 남길 수 없는데 칸만 남아
+               있으면 「어떻게 얻지?」가 됩니다. b549 에 걷었다가 b873 에 되살렸던
+               줄이고, 이번에는 사용자가 기능째 걷기로 했습니다.) -->
           <button id="diaryrow">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -2453,7 +2451,7 @@ document.fonts?.load('700 1em Dongle').then(() => {
            **여기 프로필 맨 아래에만 둡니다.** 전에는 </main> 바로 앞에 있어서,
            보고 있는 탭이 무엇이든 그 아래에 곧장 붙어 목록 한가운데 떠 있는
            것처럼 보였습니다. 관리자가 일부러 찾아봐야 하는 자리로 옮깁니다. -->
-      <p class="foot hide" id="foot">화면 <code id="build">b879</code> · <span id="ms">—</span></p>
+      <p class="foot hide" id="foot">화면 <code id="build">b880</code> · <span id="ms">—</span></p>
     </div><!-- /setview -->
 
     <!-- ── 친구(b789, friends.js) · 남의 프로필(b789, people.js) ──────────────
@@ -2579,38 +2577,25 @@ document.fonts?.load('700 1em Dongle').then(() => {
         <div class="tline">
           <span id="t_title">—</span>
           <span class="meta" id="t_meta"></span>
+          <!-- 끝난 여행에만 보입니다(review.js) — 다녀온 뒤 묻는 팝업을 다시 엽니다.
+               팝업은 여행마다 한 번만 저절로 뜨므로, 「나중에」를 누른 사람이
+               돌아올 길이 하나는 있어야 합니다(시안 C). -->
+          <button class="ghost rvbtn hide" id="rvbtn">평가</button>
           <button class="ghost" id="editbtn">수정</button>
         </div>
         <!-- 구간이 둘 이상일 때만 나옵니다. 하나면 위 줄이 이미 그 도시입니다. -->
         <div class="days" id="t_legs" style="margin:10px 0 0"></div>
       </div>
 
-      <!-- 후기 — 끝난 여행에만 나옵니다 -->
-      <div class="card hide" id="reviewbox">
-        <h2><span class="grow">다녀오셨네요</span>
-          <span class="val" id="rv_when"></span></h2>
-        <div class="rvme">
-          <span class="stars" id="rv_stars">★★★★★</span>
-        </div>
-        <!-- 한 줄짜리 칸이었습니다. 여행 하나를 한 줄로 적으라는 것은
-             적지 말라는 말과 비슷합니다. 여러 줄로 늘리고 길이도 풀었습니다.
-             칸은 쓴 만큼 저절로 자랍니다(app.js 의 growNote). -->
-        <textarea id="rv_note" rows="2" maxlength="4000"
-                  placeholder="어땠나요? 다음에 갈 사람이 알면 좋을 것도 좋아요 (선택)"
-        ></textarea>
-
-        <!-- 사진. 글만 있으면 다시 안 열어봅니다. -->
-        <div class="rvshots" id="rv_shots"></div>
-        <label class="rvadd" id="rv_add">
-          <input type="file" accept="image/*" multiple hidden id="rv_file">
-          <span>＋ 사진 넣기</span>
-        </label>
-        <div class="memo" id="rv_shotnote"></div>
-        <!-- 이 여행의 구간 도시들. 여기서 바로 매기면 기록으로 넘어갑니다. -->
-        <div id="rv_cities"></div>
-        <div id="rv_others"></div>
-        <pre id="rverr" class="hide"></pre>
-      </div>
+      <!-- ⚠⚠ **「다녀오셨네요」 카드를 걷었습니다(b880, 사용자: 「이걸 그냥 없애자
+           필요 없어」 · 「여행 다녀오면 별점 & 한줄평 & 맛집 추천만 하게 하자」).** ⚠⚠
+           여행 전체 별점 · 글 · 사진 · 「일행의 후기」가 들어 있었고, 그 카드가
+           **탭을 옮길 때마다 따라다녔습니다**(사용자 지적). 쓰임을 추적해 보니
+           보관함 목록·배지·일행 말고는 가는 데가 없었습니다 — 앱을 굴리는 것은
+           전부 «도시 별점»(city_ratings)입니다.
+           → 지금은 아래 `#rvpop` 팝업이 **별점·한줄평·맛집 추천 셋만** 묻습니다.
+           ⚠ 자료(trip_reviews · trip_photos)는 **안 지웠습니다**(db/136 머리말).
+             되살리려거든 그 파일과 review.js 의 머리말부터 읽으십시오. -->
 
       <!-- 여행 정보 수정 -->
       <div class="card hide" id="editcard">
@@ -2697,10 +2682,16 @@ document.fonts?.load('700 1em Dongle').then(() => {
              **그림 카드**로 보냅니다(card.js 의 drawPlan · planview.js 의 일정카드).
              링크가 아니라 그림이라 받는 사람이 앱이 없어도 그 자리에서 읽힙니다.
              ⚠ 그림을 못 보내는 기기에서는 «글»이 대신 나갑니다(planview.js 의 일정글).
-             ⚠ 일행이 있는 여행에서도 **지출·일행 이름·일기·메모는 안 나갑니다**(일정카드). -->
-        <h2><span class="grow">일정</span>
+             ⚠ 일행이 있는 여행에서도 **지출·일행 이름·일기·메모는 안 나갑니다**(일정카드).
+             ⚠⚠ **글자 단추에서 공유 아이콘으로, 자리도 「일정」 바로 오른쪽으로 옮겼습니다
+                 (b880, 사용자).** 오른쪽 끝에 「보내기 · 일정 후보 · 추가」 셋이 서 있으면
+                 무엇이 주된 일인지 안 읽힙니다. 아이콘은 첫 화면·지도의 공유와 **같은 그림**
+                 입니다(home.js 의 `.gshare` — 유튜브식 화살표, b858·b859 에 통일). -->
+        <h2><span class="grow">일정<button class="icoshare hide" id="sendplanbtn"
+              aria-label="일정 공유하기" title="일정 공유하기"><svg viewBox="0 0 24 24" width="18" height="18"
+              fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true"><path d="M14 5.5v3.6C8.2 9.8 4.6 13.6 3.5 19c2.4-3.2 5.7-4.7 10.5-4.7v3.7L21 11.75z"/></svg></button></span>
           <button class="ghost hide" id="catbtn">분류</button>
-          <button class="ghost hide" id="sendplanbtn">보내기</button>
           <button class="ghost" id="candbtn">일정 후보</button>
           <button class="small addbtn" id="addplanbtn">추가</button></h2>
         <!-- ⚠ 보이지 않는 단추입니다 (b388). 빈 일정 화면의 「AI 로 짜기」가
@@ -2805,6 +2796,13 @@ document.fonts?.load('700 1em Dongle').then(() => {
       <div class="card" id="card-exp">
         <h2><span class="grow">지출</span>
           <button class="small addbtn" id="addexpbtn">추가</button></h2>
+        <!-- 날짜 칩(b880, 사용자: 「지출도 지금은 통째로 되어 있는데 날짜별로 고를 수 있게」) —
+             일정 화면의 날짜 줄(#days)과 **같은 모양**입니다. 다른 점 하나: 여기는
+             **지출이 있는 날만** 올립니다. 열흘 여행에서 이틀만 썼는데 빈 칩 여덟 개를
+             세우면 고를 것이 없는 줄을 굴리게 됩니다.
+             ⚠ 쓴 날이 둘 미만이면 expense.js 가 숨깁니다 — 고를 것이 하나뿐인 거르개는
+               누를 이유가 없습니다(「분류」 단추와 같은 규칙). -->
+        <div class="days oneline hide" id="expdays"></div>
         <div id="exptotal"></div>
         <div id="expenses"><div class="empty"><span class="load">지출을 세는 중…</span></div></div>
         <pre id="experr" class="hide"></pre>
@@ -3386,7 +3384,73 @@ document.fonts?.load('700 1em Dongle').then(() => {
   </div>
 </div>
 
-<script type="module" src="app.js?v=b879"></script>
+<!-- ══ 다녀온 뒤 묻기 (b880) ═════════════════════════════════════════════
+     끝난 여행을 열면 한 번 뜹니다. 묻는 것은 **별점 · 한줄평 · 맛집 추천** 셋뿐.
+     ⚠ 성향 바뀜 알림(b854)과 **같은 틀**(.pshpop/.pshcard)입니다 — 새 모양을
+       만들지 않습니다. 한줄평·맛집 줄은 cmtask.js 가 그 자리에 끼웁니다. -->
+<div id="rvpop" class="hide" aria-modal="true" role="dialog" aria-labelledby="rv_title">
+  <div class="pshcard">
+    <h3 class="pshtitle" id="rv_title">어떠셨어요?</h3>
+    <!-- ⚠ 설명 글은 걷었습니다(b880, 사용자: 「이거 걍 다 빼」) — 제목과 단추면
+         무엇을 하는 판인지 알 수 있습니다. b868·b875 에서도 같은 판단이었습니다. -->
+    <!-- ⚠⚠ **여기서 별점을 받지 않습니다(b880).** 받는 화면이 이미 있습니다 —
+         「다녀온 뒤 평가」(home.js 의 openReviewTrip, 기록 탭의 「○○ 어땠어요?」
+         띠로도 들어가던 그 화면). 도시마다 별점·한줄평·일기가 거기 있고,
+         b880 에 맛집 줄까지 더했습니다. 팝업이 또 받으면 **같은 일이 두 벌**이
+         되고, 실제로 클래스(.rvcity)와 뒤로가기 키(t2:'rv')가 겹쳤습니다.
+         팝업은 **그 화면으로 데려다 주는 일만** 합니다. -->
+    <div class="pshbtns">
+      <button type="button" class="primary" id="rv_go">평가하러 가기</button>
+      <button type="button" class="pshx" id="rv_later">나중에</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 일정 공유 판 (b880) ═══════════════════════════════════════════════
+     보내는 길이 셋이라(그림·링크·글) 고르는 판이 하나 필요합니다 —
+     사용자가 시안 셋 중 「작은 판에서 고르기」를 골랐습니다.
+     ⚠ 줄의 내용은 share.js 가 그립니다(켜짐 여부에 따라 풀이가 달라집니다).
+     ⚠ 뒷판은 제 `::before` 로 깝니다 — `#sheetbg` 는 ui.js 의 `syncSheets` 가
+       제 목록(SHEETS)만 보고 켰다 껐다 하므로, 거기 없는 판이 그걸 쓰면
+       다음 `syncSheets()` 한 번에 뒷판만 사라집니다. -->
+<div id="sharesheet" class="hide" aria-modal="true" role="dialog" aria-label="일정 공유하기">
+  <div class="cshead">
+    <span>일정 공유하기</span>
+    <button class="csx" id="sh_x" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="shbody">
+    <div id="sh_rows"></div>
+    <!-- 켠 적이 있을 때만 보입니다(share.js) — 켜 두고 잊으면 그 링크는 영영 열립니다. -->
+    <button type="button" class="ghost shoff hide" id="sh_off">공유 링크 끄기</button>
+  </div>
+</div>
+
+<!-- ══ 링크로 받은 일정 (b880, 2단계) ════════════════════════════════════
+     `?plan=<토큰>` 으로 들어온 사람에게 보여주는 **보기 전용** 화면입니다.
+     ⚠⚠ **로그인 없이 열립니다** — 그것이 이 기능의 전부입니다. 그래서
+       `#signedout`(로그인 화면) «위»를 통째로 덮습니다(app.css 의 #sharedpane).
+     ⚠ 나가는 자료는 서버가 손으로 고릅니다(db/001 의 get_shared_trip,
+       db/135 에서 메모를 뺌). 여기서는 받은 것만 그립니다. -->
+<div id="sharedpane" class="hide" role="dialog" aria-label="공유받은 일정">
+  <div class="shdbar">
+    <button class="csx" id="shd_x" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div id="sharedbody"></div>
+  <!-- 「나도 이대로 가기」 → 가는 날 고르기(사용자 결정: 내 출발일로 옮기기) -->
+  <div id="shdtake" class="hide">
+    <label for="shd_start">언제 가세요?</label>
+    <input type="date" id="shd_start">
+    <p class="memo">Day 1·2·3 사이 간격은 그대로 두고 통째로 옮겨 드려요.</p>
+    <div class="shdbtns">
+      <button type="button" class="ghost" id="shd_cancel">취소</button>
+      <button type="button" class="primary" id="shd_go">담기</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="app.js?v=b880"></script>
 </body>
 </html>
 

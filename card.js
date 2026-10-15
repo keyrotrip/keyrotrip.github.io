@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b879';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b880';
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b879';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b880';
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
  * "나는 뭐로 나올까"가 궁금해서 평가를 더 하게 만드는 것이 목적입니다.
@@ -293,7 +293,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b879`;
+    img.src = `./persona/${code}.webp?v=b880`;
   });
 }
 
@@ -564,7 +564,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b879`;
+    img.src = `./persona/m/${code}.jpg?v=b880`;
   });
 }
 
@@ -1833,13 +1833,25 @@ async function 시트그리기(){
   }
 }
 
+/* 시트가 떠 있나 — 뒤로가기 사슬(tripview.js)이 층을 가릴 때 씁니다(b880). */
+export function 카드시트열림(){ return !!시트; }
+
+export function 카드시트닫기(fromPop){ return 시트닫기(fromPop); }
+
 function 시트닫기(fromPop){
+  /* ⚠⚠ **순서가 거꾸로였습니다(b880).** ⚠⚠ 전에는 «먼저 닫고 그 다음 뒤로»
+     였습니다. 그러면 그 뒤로가기가 일으킨 `popstate` 가 돌 때는 시트가 이미
+     닫혀 있어서, 뒤로가기 사슬(tripview.js)이 이 줄을 그냥 지나쳐 맨 끝의
+     `if (trip) return backToList(true)` 까지 흘러갔습니다 — **여행이 닫혔습니다.**
+     ×·덮개·「보내기」로 닫아도 똑같았습니다(뒤로가기만의 일이 아닙니다).
+     ⚠ 이제 앱의 다른 판 전부와 **같은 수법**입니다(closeCity·closeSpree…):
+       손으로 닫을 때는 **뒤로만 가고 아무것도 안 닫습니다.** 실제로 닫는 일은
+       그 뒤로가기가 부른 `popstate` 한 번에서만 일어납니다.
+     ⚠ `cs_go` 는 `시트` 를 먼저 손에 쥐고 부르므로(위) 여기서 늦게 닫혀도 됩니다. */
+  if (!fromPop && history.state?.t2 === 'cs'){ history.back(); return; }
   const s = 시트; 시트 = null;
   if (s?.url) URL.revokeObjectURL(s.url);
   $('cardsheet')?.classList.add('hide');
-  /* ⚠ **뒤로가기로 닫힐 때는 또 뒤로 가면 안 됩니다** — 두 칸 물러나
-     엉뚱한 화면에 떨어집니다. closeSpree·closeReview 와 같은 수법입니다. */
-  if (!fromPop && history.state?.t2 === 'cs') history.back();
 }
 
 export function shareCard(spec, name){
@@ -1888,7 +1900,16 @@ if (typeof document !== 'undefined' && $('cardsheet')){
     시트닫기();
     await sendCardBlob(s.blob, s.spec, s.name);
   });
-  window.addEventListener('popstate', () => { if (시트) 시트닫기(true); });
+  /* ⚠⚠ **뒤로가기는 여기서 안 듣습니다(b880, 사용자: 「카드 뜨고 뒤로가기 하면 다시
+     여행탭 초기로 가는데 진입한 화면으로 다시 돌아와야지」).** ⚠⚠
+     여기 `popstate` 를 따로 달아 두었더니, 여행 «안»에서 카드를 열었을 때
+     tripview.js 의 사슬이 **같은 뒤로가기에 같이 돌아** 맨 끝의
+     `if (trip) return backToList(true)` 까지 가서 여행까지 닫혔습니다.
+     (발자국·성향 카드는 여행 밖에서 열려 `trip` 이 없었고, 그래서 일정 카드가
+      생기고 나서야 드러났습니다.)
+     ⚠ 두 군데서 들으면 **순서에 기대게 됩니다** — 사슬이 먼저 돌면 이미 닫힌 뒤라
+       `카드시트열림()` 이 거짓이 되어 또 그냥 지나갑니다. 그래서 듣는 곳을
+       **사슬 하나**로 모읍니다(다른 판 전부와 같은 규칙). */
 }
 
 /* 평생 누적 값. 별점을 매긴 도시만 셉니다 — "가보고 싶어요"는 간 곳이 아닙니다.

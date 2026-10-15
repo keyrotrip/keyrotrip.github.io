@@ -15,28 +15,28 @@
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
 import { $, esc, toast, emptyDo, josa, toTop, coverDeck, backLabel,
-         flagOf, flagOk, flagSprite } from './dom.js?v=b879';
-import { openCity } from './city.js?v=b879';
-import { sb } from './db.js?v=b879';
-import { cities, countryName, cityCountry, onlyCho } from './cities.js?v=b879';
-import { myRates, cityStat, visited, avgTail } from './rate.js?v=b879';
-import { starHtml, paintStars, starValue, 별갈래, BAND_NAME } from './stars.js?v=b879';
-import { fail } from './net.js?v=b879';
-import { arm } from './ui.js?v=b879';
+         flagOf, flagOk, flagSprite } from './dom.js?v=b880';
+import { openCity } from './city.js?v=b880';
+import { sb } from './db.js?v=b880';
+import { cities, countryName, cityCountry, onlyCho } from './cities.js?v=b880';
+import { myRates, cityStat, visited, avgTail } from './rate.js?v=b880';
+import { starHtml, paintStars, starValue, 별갈래, BAND_NAME } from './stars.js?v=b880';
+import { fail } from './net.js?v=b880';
+import { arm } from './ui.js?v=b880';
 /* 깃발 벽의 공유는 지도·나라 목록과 **같은 카드**입니다(b649) — 셋 다
    「몇 개국 다녀왔다」를 말합니다. map.js 가 만들고 여기서 부르기만
    합니다. ⚠ map.js 는 shelf.js 를 안 가져오므로 고리가 안 생깁니다. */
-import { 발자국스펙 } from './map.js?v=b879';
-import { shareCard } from './card.js?v=b879';
-import { todayYmd } from './calc.js?v=b879';
+import { 발자국스펙 } from './map.js?v=b880';
+import { shareCard } from './card.js?v=b880';
+import { todayYmd } from './calc.js?v=b880';
 /* ⚠ `flagOf`·`flagOk` 는 **dom.js 것**입니다(위 줄) — un.js 에 또 만들었다가
      걷었습니다. `UN_CONT`·`UN_TOTAL` 도 un.js 가 «세어서» 줍니다. map.js 를
      끌어오지 않는 이유가 이것입니다 — 195 라는 수를 두 곳에서 적으면
      언젠가 갈라집니다. 두 곳이 같은지는 un.js 의 `검산()` 이 봅니다. */
-import { UN_CODES, UN_TOTAL } from './un.js?v=b879';
-import { loadCities } from './citysearch.js?v=b879';
-import { loadRateData, saveRate } from './rating.js?v=b879';
-import { openFoodNote } from './cityrev.js?v=b879';
+import { UN_CODES, UN_TOTAL } from './un.js?v=b880';
+import { loadCities } from './citysearch.js?v=b880';
+import { loadRateData, saveRate } from './rating.js?v=b880';
+import { openFoodNote } from './cityrev.js?v=b880';
 
 let ctx = {
   me: () => null,
@@ -258,46 +258,9 @@ async function openPlaceShelf(kind){
            일정에 넣어두면 여행이 끝난 뒤 여기서 평가할 수 있어요.</div>`;
 }
 
-/* 다녀온 여행에 남긴 것을 모아 봅니다. 여행 화면 안에만 두면 그 여행을
-   다시 찾아 들어가야 다시 볼 수 있습니다 — 후기는 다시 보라고 쓰는 것입니다.
-   별점·글·사진 중 하나라도 남긴 여행만 나옵니다(db/052 의 my_reviews). */
-async function openReviewShelf(){
-  const { data, error } = await sb.rpc('my_reviews');
-  if (error) return fail(error, 'trip');
-  const list = data || [];
-  $('shelfcount').textContent = list.length ? `${list.length}개` : '';
-  if (!list.length){
-    $('shelflist').innerHTML =
-      emptyDo('아직 남긴 후기가 없어요.', null, null,
-              '여행이 끝나면 그 여행 화면에서 별점과 글, 사진을 남길 수 있어요.');
-    return;
-  }
-  /* 표지 사진은 비공개 통에 있습니다. 잠깐 열리는 주소를 한 번에 받습니다. */
-  const paths = list.map(r => r.cover).filter(Boolean);
-  let by = {};
-  if (paths.length){
-    const { data: urls } = await sb.storage.from('trip-photos')
-      .createSignedUrls(paths, 3600);
-    by = Object.fromEntries((urls || []).map(u => [u.path, u.signedUrl]));
-  }
-  /* 한줄평·맛집 추천과 같은 모양(b873, 사용자 2번) — 글이 주인공. 표지가 없으면 도시 사진, 그것도 없으면 첫 글자.
-     ⚠ 별은 글자(★4.5)로만 — 별 그림(.st)을 두면 아래 별 누르기 핸들러가 도시 별점으로 받습니다. */
-  await loadCities();
-  const 날 = d => { const [y, m, dd] = String(d || '').split('-'); return y ? `${y}.${Number(m)}.${Number(dd)}` : ''; };
-  $('shelflist').innerHTML = list.map(r => {
-    const c = (cities || []).find(x => x.name === r.destination);
-    const 그림 = (r.cover && by[r.cover]) || c?.image_url;
-    const 줄 = [r.destination, 날(r.end_date), r.stars != null ? `★${Number(r.stars).toFixed(1)}` : '', r.photos ? `사진 ${r.photos}장` : '']
-      .filter(Boolean).join(' · ');
-    return `<div class="cmt fdmy" data-rvtrip="${esc(r.trip_id)}">
-        <div class="rrow">
-          ${그림 ? `<img class="thumb" src="${esc(그림)}" alt="" loading="lazy">` : `<span class="thumb ph">${esc(String(r.title || '').slice(0, 1))}</span>`}
-          <div class="t"><b>${esc(r.title)}</b><span class="memo">${esc(줄)}</span></div>
-        </div>
-        ${r.comment ? `<div class="cq">${esc(r.comment)}</div>` : ''}
-      </div>`;
-  }).join('');
-}
+/* (「여행 후기」 보관함 화면은 b880 에 걷었습니다 — 그 기능째 없앴습니다
+   (사용자: 「이걸 그냥 없애자 필요 없어」). 자료와 `my_reviews`(db/052)는
+   그대로 있으니, 되살리려거든 review.js 의 머리말부터 읽으십시오.) */
 
 /* ── 맛집 추천(b873, db/134 · 사용자: 「보관함에 한줄평 밑에 맛집 후기까지」 → 이름은 도시 화면과 같은 「맛집 추천」) ──
  * 내가 도시 화면에서 남긴 추천을 전부(한마디 없는 것도). 「다녀온 맛집」(여행 일정 속 식당)과는 다른 것입니다.
@@ -598,7 +561,6 @@ export async function openShelf(kind, 다시 = false){
   $('shelflist').classList.remove('flagwall');
   if (kind === 'flag')   return openFlagShelf();
   if (kind === 'place' || kind === 'spot') return openPlaceShelf(kind);
-  if (kind === 'review') return openReviewShelf();
   if (kind === 'food')   return openFoodShelf(다시);
   if (kind === 'badge')  return openBadgeShelf();
 

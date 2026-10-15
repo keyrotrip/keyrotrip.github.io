@@ -18,19 +18,21 @@
  *
  * 층: dom.js · net.js · calc.js · trip.js 와 이미 떼어낸
  *     planline.js · planmap.js · plancheck.js 를 씁니다. */
-import { $, esc, emptyDo } from './dom.js?v=b879';
-import { featOn, flags } from './flags.js?v=b879';
-import { fail, write } from './net.js?v=b879';
-import { dayLabel, hm, hop, money, legNear, dateRange, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b879';
-import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b879';
-import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b879';
-import { drawPlanMap, mapLinks } from './planmap.js?v=b879';
-import { STAY_MIN, mins } from './plancheck.js?v=b879';
+import { $, esc, emptyDo } from './dom.js?v=b880';
+import { featOn, flags } from './flags.js?v=b880';
+import { fail, write } from './net.js?v=b880';
+import { dayLabel, hm, hop, money, legNear, dateRange, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b880';
+import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b880';
+import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b880';
+import { drawPlanMap, mapLinks } from './planmap.js?v=b880';
+import { STAY_MIN, mins } from './plancheck.js?v=b880';
 /* 좌표 없는 줄에서 그 한 곳만 찾습니다. **cands.js 는 이 파일을 안 부르므로
    고리가 안 생깁니다**(b375 에 확인). */
-import { fillOnePlan } from './cands.js?v=b879';
+import { fillOnePlan } from './cands.js?v=b880';
 /* 일정을 그림 카드로 보냅니다(b879) — 아래 `일정카드`. */
-import { shareCard } from './card.js?v=b879';
+import { shareCard } from './card.js?v=b880';
+/* 보내는 길이 셋이 되어(그림·링크·글) 고르는 판이 생겼습니다(b880). */
+import { openShareSheet } from './share.js?v=b880';
 
 let ctx = { loadPlans: async () => {} };
 export function setPlanViewCtx(o){ ctx = { ...ctx, ...o }; }
@@ -355,9 +357,16 @@ function 일정카드(){
   };
 }
 
+/* ⚠ **이 단추는 이제 «고르는 판»을 엽니다(b880).** 전에는 바로 그림 카드였습니다.
+   그림·링크·글 셋 중에 고릅니다 — 만드는 법은 여기가 알고, 고르게 하는 것은
+   share.js 가 합니다(서로 안 부르게 함수를 넘깁니다). */
 $('sendplanbtn')?.addEventListener('click', () => {
   if (!trip || !plans.length) return;
-  shareCard(일정카드(), `기로-${String(trip.destination || trip.title || '일정').replace(/\s+/g, '')}-일정`);
+  openShareSheet({
+    그림: () => shareCard(일정카드(),
+      `기로-${String(trip.destination || trip.title || '일정').replace(/\s+/g, '')}-일정`),
+    글: () => 일정글(),
+  });
 });
 
 export function drawPlans(){

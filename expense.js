@@ -16,13 +16,13 @@
  * 이렇게 하니 ctx 가 둘로 줄었습니다. **떼어낼수록 얽힘이 줄어드는 자리입니다.**
  *
  * 층: dom.js · db.js · net.js · calc.js · trip.js · ui.js 만 씁니다. */
-import { $, esc, toast, emptyDo } from './dom.js?v=b879';
-import { sb } from './db.js?v=b879';
-import { fail, netTimeout, offNote, isOffline, write, drawOffbar } from './net.js?v=b879';
-import { money, NO_CENTS, settleMath, dayLabel, legNear, todayYmd, hm } from './calc.js?v=b879';
+import { $, esc, toast, emptyDo } from './dom.js?v=b880';
+import { sb } from './db.js?v=b880';
+import { fail, netTimeout, offNote, isOffline, write, drawOffbar } from './net.js?v=b880';
+import { money, NO_CENTS, settleMath, dayLabel, legNear, todayYmd, hm } from './calc.js?v=b880';
 import { trip, plans, legs, members, expenses, setExpenses, nameOf,
-         pickedDay, tab, setSettleOn } from './trip.js?v=b879';
-import { arm } from './ui.js?v=b879';
+         pickedDay, tab, setSettleOn } from './trip.js?v=b880';
+import { arm } from './ui.js?v=b880';
 
 /* app.js 만 아는 것 둘. **`me` 는 값이 아니라 함수로 받습니다** —
    로그인할 때마다 바뀌는데 값으로 받으면 처음 것을 붙들고 있습니다. */
@@ -109,8 +109,48 @@ export async function loadExpenses(){
   if ((plans || []).length) ctx.drawPlans();
 }
 
+/* ── 날짜로 거르기 (b880) ─────────────────────────────────────────────
+ * 사용자: 「지출도 지금은 통째로 되어 있는데 날짜별로 고를 수 있게 디테일하게」.
+ * ⚠ 거르는 것은 **이 카드뿐**입니다. 정산(#settlecard)은 여행 통째로 둡니다 —
+ *   「누가 누구에게 얼마」는 하루만 떼어 내면 뜻이 없습니다(하루치만 갚지
+ *   않습니다). 거르개를 거기까지 걸면 반쯤 맞는 숫자가 나옵니다.
+ * ⚠ 고른 날은 **그 여행 안에서만** 삽니다. 여행을 바꾸면 그 날짜가 없어지므로
+ *   아래에서 스스로 풉니다(따로 비우는 자리를 두지 않습니다). */
+let 지출날 = null;
+
+/* 칩 한 장의 글자 — 「Day 2」. `dayLabel` 이 만든 「Day 2 · 11월 13일 목요일」의
+   앞 토막입니다. 기간 밖 지출이면 날짜가 통째로 나옵니다(그쪽이 맞습니다). */
+const 칩말 = d => String(dayLabel(d, trip)).split(' · ')[0];
+
+function 날짜칩(쓴날){
+  const 줄 = $('expdays');
+  if (!줄) return;
+  /* 하루치뿐이면 거를 것이 없습니다. */
+  줄.classList.toggle('hide', 쓴날.length < 2);
+  if (쓴날.length < 2) return;
+  줄.innerHTML =
+    `<button class="day${지출날 === null ? ' on' : ''}" data-expday="">모든 날</button>` +
+    쓴날.map(d => `<button class="day${지출날 === d ? ' on' : ''}" data-expday="${esc(d)}">` +
+                  `${esc(칩말(d))}</button>`).join('');
+  /* 옆으로 굴러가는 줄이라 고른 칩이 화면 밖일 수 있습니다(#days 와 같은 처리). */
+  /* 「모든 날」 칩은 늘 맨 앞이라 굳이 끌어올 필요가 없습니다 — 고른 날짜 칩만 봅니다. */
+  const on = 줄.querySelector('.day.on[data-expday]:not([data-expday=""])');
+  if (on) on.scrollIntoView({ block:'nearest', inline:'center' });
+}
+
+if (typeof document !== 'undefined' && $('expdays')){
+  /* 칩은 매번 새로 그려지므로 줄에 한 번만 답니다(#days 와 같은 수법). */
+  $('expdays').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-expday]'); if (!b) return;
+    지출날 = b.dataset.expday || null;
+    drawExpenses();
+  });
+}
+
 function drawExpenses(){
   if (!expenses.length){
+    지출날 = null;
+    $('expdays')?.classList.add('hide');
     $('exptotal').innerHTML = '';
     /* ⚠ 보기 전용 일행에게는 단추를 안 답니다(b799, GPT 리포트에서 찾음) — 머리의 「추가」는
        숨겼는데(opentrip.js) 빈 화면 단추가 숨은 단추를 대신 눌러 폼이 열리고, 저장은 막혀 실패했습니다. */
@@ -120,13 +160,23 @@ function drawExpenses(){
       보기만 ? '일행이 넣으면 여기에 모여요.' : '넣어두면 일행과 나눠 낼 몫이 자동으로 계산돼요.');
     return;
   }
+  /* 쓴 날만 칩으로 올립니다. ⚠ 고른 날이 그 사이 없어졌으면(지출을 지웠거나
+     여행을 바꿨거나) 조용히 풉니다 — 아무것도 안 보이는 화면이 나면 안 됩니다. */
+  const 쓴날 = [...new Set(expenses.map(x => x.date).filter(Boolean))].sort();
+  if (지출날 && !쓴날.includes(지출날)) 지출날 = null;
+  날짜칩(쓴날);
+
+  /* 여기서부터 «보이는 것»만 셉니다 — 총액도 분류 막대도 고른 날 것입니다.
+     목록만 거르고 합계는 통째로 두면 숫자와 목록이 어긋나 보입니다. */
+  const 보일것 = 지출날 ? expenses.filter(x => x.date === 지출날) : expenses;
+
   const byCur = {};
-  for (const e of expenses) byCur[e.currency] = (byCur[e.currency] || 0) + Number(e.amount);
+  for (const e of 보일것) byCur[e.currency] = (byCur[e.currency] || 0) + Number(e.amount);
   const detail = Object.entries(byCur).map(([c, v]) => money(v, c)).join(' · ');
 
   /* 환산된 것만 합칩니다. 못 구한 환율을 짐작해 채우면 틀린 총액이 나옵니다. */
-  const done = expenses.filter(e => e.amount_home != null);
-  const missing = expenses.length - done.length;
+  const done = 보일것.filter(e => e.amount_home != null);
+  const missing = 보일것.length - done.length;
   const total = done.reduce((s, e) => s + Number(e.amount_home), 0);
 
   /* 분류별로 얼마나 썼는지. 숫자만 늘어놓으면 어디에 많이 쓴 건지 안 보입니다.
@@ -148,7 +198,7 @@ function drawExpenses(){
 
   $('exptotal').innerHTML =
     `<div class="picked" style="margin-bottom:var(--s-sm); display:block">
-       <div class="c">모두 합쳐</div>
+       <div class="c">${지출날 ? esc(칩말(지출날) + '에 쓴 돈') : '모두 합쳐'}</div>
        ${done.length
          ? `<b style="font-size:calc(21px * var(--ts))">${esc(money(total, trip.home_currency))}</b>`
          : ''}
@@ -162,7 +212,7 @@ function drawExpenses(){
   if (missing) $('fxfill').onclick = fillRates;
 
   let html = '', last = null;
-  for (const e of expenses){
+  for (const e of 보일것){
     if (e.date !== last){
       html += `<div class="daysep">${esc(dayLabel(e.date, trip))}</div>`;
       last = e.date;

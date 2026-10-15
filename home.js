@@ -33,46 +33,46 @@
  * 층: 아래층 여럿과 이미 떼어낸 조각들(citysearch · rating · map ·
  *     report · globe)을 씁니다. 그쪽은 이 파일을 안 부르므로 고리가
  *     생기지 않습니다 — 저쪽이 이 화면을 다시 그릴 때는 ctx 를 씁니다. */
-import { $, esc, toast } from './dom.js?v=b879';
-import { sb } from './db.js?v=b879';
-import { fail, netTimeout, netIsDown, drawOffbar } from './net.js?v=b879';
-import { hm, todayYmd } from './calc.js?v=b879';
-import { starHtml, paintStars } from './stars.js?v=b879';
+import { $, esc, toast } from './dom.js?v=b880';
+import { sb } from './db.js?v=b880';
+import { fail, netTimeout, netIsDown, drawOffbar } from './net.js?v=b880';
+import { hm, todayYmd } from './calc.js?v=b880';
+import { starHtml, paintStars } from './stars.js?v=b880';
 /* 평가 히어로는 세 화면이 같은 것을 씁니다 — rateui.js 머리말 참고(b409). */
-import { starValue } from './rateui.js?v=b879';
-import { cities, countryName, cityCountry } from './cities.js?v=b879';
-import { UN_CODES } from './un.js?v=b879';
-import { myRates, cityStat, visited } from './rate.js?v=b879';
-import { plans } from './trip.js?v=b879';
-import { loadCities } from './citysearch.js?v=b879';
+import { starValue } from './rateui.js?v=b880';
+import { cities, countryName, cityCountry } from './cities.js?v=b880';
+import { UN_CODES } from './un.js?v=b880';
+import { myRates, cityStat, visited } from './rate.js?v=b880';
+import { plans } from './trip.js?v=b880';
+import { loadCities } from './citysearch.js?v=b880';
 /* 지구본에서 나라를 누르면 뜨는 카드가 도시 화면으로 보냅니다(b555). */
-import { openCity } from './city.js?v=b879';
-import { saveRate, refreshVisited, loadRateData } from './rating.js?v=b879';
+import { openCity } from './city.js?v=b880';
+import { saveRate, refreshVisited, loadRateData } from './rating.js?v=b880';
 /* CONT 는 대륙별 분모(b451) — 지도 화면과 **같은 표**를 씁니다.
    여기서 새로 적으면 두 화면의 분모가 갈라집니다. */
-import { openMap, UN_COUNTRIES, CONT, CONT_VIEW, mapBackTo, 발자국스펙 } from './map.js?v=b879';
+import { openMap, UN_COUNTRIES, CONT, CONT_VIEW, mapBackTo, 발자국스펙 } from './map.js?v=b880';
 /* ⚠ **`renderAiCard`·`aiPrompt` 를 b398 에서 뗐습니다.** 홈에서 AI 일정
    권유를 걷어냈기 때문입니다(메인은 평가, 일정은 서브). 둘은 report.js 에
    그대로 살아 있으니 일정 쪽에서 쓸 자리가 생기면 거기서 가져다 쓰십시오. */
-import { drawReport } from './report.js?v=b879';
+import { drawReport } from './report.js?v=b880';
 /* 성향은 **card.js 가 정합니다.** 여기서 다시 세지 않습니다 — 두 군데서 세면
    홈에 뜬 유형과 성향 화면의 유형이 언젠가 갈라집니다. */
 /* PERSONA_BG 만 씁니다 — 카드 배경색입니다. personaAxes·personaRank·PERSONA16 은
    b457 에 홈에서 성향을 빼면서 같이 걷었습니다(분석 탭이 씁니다). */
-import { PERSONA_BG, shareCard } from './card.js?v=b879';
+import { PERSONA_BG, shareCard } from './card.js?v=b880';
 /* 한줄평 · 맛집 묻기(b861) */
-import { 물을까, 묻기Html } from './cmtask.js?v=b879';
+import { 물을까, 묻기Html, 맛집줄Html } from './cmtask.js?v=b880';
 /* ♡ 알림(b859) */
-import { openActivity, heartRefresh } from './activity.js?v=b879';
+import { openActivity, heartRefresh } from './activity.js?v=b880';
 /* 성향이 바뀌면 홈 맨 위에 한 번 알립니다(b526) — 「다시 열 이유」. */
-import { checkPersonaShift } from './pshift.js?v=b879';
+import { checkPersonaShift } from './pshift.js?v=b880';
 /* 일기장은 제 화면을 엽니다. 「기록 탭에서 왔다」를 적어둬야 닫을 때
    프로필이 아니라 여기로 돌아옵니다(map.js 의 「나온 자리로」와 같은 규칙). */
 /* 손가락으로 돌려 보는 지구본. **성향 탭에 있던 것을 여기로 옮겼습니다(b542)** —
    이 탭이 곧 「내가 어디를 갔나」입니다. */
-import { mountGlobe } from './globe.js?v=b879';
+import { mountGlobe } from './globe.js?v=b880';
 /* 홈 화면에 추가 안내(b844) — 로그인 뒤에도 브라우저로 쓰는 폰에 칩 하나. install.js 머리말 참고. */
-import { 안내할까, 기기알기, 설치안내열기, 폰그림 } from './install.js?v=b879';
+import { 안내할까, 기기알기, 설치안내열기, 폰그림 } from './install.js?v=b880';
 /* 나라 지도 화면(b682). 지구본에서 나라를 누르면 여기로 갑니다. */
 /* ⚠ `ctrymap.js`(나라 페이지)는 b707 에 없앴습니다 — 지구본이 직접 도시까지
    보여줍니다. 파일도 지웠습니다. */
@@ -1086,7 +1086,9 @@ export async function openTripReport(id){
   await drawReport(id);
 }
 
-async function openReviewTrip(id){
+/* ⚠ b880 부터 **내보냅니다** — 끝난 여행을 열 때 뜨는 팝업(review.js)과
+   여행 머리줄 「평가」 단추가 이 화면을 엽니다. 받는 곳은 여기 하나입니다. */
+export async function openReviewTrip(id){
   rvTrip = id;
   /* 탭 화면 다섯은 이제 덱 한 덩어리입니다(b474) — 낱개로 숨기면 덱 안에서
      가로 위치가 밀립니다. */
@@ -1137,6 +1139,7 @@ async function openReviewTrip(id){
       </div>
       <input class="rvcmt" data-cmt="${esc(cid)}" maxlength="80"
              placeholder="한줄평 — 남들에게도 보여요" value="${esc(r.comment || '')}">
+      ${맛집줄Html(cid, c.name)}
       <textarea class="rvjrn" data-jrn="${esc(cid)}" rows="3" maxlength="4000"
         placeholder="일기 — 나만 봅니다">${esc(r.journal || '')}</textarea>
     </div>`;
@@ -1437,8 +1440,29 @@ async function renderFoot(통){
       /* 뒤 복제(맨 끝) → 진짜 첫 장(0). 앞 복제는 b669 에 없앴습니다. */
       if (i === 수) 옮기기(0);
       /* ⚠ 복제가 아니어도 어긋나 있으면 맞춰 둡니다 — 관성이 스냅을
-         못 잡고 멎는 경우가 드물게 있습니다. */
-      else if (줄기.scrollLeft % w) 옮기기(i * w);
+         못 잡고 멎는 경우가 드물게 있습니다.
+         ⚠⚠ **판정은 «진짜 폭»으로, 1px 여유를 두고 합니다(b880).** ⚠⚠
+           제보: 안드로이드 크롬에서 카드를 넘기면 덜덜 떪(사파리 기기는 정상).
+           전에는 `scrollLeft % w`(w = clientWidth) 였습니다. `clientWidth` 는
+           **반올림된 정수**인데, 스냅이 실제로 서는 자리는 카드의 **진짜 폭**
+           (소수일 수 있음)의 배수입니다. 화면 배율이 2.625·2.75 인 안드로이드는
+           CSS 폭이 411.43px 처럼 소수라 카드 폭이 389.422 가 됩니다 —
+           그러면 3번째 칸의 스냅 자리는 1168.27 인데 `3 × 389 = 1167` 로 고치고,
+           스냅이 도로 1168.27 로 당기고, 또 고치고… 를 되풀이했습니다.
+           실측(데스크톱 크롬 · 폭을 소수로 맞춰서): 한 번 넘기는데 보정 6번,
+           scroll/scrollend 6~10번. 정수 폭(390·384)에서는 0번.
+           보정만 끄면 사라지고 지구본만 끄면 그대로였습니다.
+           ⚠ **실제 안드로이드 기기에서는 아직 재현·확인하지 못했습니다** — 위 숫자는
+             데스크톱 크롬에서 폭을 소수로 맞춰 잰 것입니다. 기기에서 떨림이 남으면
+             지구본 쪽(카드 넘김마다 거는 굴림)을 다음으로 보십시오 — 그쪽은 이
+             환경에서 rAF 가 눌려 재지 못했습니다.
+           (아이폰은 폭이 390·393·430 처럼 정수라 안 걸렸을 것으로 짐작합니다.)
+         ⚠ 여유 1px 은 크롬이 `scrollLeft` 를 정수로 돌려주는 몫입니다
+           (1168.27 → 1168). 진짜 폭으로 재면 칸 번호가 커져도 어긋남이 안 쌓입니다. */
+      else {
+        const 자리 = i * 줄기.getBoundingClientRect().width;
+        if (Math.abs(줄기.scrollLeft - 자리) > 1) 옮기기(자리);
+      }
     };
     const 있음 = 'onscrollend' in 줄기;
     let 타이머 = 0;
@@ -1714,8 +1738,8 @@ export async function loadFootprint(){
     .eq('user_id', ctx.me().id).not('comment', 'is', null)
     .then(r => { const el = $('s_comment'); if (el) el.textContent = r.count ?? 0; });
   /* 맛집 추천 수(b873, db/134) — city_foods 는 직접 못 읽어서(정책 없음) 함수로 받습니다. 못 받으면 0 그대로. */
-  /* 여행 후기 수(b873) — 보관함 「여행 후기」 화면과 같은 함수(db/052 my_reviews)로 셉니다. */
-  sb.rpc('my_reviews').then(r => { const el = $('s_review'); if (el && !r.error) el.textContent = (r.data || []).length; });
+  /* (「여행 후기」 숫자는 b880 에 그 칸째 걷었습니다 — `my_reviews`(db/052)는
+     놀고 있을 뿐 그대로 둡니다. 되살릴 때 다시 필요합니다.) */
   sb.rpc('my_foods').then(r => { const el = $('s_food'); if (el && !r.error) el.textContent = (r.data || []).length; });
   /* 일기를 쓴 도시 수(b554). 한줄평과 **다른 칸**입니다 — 한줄평은 남에게
      보이고 일기는 나만 봅니다(db/071 의 journal). */

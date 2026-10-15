@@ -8,11 +8,11 @@
  * 저장: 한줄평은 saveRate(rating.js — ctx 로 받음, 고리 막기) · 맛집은 food_add(db/124).
  * 누르기는 document 에 한 번 — 지구본 카드 · 평가 탭 줄 · 도시 화면 어디에 붙어도 같은 처리.
  */
-import { esc, toast, avatarImg, fitImage } from './dom.js?v=b879';
-import { sb } from './db.js?v=b879';
-import { netTimeout } from './net.js?v=b879';
+import { esc, toast, avatarImg, fitImage } from './dom.js?v=b880';
+import { sb } from './db.js?v=b880';
+import { netTimeout } from './net.js?v=b880';
 /* 「내 추천 지우기」를 한 번 더 눌러 정하는 장치. ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b879';
+import { arm } from './ui.js?v=b880';
 
 /* ⚠ 기다리는 시간(검토에서 찾음): netTimeout 기본 2.5초는 «오프라인» 판정까지 켭니다 — 느린 폰 망에서 저장은 됐는데
    「timeout」 오류 + 20초 오프라인 띠가 떴습니다. 쓰기는 10초, 읽기는 8초. 오류 글은 한국어로. */
@@ -58,6 +58,21 @@ export function 묻기Html(id, 이름, 한줄, 얇게 = false){
       맛집남음 ? 단추('food', 얇게 ? '🍽 맛집 추천하기 ›' : '🍽 맛집 추천하기') : ''}${
       얇게 ? '<button type="button" class="cmx" data-cmskip aria-label="이 도시는 그만 묻기">×</button>' : ''}</div>
     <div class="cmform"${얇게 ? ' data-kbtop="prev"' : ' data-kbtop'}></div>
+  </div>`;
+}
+
+/* 맛집만 묻는 줄(b880) — 「다녀온 뒤 평가」 화면에는 한줄평 칸이 **이미 있어서**
+   한줄평 단추를 또 달면 같은 것을 두 군데서 받게 됩니다.
+ ⚠ **★4.5 문턱도 하루 셋 제한도 안 겁니다**(사용자: 「여행 일정으로 다녀온 건
+   4.5 안 넘어도 한줄평, 맛집 추천 다 넣게 해」). 평가 탭에서 «지나가다» 묻는 것과
+   달리, 여기는 다녀와서 한 번 작정하고 쓰는 자리입니다 — 그래서 `묻었다`(하루 셋
+   셈)도 안 적습니다. 그 제한이 이 화면까지 따라오면 도시 넷째부터는 못 씁니다.
+ ⚠ 이미 추천한 도시면 빈 글을 줍니다 — 같은 도시에 두 번 받지 않습니다. */
+export function 맛집줄Html(id, 이름){
+  if (맛집했나(id)) return '';
+  return `<div class="cmask thin" data-city="${esc(id)}" data-name="${esc(이름)}">
+    <div class="cmbtns"><button type="button" class="cmbtn" data-cmopen="food">🍽 맛집 추천하기 ›</button></div>
+    <div class="cmform" data-kbtop="prev"></div>
   </div>`;
 }
 

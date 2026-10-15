@@ -738,6 +738,19 @@ h1.brand .mark{ width:1.05em; height:1.05em; flex:none; fill:var(--brand);
           letter-spacing:calc(-0.4px * var(--ts));
           display:flex; align-items:center; gap:var(--s-xs); }
 .card h2 .grow{ flex:1; word-break:keep-all; }   /* 넘치더라도 「일기장」 같은 낱말 한가운데서는 안 끊기게(b805 점검) */
+/* 제목 글자 바로 오른쪽에 붙는 아이콘 단추(b880 — 일정 공유). ⚠ 제목 «안»에 있습니다
+   (`.grow` 속). 제목 밖에 두면 `.grow` 가 밀어내 오른쪽 끝으로 가 버립니다.
+   ⚠ 글자 크기를 따라 커지면 안 됩니다 — 아이콘은 18px 고정입니다. */
+.icoshare{ border:0; background:transparent; color:var(--ink-48);
+           padding:4px 6px; margin-left:2px; vertical-align:-4px;
+           line-height:0; position:relative; }
+.icoshare:active{ transform:scale(.92); }
+/* ⚠ **누르는 자리를 44×44 로 넓힙니다.** 보이는 크기(30×26, 실측)대로 두면
+   손가락 기준(44pt)에 한참 못 미칩니다. 안쪽 여백을 키우면 제목 줄 높이가
+   같이 늘어나므로(36px 가 40 이 됩니다), **넘쳐나는 가짜 칸**으로 넓힙니다 —
+   자리는 한 픽셀도 안 바뀌고 손가락만 편해집니다. */
+.icoshare::after{ content:''; position:absolute; left:50%; top:50%;
+                  width:44px; height:44px; transform:translate(-50%, -50%); }
 /* ⚠ `.grow` 는 `.card h2` 안에서만 늘어나고 있었습니다(b641). 날짜 머리줄
      (`.daysep`)도 flex 인데 거기서는 안 늘어나, 오른쪽에 단추를 달아도
      제목 옆에 붙어 버립니다. **같은 이름이면 같은 일을 해야 합니다.** */
@@ -2832,8 +2845,8 @@ body.bigmap .tabbar{ display:none; }
      갖고 있어서, 두면 **12px 사이에 선이 둘** 그어집니다. */
 .facts div:last-child{ border-bottom:0; }
 /* 후기 — 별과 한 줄을 나란히 */
-.rvme{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.rvme input{ flex:1; min-width:180px; }
+/* (`.rvme` — 여행 전체 별점 줄의 칸이었습니다. b880 에 그 별점을 걷으면서
+   같이 치웠습니다. 되살리려거든 index.html 의 그 자리 주석부터 읽으십시오.) */
 /* 왓챠의 포스터 자리. 사진이 없으면 첫 글자로 대신합니다. */
 /* ⚠ **목록 사진도 각집니다(b625).** 종이로 넘어오면서 카드·단추·입력칸을
      다 각지게 했는데 사진만 10px 로 둥글었습니다 — 훑어보니 **150곳**
@@ -3430,25 +3443,8 @@ body:not(.intrip) .topbar{ display:none; }
 /* ── 후기 사진 ───────────────────────────────────────────────────────
  * 넉 장씩 정사각으로 깝니다. 세로·가로가 섞여 있어도 줄이 안 흔들립니다.
  * 원본 비는 눌러서 크게 볼 때 지킵니다 — 여기서는 훑는 것이 일입니다. */
-.rvshots{ display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;
-          margin-top:10px; }
-.rvshots:empty{ display:none; }
-.rvshot{ position:relative; aspect-ratio:1/1; border-radius:var(--r-sm);
-         overflow:hidden; background:var(--parchment); }
-.rvshot img{ width:100%; height:100%; object-fit:cover; display:block;
-             cursor:zoom-in; }
-/* 지우기는 내 사진에만 붙습니다. 작게 두되 손가락이 닿을 만큼은 둡니다.
-   × 는 아이콘이라 22px 상자에 맞춘 px 입니다 (.shot1 .x 와 같은 이유). */
-.rvshot .x{ position:absolute; top:3px; right:3px; width:22px; height:22px;
-            padding:0; border:0; border-radius:50%; line-height:22px;
-            background:rgba(0,0,0,.5); color:var(--on-dark); font-size:14px; }
-.rvshot .x[data-armed="1"]{ width:auto; padding:0 8px; border-radius:var(--r-pill);
-                            font-size:var(--f-xs); }
-/* 사진 넣기 — 파일 고르개는 못생겨서 라벨로 감싸 단추처럼 씁니다. */
-.rvadd{ display:block; margin-top:10px; padding:10px; text-align:center;
-        border:1px dashed var(--hairline); border-radius:var(--r-sm);
-        color:var(--ink-48); font-size:var(--f-md); cursor:pointer; }
-.rvadd:active{ background:var(--pearl); }
+/* (후기 사진 칸 `.rvshots`·`.rvshot`·`.rvadd` 은 b880 에 그 기능째 걷었습니다 —
+   review.js 의 머리말 참고. 되살리려거든 거기부터 읽으십시오.) */
 #rv_shotnote{ text-align:right; margin-top:4px; }
 #rv_shotnote:empty{ display:none; }
 #rv_note{ margin-top:10px; resize:none; overflow-y:auto; }
@@ -7259,3 +7255,98 @@ body.kbup .tabbar{ display:none; }
 .rcc-g4 .rcc-c b{ font-size:var(--f-md); white-space:normal; line-height:1.2; text-align:center; word-break:keep-all;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .rcc-g4 .rcc-c span{ font-size:var(--f-xs); }
+
+/* ══ 일정 공유 판 (b880) ════════════════════════════════════════════════
+ * 그림·링크·글 셋 중 하나를 고르는 작은 판. 카드 미리보기 시트(#cardsheet)와
+ * 같은 머리(.cshead·.csx)를 쓰되 **높이는 내용만큼**입니다 — 줄 셋뿐이라
+ * 780px 를 잡으면 아래가 텅 빕니다.
+ * ⚠ 뒷판은 여기 `::before` 입니다. `#sheetbg` 를 쓰면 ui.js 의 `syncSheets()`
+ *   가 제 목록에 없는 이 판을 모르고 뒷판만 걷어 갑니다(index.html 주석). */
+#sharesheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:1300;
+  background:var(--canvas);
+  border-radius:var(--r-lg) var(--r-lg) 0 0;
+  box-shadow:0 -6px 40px rgba(16,20,35,.18);
+  padding-bottom:max(10px, env(safe-area-inset-bottom));
+  animation:csup .22s var(--ease);
+}
+@media (prefers-reduced-motion:reduce){ #sharesheet{ animation:none } }
+#sharesheet::before{
+  content:''; position:fixed; inset:0 0 100% 0; height:100vh;
+  background:rgba(16,20,35,.34); z-index:-1;
+}
+.shbody{ padding:2px 10px 6px; }
+/* 한 줄 = 아이콘 + (이름·풀이) + 꺾쇠. 누르는 자리가 줄 통째라 넓습니다. */
+.shrow{ display:flex; align-items:center; gap:12px; width:100%;
+        padding:13px 10px; border:0; background:transparent; text-align:left; }
+.shrow + .shrow{ border-top:1px solid var(--divider-soft); }
+.shrow:active{ background:var(--sunk); }
+.shic{ flex:none; width:38px; height:38px; border-radius:50%;
+       background:var(--sunk); color:var(--ink-80);
+       display:grid; place-items:center; }
+.shtx{ flex:1; min-width:0; display:block; }
+.shtx b{ display:block; font-size:var(--f-lg); font-weight:600; color:var(--ink); }
+.shtx i{ display:block; font-style:normal; font-size:var(--f-md); color:var(--ink-48);
+         margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.shgo{ flex:none; color:var(--ink-48); font-size:var(--f-lg); }
+.shoff{ display:block; width:100%; margin-top:2px; padding:12px;
+        color:var(--danger); font-weight:600; }
+
+/* ══ 링크로 받은 일정 (b880) ════════════════════════════════════════════
+ * ⚠⚠ **로그인 화면 위를 통째로 덮습니다.** 로그인 없이 열리는 것이 이 기능의
+ *   전부라, 아래에 무엇이 서 있든(로그인 화면이든 앱이든) 가려야 합니다.
+ *   그래서 `position:fixed; inset:0` 에 제 스크롤입니다. */
+#sharedpane{
+  position:fixed; inset:0; z-index:1250;
+  background:var(--canvas); overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:calc(var(--sat) + 6px) var(--s-md) calc(var(--s-md) + 40px);
+}
+body.sharedon{ overflow:hidden; }
+/* ⚠ `.csx`(닫기 동그라미)는 시트에서 쓰라고 `position:absolute` 입니다.
+   여기 판은 `position:fixed` 라 그 절대 위치가 **판 모서리**로 가서 제목
+   위에 겹쳤습니다(눈으로 봄). 이 판에서만 제자리로 되돌립니다 —
+   `.gacts .gmore` 에서 쓴 것과 같은 수법입니다. */
+.shdbar{ display:flex; justify-content:flex-end; margin-bottom:2px; }
+.shdbar .csx{ position:relative; right:auto; top:auto; }
+.shdhead{ padding:2px 0 14px; border-bottom:2px solid var(--ink); margin-bottom:4px; }
+.shdkicker{ margin:0; font-size:var(--f-sm); font-weight:700; letter-spacing:.14em;
+            color:var(--primary); }
+.shdhead h2{ margin:5px 0 0; font-size:var(--f-3xl); font-weight:800;
+             letter-spacing:-.4px; }
+.shdmeta{ margin:6px 0 0; font-size:var(--f-md); color:var(--ink-48); }
+.shdday{ padding:12px 0 8px; border-bottom:1px solid var(--line); }
+.shdday:last-of-type{ border-bottom:0; }
+.shdday h3{ margin:0 0 6px; font-size:var(--f-md); font-weight:800; color:var(--ink); }
+.shdrow{ display:flex; gap:10px; padding:5px 0; }
+.shdrow em{ flex:none; width:44px; font-style:normal; font-weight:700;
+            font-size:var(--f-md); color:var(--star);
+            font-variant-numeric:tabular-nums; padding-top:2px; }
+.shdrow span{ flex:1; min-width:0; }
+.shdrow b{ display:block; font-weight:500; font-size:var(--f-lg); color:var(--ink); }
+.shdrow i{ display:block; font-style:normal; font-size:var(--f-md);
+           color:var(--ink-48); margin-top:1px; }
+.shdcta{ margin-top:22px; padding-top:16px; border-top:6px solid var(--sunk); }
+.shdcta button{ width:100%; padding:14px; font-size:var(--f-lg); }
+.shdcta .memo{ text-align:center; margin-top:8px; }
+/* 가는 날 고르기 — 판 아래에 붙습니다(고를 것이 하나뿐이라 시트까지 안 씁니다). */
+#shdtake{ position:fixed; left:0; right:0; bottom:0; z-index:1260;
+          background:var(--canvas); border-top:1px solid var(--line);
+          padding:14px var(--s-md) max(14px, env(safe-area-inset-bottom));
+          box-shadow:0 -6px 30px rgba(16,20,35,.14); }
+#shdtake label{ display:block; font-weight:700; margin-bottom:8px; }
+#shdtake input{ width:100%; box-sizing:border-box;
+                font-size:max(var(--in-floor, 16px), 16px); }
+.shdbtns{ display:flex; gap:8px; margin-top:12px; }
+.shdbtns button{ flex:1; padding:13px; font-size:var(--f-lg); }
+
+/* ── 다녀온 뒤 묻기 팝업(b880) ─────────────────────────────────────────
+ * 판은 성향 바뀜 알림의 것(.pshpop/.pshcard)을 **그대로** 씁니다. 여기서는
+ * 그 안에 들어가는 도시 줄만 정합니다. */
+#rvpop{ position:fixed; inset:0; z-index:1300; display:flex; align-items:center;
+        justify-content:center; padding:24px; background:rgba(27,24,18,.38); }
+/* (팝업 안에서 별점을 받던 줄 `.rvask` 는 걷었습니다 — 받는 화면이 이미 있어서
+   팝업은 데려다 주기만 합니다. index.html 의 `#rvpop` 주석 참고.)
+ ⚠ 「다녀온 뒤 평가」 화면의 맛집 줄은 사진 자리만큼 밀릴 까닭이 없습니다
+   (.rcc-list 에서 한 것과 같은 까닭 — b878 주석). */
+#rvt_cities .cmask.thin .cmbtns{ padding-left:0; }
