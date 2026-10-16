@@ -34,6 +34,9 @@
  * 여기서 못 잡는 것: 오타 난 이름, 아무 데도 없는 이름. 그건 브라우저가
  * 그 줄을 실제로 돌릴 때 납니다. */
 import { readFileSync, readdirSync } from 'node:fs';
+/* 판단은 refs-core.mjs 가 합니다(파일을 안 읽는 순수 함수 — 회귀 검사 check-refs.test.mjs 가 씁니다).
+   이 파일은 읽고·모으고·알리는 일만 합니다. */
+import { 벗기기, 바깥쉼표, 이름아님, 빠진이름 } from './refs-core.mjs';
 
 /* app.js 에서 떼어낸 것들. 새 조각을 만들면 여기 더하십시오 —
    안 더하면 그 파일은 아무도 안 봅니다.
@@ -43,75 +46,16 @@ import { readFileSync, readdirSync } from 'node:fs';
    그대로 죽었을 것입니다. app.js 는 자기가 선언한 것이 대부분이라
    여기 들어가도 조용합니다. 말할 때는 진짜입니다. */
 const 모듈 = ['persona.js', 'map.js', 'shelf.js', 'city.js', 'aiui.js',
-              'report.js', 'cards.js', 'expense.js', 'prep.js', 'member.js', 'planmap.js', 'citysearch.js', 'profile.js', 'review.js', 'rating.js', 'notify.js', 'newtrip.js', 'home.js', 'cands.js', 'selfcheck.js', 'bring.js', 'trash.js', 'plancheck.js', 'aiscreen.js', 'account.js', 'draft.js', 'triplist.js', 'tabs.js', 'planline.js', 'planview.js', 'geocode.js', 'legs.js', 'tripview.js', 'today.js', 'opentrip.js', 'flags.js', 'swreg.js', 'people.js', 'friends.js', 'pshift.js', 'setnav.js', 'myrecord.js', 'pmore.js', 'install.js', 'crop.js', 'cityrev.js', 'cmtask.js', 'activity.js', 'app.js'];
+              'report.js', 'cards.js', 'expense.js', 'prep.js', 'member.js', 'planmap.js', 'citysearch.js', 'profile.js', 'review.js', 'rating.js', 'notify.js', 'newtrip.js', 'home.js', 'cands.js', 'selfcheck.js', 'bring.js', 'trash.js', 'plancheck.js', 'aiscreen.js', 'account.js', 'draft.js', 'triplist.js', 'tabs.js', 'planline.js', 'planview.js', 'geocode.js', 'legs.js', 'tripview.js', 'today.js', 'opentrip.js', 'flags.js', 'swreg.js', 'people.js', 'friends.js', 'pshift.js', 'setnav.js', 'myrecord.js', 'pmore.js', 'install.js', 'crop.js', 'cityrev.js', 'cmtask.js', 'activity.js', 'card.js', 'personacalc.js', 'personadata.js', 'app.js'];
+/* 2026-10-16: card.js(전엔 빠져 있었음)·personacalc.js·personadata.js 를 더함. 나머지 34개(net.js·share.js·globe.js 등)는 아직
+   안 봅니다 — 전부 넣어 보니 4건이 나왔고 넷 다 이 검사의 오탐이었습니다(그리스 글자 이름 φt0 · 정규식 안의 $) ·
+   주석 속 역따옴표 · 함수 매개변수 guessCat). 오탐을 먼저 고쳐야 넣을 수 있습니다. */
 
 /* 이름을 내보낼 수 있는 파일 전부. 여기 없는 파일이 내보내는 이름은
    후보에 안 들어가므로 검사가 그냥 조용합니다 — 틀린 말은 안 합니다. */
 const 전부 = readdirSync('.').filter(f => f.endsWith('.js') && f !== 'sw.js' && f !== 'supabase.js');
 
-/* ── 주석과 글자열을 지웁니다. 다만 템플릿의 ${...} 안은 코드라 남깁니다 ──
-   글자를 세는 것이 아니라 이름을 세는 것이라 이 정도면 됩니다. */
-function 벗기기(src){
-  let i = 0;
-  const n = src.length, out = [];
-
-  const 따옴표 = q => {
-    i++;
-    while (i < n && src[i] !== q){ if (src[i] === '\\') i++; i++; }
-    i++; out.push(' ');
-  };
-  /* `/` 가 나눗셈인지 정규식인지 앞글자로 가릅니다. 정규식 안의 따옴표를
-     글자열 시작으로 잘못 읽으면 그 뒤 코드가 통째로 사라집니다 —
-     esc 의 /[&<>"]/ 가 딱 그 모양입니다. */
-  const 정규식자리 = () => {
-    for (let k = out.length - 1; k >= 0; k--){
-      const c = out[k];
-      if (c === ' ' || c === '\n' || c === '\t') continue;
-      return '(,=:[!&|?{};+-*%~^<>'.includes(c);
-    }
-    return true;
-  };
-  const 정규식 = () => {
-    i++;
-    let 대괄호 = false;
-    while (i < n){
-      const c = src[i];
-      if (c === '\\'){ i += 2; continue; }
-      if (c === '[') 대괄호 = true;
-      else if (c === ']') 대괄호 = false;
-      else if (c === '/' && !대괄호){ i++; break; }
-      else if (c === '\n') break;
-      i++;
-    }
-    while (i < n && 'gimsuyd'.includes(src[i])) i++;
-    out.push(' ');
-  };
-  const 템플릿 = () => {
-    while (i < n){
-      const c = src[i];
-      if (c === '\\'){ i += 2; continue; }
-      if (c === '`'){ i++; return; }
-      if (c === '$' && src[i + 1] === '{'){ i += 2; out.push(' '); 코드(true); out.push(' '); continue; }
-      i++;
-    }
-  };
-  function 코드(안쪽){
-    let 깊이 = 0;
-    while (i < n){
-      const c = src[i], d = src[i + 1];
-      if (c === '/' && d === '*'){ const e = src.indexOf('*/', i + 2); i = e < 0 ? n : e + 2; out.push(' '); continue; }
-      if (c === '/' && d === '/'){ const e = src.indexOf('\n', i);   i = e < 0 ? n : e;     out.push(' '); continue; }
-      if (c === '"' || c === "'"){ 따옴표(c); continue; }
-      if (c === '`'){ i++; 템플릿(); continue; }
-      if (c === '/' && 정규식자리()){ 정규식(); continue; }
-      if (안쪽 && c === '{') 깊이++;
-      if (안쪽 && c === '}'){ if (깊이 === 0){ i++; return; } 깊이--; }
-      out.push(c); i++;
-    }
-  }
-  코드(false);
-  return out.join('');
-}
+/* (`벗기기` — 주석과 글자열 지우기 — 는 refs-core.mjs 로 옮겼습니다.) */
 
 const 소스 = {};
 for (const f of 전부) 소스[f] = 벗기기(readFileSync(f, 'utf8'));
@@ -128,19 +72,7 @@ const 어디 = new Map();
    잡힙니다.** `있는이름`(이 파일이 가진 것) 쪽은 넉넉히 세어도 조용해질 뿐이라
    괜찮지만, **후보 표(`어디`)에서 넉넉히 세면 없는 이름을 지어냅니다** —
    실제로 스물세 개가 헛짚혔습니다. 후보 쪽은 **맨 바깥 쉼표에서만** 자릅니다. */
-function 바깥쉼표(s){
-  const out = []; let 깊이 = 0, buf = '';
-  for (const c of s){
-    if ('([{'.includes(c)) 깊이++;
-    else if (')]}'.includes(c)) 깊이--;
-    if (c === ',' && 깊이 === 0){ out.push(buf); buf = ''; continue; }
-    buf += c;
-  }
-  return out.concat(buf);
-}
-/* 값으로만 쓰이는 낱말은 이름이 아닙니다. */
-const 이름아님 = new Set(['null','undefined','true','false','this','new','typeof',
-                          'await','void','delete','in','of','instanceof']);
+/* (`바깥쉼표` · `이름아님` 은 refs-core.mjs 로 옮겼습니다.) */
 /* **떼어낸 모듈이 내보내는 것도 셉니다(b336).** 전에는 여기서 걸렀는데,
    그러면 `city.js` 의 `openCity` 를 `shelf.js` 가 import 없이 부르는 것을
    못 봅니다 — 조각끼리 서로 부르는 자리가 이미 여럿입니다. 자기가 내보낸
@@ -206,51 +138,14 @@ for (const m of app.matchAll(/\bimport\s*\{([^}]*)\}/g))
     if (어디.get(n) === 'app.js') 어디.delete(n);
   }
 
-/* ── 한 파일 안에서 이름이 생기는 자리 ────────────────────────────────
-   선언·import 만 세면 매개변수와 분해가 빠져서 헛짚습니다
-   (trip·plans 처럼 흔한 이름이 남의 파일에서도 내보내집니다).
-   넉넉히 세는 쪽으로 기울입니다 — 놓치는 것보다 헛짚는 것이 더 나쁩니다. */
-const 담기 = (덩어리, 집합) => {
-  for (const p of String(덩어리).split(',')){
-    const n = p.trim().split(':').pop().trim().replace(/^\.\.\./, '').split('=')[0].trim();
-    if (/^[A-Za-z_$][\w$]*$/.test(n)) 집합.add(n);
-  }
-};
-function 있는이름(코드){
-  const s = new Set();
-  for (const m of 코드.matchAll(/\b(?:function|const|let|var|class)\s+([A-Za-z_$][\w$]*)/g)) s.add(m[1]);
-  /* 한 뭉치로 적은 선언의 **둘째 이름부터**도 셉니다(b339). 위 줄은 첫 이름만
-     잡습니다 — `let a = 1, b = 2;` 의 `b` 가 빠져서 자기 파일 안에서 선언한
-     것을 '없다'고 말합니다. app.js 에서 열아홉 개가 그렇게 나왔습니다.
-     세미콜론까지 훑으므로 가끔 넉넉히 셉니다. 그 방향이 안전합니다 —
-     넉넉히 세면 조용해질 뿐이고, 모자라게 세면 없는 사고를 지어냅니다. */
-  for (const m of 코드.matchAll(/\b(?:const|let|var)\s+([^;]*);/g)) 담기(m[1], s);
-  for (const m of 코드.matchAll(/\bimport\s*\{([^}]*)\}/g))
-    for (const p of m[1].split(',')) s.add(p.trim().split(/\s+as\s+/).pop().trim());
-  for (const m of 코드.matchAll(/(?:function\s*[A-Za-z_$][\w$]*\s*|function\s*|catch\s*)\(([^()]*)\)/g)) 담기(m[1], s);
-  for (const m of 코드.matchAll(/\(([^()]*)\)\s*=>/g)) 담기(m[1], s);
-  for (const m of 코드.matchAll(/([A-Za-z_$][\w$]*)\s*=>/g)) s.add(m[1]);
-  for (const m of 코드.matchAll(/\b(?:const|let|var)\s*[{[]([^}\]]*)[}\]]/g)) 담기(m[1], s);
-  return s;
-}
+/* (`있는이름` — 한 파일 안에서 이름이 생기는 자리 — 은 refs-core.mjs 로 옮겼습니다.) */
 
 let 틀림 = 0;
 for (const f of 모듈){
   const 코드 = 소스[f];
-  const 있음 = 있는이름(코드);
-  /* 점 뒤(속성)와 `이름:`(객체 열쇠)은 변수가 아닙니다. */
-  const 평평 = 코드.replace(/\.\s*[A-Za-z_$][\w$]*/g, ' ')
-                   .replace(/([A-Za-z_$][\w$]*)\s*:/g, ' ');
-  const 빠짐 = new Map();
-  /* ⚠ 여기에 `\b` 를 쓰면 **`$` 로 시작하는 이름이 통째로 안 보입니다**(b362).
-     `\b` 는 단어글자와 아닌 것의 경계인데 `$` 는 `\w` 가 아닙니다 — 그래서
-     `$('noticebar')` 는 앞이 `(` 뒤도 `(` 라 양쪽 다 경계가 안 섭니다.
-     `$` 는 dom.js 가 내보내는 이름이고 거의 모든 파일이 씁니다. 그런데도
-     b325~b361 서른일곱 조각 내내 한 번도 안 세어졌고, `flags.js` 가 import
-     없이 일곱 곳에서 쓰는 것이 그대로 배포됐습니다. 실기기에서 잡혔습니다.
-     경계 대신 **앞뒤에 이름글자가 없음**을 봅니다. `$` 도 이름글자로 셉니다. */
-  for (const m of 평평.matchAll(/(?<![\w$])([A-Za-z_$][\w$]*)(?![\w$])/g))
-    if (어디.has(m[1]) && !있음.has(m[1])) 빠짐.set(m[1], 어디.get(m[1]));
+  /* 선언·import 로 생긴 이름은 빼고, 남이 가진 이름을 맨몸으로 쓰는 것만 봅니다.
+     ⚠ import 문 자체는 «쓰임»에서 뺍니다(refs-core.mjs 의 import지우기 — 별칭 오탐). */
+  const 빠짐 = 빠진이름(코드, 어디);
 
   if (빠짐.size){
     틀림 += 빠짐.size;

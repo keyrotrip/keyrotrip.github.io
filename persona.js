@@ -19,27 +19,29 @@
  *     rec·rate 는 b395 에서 늘었습니다 — 「어울리는 곳 · 도전해볼 곳」을
  *     뽑느라 추천 계산과 다녀온 곳이 필요해졌습니다. city.js 는 b399 에서
  *     다시 뺐습니다 — 추천이 카드 그림 안으로 들어가 누를 줄이 없어졌습니다. */
-import { $, esc, backLabel, toTop, coverDeck } from './dom.js?v=b880';
-import { sb } from './db.js?v=b880';
-import { cities, countryName, continentOf } from './cities.js?v=b880';
+import { $, esc, backLabel, toTop, coverDeck } from './dom.js?v=b881';
+/* 서버 질의는 personadata.js 에(2026-10-16) — 성향 기능의 표·칸을 한 곳에서 봅니다. */
+import { 내별점읽기, 성향재료칸 } from './personadata.js?v=b881';
+import { cities, countryName, continentOf } from './cities.js?v=b881';
 /* 닮은 도시로 다음 갈 곳을 고릅니다. **AI 를 안 씁니다** — 오프라인에서도
    돌아야 하고 같은 자료에는 늘 같은 답이 나와야 합니다(rec.js 맨 위 참고). */
-import { similarPicks } from './rec.js?v=b880';
+import { similarPicks } from './rec.js?v=b881';
 /* 친구와 궁합. **받는 쪽만 남았습니다(b551)** — 보내는 단추를 걷으면서
    shareMate 를 뗐습니다. mate.js 에는 그대로 있으니 되살리려면 가져다
    쓰면 됩니다(b408 의 「유입이 유입을 만드는 고리」, 그 머리말 참고). */
-import { mateCode, mateHtml } from './mate.js?v=b880';
-import { visited } from './rate.js?v=b880';
-import { open16 } from './p16.js?v=b880';
+import { mateCode, mateHtml } from './mate.js?v=b881';
+import { visited } from './rate.js?v=b881';
+import { open16 } from './p16.js?v=b881';
 import { personaStats, personaAxes, personaRank, personaMates, personaMrz,
          PERSONA16, AXIS_WORD, AXIS_NAME, axisSpectrum, personaWhyHtml, personaShiftWhy,
-         PERSONA_VER, shareCard } from './card.js?v=b880';
+         PERSONA_VER, shareCard } from './card.js?v=b881';
+import { 성향문턱 } from './personacalc.js?v=b881';
 /* 성향 v2(2026-09-30): 지난번 코드(흔들림 막기)와 올리기는 pshift.js 한 곳 — 홈 알림과 같은 기준이어야
    두 화면이 다른 유형을 붙잡지 않습니다. 다시 간 도시 시트는 visits.js. */
-import { prevPersona, savePersona } from './pshift.js?v=b880';
+import { prevPersona, savePersona } from './pshift.js?v=b881';
 /* 성향 칸 더보기(b839) — 나를 만든 도시 · 성향 변천사 · 친구 중 여행 메이트. 자리는 아래 틀에, 그리는 것은 pmore.js. */
-import { 성향더보기 } from './pmore.js?v=b880';
-import { openVisits } from './visits.js?v=b880';
+import { 성향더보기 } from './pmore.js?v=b881';
+import { openVisits } from './visits.js?v=b881';
 
 let ctx = { me: () => null, loadCities: async () => {}, showApp: () => {},
             /* 성향 보러 가기(b822) — 칸 고르기·맨 위로까지 app.js 가 합니다. 기본값은 예전과 같은 «탭만 열기». */
@@ -77,7 +79,7 @@ export async function renderPersona(){
   /* v2: 다시 간 횟수(visits)를 같이 받고, 지난번 코드(서버)를 나란히 받습니다 — 흔들림 막기. */
   const uid = ctx.me().id;
   const [{ data, error }, 전코드] = await Promise.all([
-    sb.from('city_ratings').select('city_id,stars,want,comment,created_at,visits').eq("user_id", uid),
+    내별점읽기(uid, 성향재료칸.리포트),
     prevPersona(uid)]);
   if (error){
     $('personabox').innerHTML =
@@ -129,11 +131,11 @@ $('personaback').addEventListener('click', () => closePersona());
 
 /* 성향이 확정되는 문턱 — **해외 10곳**(2026-10-03 사용자: 「문턱 10곳으로 하자」).
    5곳이면 한 곳 더 매길 때 유형이 바뀌는 사람이 61%, 10곳 언저리면 30% 남짓이었습니다(처음 보는 사람 기준 —
-   한 번 정해진 뒤에는 흔들림 막기로 0~6%). card.js personaAxes 머리 ⚠ 에 잰 값.
-   ⚠ **같은 값이 넷입니다** — 여기 · pshift.js · people.js · rating.js(`성향문턱`). 하나만 고치면 「확정」 순간·서버에
-     올리는 것·남의 화면 궁합이 서로 다른 날에 섭니다. 관리자 숫자(admin_usage 의 「성향 확정」 — db/115)도 같은 10번째.
+   한 번 정해진 뒤에는 흔들림 막기로 0~6%). personacalc.js personaAxes 머리 ⚠ 에 잰 값.
+   ⚠ 값은 **personacalc.js 의 `성향문턱` 하나**입니다(2026-10-16 — 전엔 여기 · pshift.js · people.js · rating.js 에
+     넷이 따로 있었습니다). 관리자 숫자(admin_usage 의 「성향 확정」 — db/115)는 SQL 이라 따로 맞춰야 합니다.
    (try.js 의 맛보기 문턱은 화면을 걷어서(b799) 이제 아무 데도 안 씁니다.) */
-const 문턱 = 10;
+const 문턱 = 성향문턱;
 
 /* ── 카드 그리기 ──────────────────────────────────────────────────────
  * `s` 는 날숫자(personaStats), `ax` 는 네 축과 코드(personaAxes)입니다.
@@ -245,7 +247,7 @@ async function drawPersona(s, ax, rates){
        이상하지 않겠어?」. 지금 성향은 위에 크게 떠 있으므로, 여기서 새로
        말할 것은 「예전엔 이랬다」 하나입니다. */
     return `<div class="pwas">
-      <img class="pwasim" src="./persona/t/${esc(앞)}.jpg?v=b880"
+      <img class="pwasim" src="./persona/t/${esc(앞)}.jpg?v=b881"
            alt="" loading="lazy" decoding="async">
       <span class="pwast"><b>성향이 바뀌었어요</b>
         <i>예전엔 <em>${esc(앞)}</em> ${esc(PERSONA16[앞]?.n || 앞)}</i>
@@ -367,12 +369,12 @@ async function drawPersona(s, ax, rates){
              깔아 둡니다 — 원본이 붙기 전까지 그 자리를 채웁니다.
            ⚠ 원본 webp 를 여기 깔면 안 됩니다. 같은 그림을 두 번 받습니다. -->
         <div class="psizer"
-             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b880')"></div>
+             style="background-image:url('./persona/t/${esc(code)}.jpg?v=b881')"></div>
         <!-- ⚠ 원본(webp, 장당 약 490KB)이 아니라 **중간 크기**(m/, 77KB)
              입니다(b744). 이 자리는 폭 356 이라 720px 이면 2배까지 충분합니다.
              원본은 공유 카드 그림(card.js)에서만 씁니다 — 거기는 1080 폭
              캔버스에 그리므로 큰 것이 필요합니다. -->
-        <img src="./persona/m/${esc(code)}.jpg?v=b880" alt=""
+        <img src="./persona/m/${esc(code)}.jpg?v=b881" alt=""
              onerror="this.closest('.phero').classList.add('noart')">
         <div class="pscrim"></div>
         <!-- ⚠⚠ **공유 아이콘은 히어로 «안»에 있어야 합니다(b741).** ⚠⚠
@@ -489,13 +491,13 @@ async function drawPersona(s, ax, rates){
              있었습니다 — 유형은 «그림으로» 기억됩니다.
            ⚠ 작은 것(t/, 23KB)입니다. 칸이 160px 이라 360px 이면 넉넉합니다. -->
         <div class="mate good">
-          <img class="mateimg" src="./persona/t/${esc(mate.best)}.jpg?v=b880"
+          <img class="mateimg" src="./persona/t/${esc(mate.best)}.jpg?v=b881"
                alt="" loading="lazy" decoding="async">
           <span class="ml">환상의 메이트${임시 ? '' : ` · ${mate.bestScore}%`}</span>
           <b>${esc(PERSONA16[mate.best]?.n || mate.best)}</b>
           <span class="mc">${esc(mate.best)}</span></div>
         <div class="mate bad">
-          <img class="mateimg" src="./persona/t/${esc(mate.worst)}.jpg?v=b880"
+          <img class="mateimg" src="./persona/t/${esc(mate.worst)}.jpg?v=b881"
                alt="" loading="lazy" decoding="async">
           <span class="ml">극과 극 메이트${임시 ? '' : ` · ${mate.worstScore}%`}</span>
           <b>${esc(PERSONA16[mate.worst]?.n || mate.worst)}</b>

@@ -55,12 +55,19 @@ jobs:
         env:
           URL: ${{ secrets.SUPABASE_URL }}
           KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          # 스케줄러 전용 열쇠(2026-10-16). 함수의 PUSH_CRON_SECRET 과 같은 값입니다.
+          # 비어 있으면 머리를 안 보내고 예전처럼 Authorization 만으로 갑니다 — 어느 쪽을
+          # 먼저 넣어도 알림이 멈추지 않게 했습니다(docs/운영-설정-확인.md 「push 인증」).
+          CRON: ${{ secrets.PUSH_CRON_SECRET }}
         run: |
           # 주소 끝에 / 를 붙여둔 경우가 흔합니다. 붙어 있으면 // 가 되어 404 입니다.
           URL="${URL%/}"
+          extra=()
+          if [ -n "$CRON" ]; then extra=(-H "x-cron-secret: $CRON"); fi
           code=$(curl -s -o /tmp/out.json -w '%{http_code}' -X POST \
             "$URL/functions/v1/push" \
             -H "Authorization: Bearer $KEY" \
+            "${extra[@]}" \
             -H "Content-Type: application/json" -d '{}')
           body=$(cat /tmp/out.json)
           echo "HTTP $code"

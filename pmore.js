@@ -11,11 +11,11 @@
  * ⚠ 친구 성향은 서버 friend_personas(db/119) — 팔로우 수락된 사람 · 비활성화·차단 뺌 · 볼 수 있는 사람만. 함수가 없으면 조용히 안 냅니다.
  * ⚠ 확정 전(해외 10곳 미만)에는 셋 다 안 냅니다(persona.js) — 흔들리는 코드로 지은 이야기는 같이 흔들립니다.
  * ⚠ 맨 바깥 이름은 한글로 둡니다 — tools/check-refs.mjs 가 영문 이름을 다른 파일과 견줍니다(b836 의 CSS 사고).
- * 층: dom · db · card(성향) · calc(거리). persona.js 가 부르고, 사람 화면은 누를 때 불러옵니다(people.js — 고리 없이). */
-import { esc, emptyDo, josa, avatarImg } from './dom.js?v=b880';
-import { sb } from './db.js?v=b880';
-import { personaAxes, personaMatch, PERSONA16, AXIS_WORD, AXIS_NAME } from './card.js?v=b880';
-import { distKm, SEOUL } from './calc.js?v=b880';
+ * 층: dom · personadata(서버) · card(성향) · calc(거리). persona.js 가 부르고, 사람 화면은 누를 때 불러옵니다(people.js — 고리 없이). */
+import { esc, emptyDo, josa, avatarImg } from './dom.js?v=b881';
+import { 친구성향읽기 } from './personadata.js?v=b881';   /* 서버 질의는 personadata.js 에(2026-10-16) */
+import { personaAxes, personaMatch, PERSONA16, AXIS_WORD, AXIS_NAME } from './card.js?v=b881';
+import { distKm, SEOUL } from './calc.js?v=b881';
 
 const 국내 = 'KR';
 const 코드꼴 = /^[FH][ML][ND][GP]$/;
@@ -35,7 +35,7 @@ const 사진칸 = (c, 이름) => {
   const u = 사진주소(c?.image_url);
   return `<span class="gapim"${u ? ` style="background-image:url('${esc(u)}')"` : ''}>${u ? '' : esc([...String(이름 || '?')][0] || '?')}</span>`;
 };
-const 성향그림 = code => `./persona/t/${esc(code)}.jpg?v=b880`;
+const 성향그림 = code => `./persona/t/${esc(code)}.jpg?v=b881`;
 
 /* ══ ② 성향 변천사 ══════════════════════════════════════════════════════
  * 별점 줄(city_ratings — created_at 이 있는 것)을 매긴 차례로 세우고, 해외가 문턱(10곳)에 닿은 뒤로는 한 줄 더할 때마다
@@ -176,7 +176,7 @@ export function 친구줄(내코드, 친구들){
 }
 
 export async function 친구메이트Html(내코드){
-  const r = await sb.rpc('friend_personas');
+  const r = await 친구성향읽기();
   /* db/119 를 안 돌렸으면 함수가 없습니다 — 카드를 안 냅니다(고장처럼 보이는 빈 상자를 띄우지 않음). */
   if (r.error) return '';
   return 친구카드Html(내코드, r.data);
@@ -223,7 +223,7 @@ export function 성향더보기({ ax, code, rates, world, 문턱 }){
     친구칸.innerHTML = html;
     친구칸.onclick = e => {
       const b = e.target.closest('[data-person]');
-      if (b) import('./people.js?v=b880').then(m => m.openPerson(b.dataset.person));
+      if (b) import('./people.js?v=b881').then(m => m.openPerson(b.dataset.person));
     };
   }).catch(e => { console.error('@pmore', e); self.reportError?.(e); });
 }

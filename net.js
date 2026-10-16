@@ -18,8 +18,8 @@
  *
  * 밖에서 가져오는 것은 dom.js 와 db.js 뿐입니다. 둘 다 잎이라 순환이 없습니다.
  */
-import { $, toast } from './dom.js?v=b880';
-import { sb } from './db.js?v=b880';
+import { $, toast, esc } from './dom.js?v=b881';
+import { sb } from './db.js?v=b881';
 
 /* 큐가 다 나간 뒤에 화면을 서버 값으로 맞추는 일은 app.js 가 압니다.
    여기서 trip 이나 loadPlans 를 직접 부르면 net → app 으로 거꾸로 기대게 되어
@@ -129,6 +129,7 @@ const QKEY = 't2:queue';
  *   부르는 곳은 둘(로그아웃·탈퇴)이고, 규칙은 한 곳에 있어야 합니다. */
 export function forgetLocal(){
   queue = [];
+  실패 = [];         /* 저장 못 한 것 목록도 앞사람 것입니다(2026-10-16) */
   try {
     Object.keys(localStorage).filter(k => k.startsWith('t2:'))
       .forEach(k => localStorage.removeItem(k));
@@ -137,6 +138,22 @@ export function forgetLocal(){
 let queue = [];
 try { queue = JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch { queue = []; }
 const qsave = () => { try { localStorage.setItem(QKEY, JSON.stringify(queue)); } catch {} };
+
+/* ── 저장 못 한 것 (2026-10-16) ─────────────────────────────────────────
+ * ⚠⚠ **전에는 대기줄에서 «네트워크 아닌 이유»로 실패한 것을 그냥 지웠습니다.** ⚠⚠
+ *   토스트 한 줄(「그 내용만 다시 넣어주세요」)만 남고, 무엇이 안 됐는지는 볼 길이
+ *   없었습니다 — 비행기모드에서 넣은 지출 셋 중 하나가 조용히 사라진 셈입니다.
+ * → 버리지 않고 여기 모아 둡니다. 오프라인 띠에 「저장 못 한 것 N건」이 뜨고,
+ *   누르면 무엇이 왜 안 됐는지 보고 «다시 보내기»·«버리기»를 고릅니다.
+ * ⚠ 기기에만 있습니다(대기줄과 같은 자리). 로그아웃하면 같이 지웁니다(forgetLocal). */
+const FKEY = 't2:queue:failed';
+let 실패 = [];
+try { 실패 = JSON.parse(localStorage.getItem(FKEY) || '[]'); } catch { 실패 = []; }
+const fsave = () => { try { localStorage.setItem(FKEY, JSON.stringify(실패)); } catch {} };
+const 실패담기 = (job, why) => {
+  실패.push({ job, why: String(why || '').slice(0, 300), at: new Date().toISOString() });
+  fsave();
+};
 
 /* 오프라인에서 못 쓰는 자리에 "불러오는 중…"을 남겨두면 하루 종일 기다리게 됩니다.
    기다려도 안 온다는 것을 그 자리에 그대로 적습니다. */
@@ -209,6 +226,44 @@ export function isOffline(err){
   return /Failed to fetch|NetworkError|Load failed|network|timeout|ECONN/i.test(m);
 }
 
+/* ── 다시 보내도 두 번 안 들어가게(2026-10-16) ──────────────────────────
+ * ⚠ **추가(insert)는 응답만 잃어도 다시 보내면 줄이 둘이 됩니다.** 서버에는 들어갔는데
+ *   연결이 끊겨 답을 못 받으면(터널·엘리베이터) 「네트워크 실패」로 보고 대기줄에 쌓고,
+ *   연결이 돌아오면 같은 것을 또 넣었습니다.
+ * → 처음 보낼 때 **기기에서 id 를 정해** 같이 보냅니다. 다시 보내면 같은 키라 서버가
+ *   `23505`(이미 있음)로 막고, 아래 `판정` 이 그 줄이 정말 있는지 확인해 «저장됨»으로 봅니다.
+ * ⚠ `write()` 로 들어오는 표(plans·expenses)는 둘 다 `id uuid` 기본키라 기기가 정한 id 를
+ *   받습니다(db/001). 다른 표를 더할 때 그 표의 id 꼴부터 보십시오.
+ * ⚠ 부르는 쪽 객체를 고치지 않으려고 복사해서 붙입니다. 이미 id 가 있으면 그대로 둡니다. */
+function 준비(job){
+  if (job.action !== 'insert' || !job.row || job.row.id) return job;
+  const id = globalThis.crypto?.randomUUID?.();
+  return id ? { ...job, row: { id, ...job.row } } : job;
+}
+
+/* ── 보낸 결과를 판정하는 곳은 **여기 하나**입니다(2026-10-16) ──────────────
+ * ⚠⚠ **전에는 둘이 서로 다른 기준을 썼습니다.** ⚠⚠ `write()` 는 «오류 없고 1건 이상»을
+ *   성공으로 봤는데, `flushQueue()` 는 «오류만 없으면» 성공으로 봤습니다. 그래서
+ *   권한(RLS)에 걸려 **0건 반영된** 대기줄 항목은 성공으로 치고 버렸습니다 —
+ *   화면에는 저장된 것처럼 남는데 서버에는 없는 상태가 됩니다.
+ * 돌려주는 것: {ok:true, id} · {ok:false, norow:true} · {ok:false, error} */
+async function 판정(job, r){
+  if (r.error){
+    /* 같은 추가를 다시 보낸 경우 — 첫 시도가 사실은 들어갔는데 답만 못 받은 것입니다. */
+    if (job.action === 'insert' && r.error.code === '23505' && job.row?.id){
+      const 있나 = await sb.from(job.table).select('id').eq('id', job.row.id).maybeSingle();
+      if (있나.error) return { ok:false, error:있나.error };
+      if (있나.data?.id) return { ok:true, id:있나.data.id };
+    }
+    return { ok:false, error:r.error };
+  }
+  if (!r.data?.length) return { ok:false, norow:true };
+  return { ok:true, id:r.data[0].id };
+}
+/* 0건일 때 사람에게 할 말 — 동작마다 다릅니다. */
+const 영건말 = job => job.action === 'delete' ? NOROW.del
+                   : job.action === 'update' ? NOROW.edit : NOROW.save;
+
 /* 저장 한 건. table·action·payload 만 남기면 나중에 그대로 재생할 수 있습니다. */
 async function send(job){
   const q = sb.from(job.table);
@@ -230,11 +285,12 @@ export function setReadOnly(on){ readOnly = !!on; }
 
 export async function write(job){
   if (readOnly) return { ok:false, why:'지금은 점검 중이라 저장할 수 없어요. 잠시 뒤 다시 해주세요.' };
+  job = 준비(job);                    /* 추가면 기기 id 를 붙입니다(위 머리말) */
   try {
-    const r = await send(job);
-    if (r.error) throw r.error;
-    if (!r.data?.length) return { ok:false, why: NOROW.save };
-    return { ok:true, id:r.data[0].id };
+    const v = await 판정(job, await send(job));
+    if (v.ok) return { ok:true, id:v.id };
+    if (v.norow) return { ok:false, why: 영건말(job) };
+    throw v.error;
   } catch (e){
     if (!isOffline(e)) return { ok:false, why:e };
     queue.push(job); qsave(); drawOffbar();
@@ -247,38 +303,101 @@ export async function flushQueue(){
   if (flushing || !queue.length || netIsDown()) return;
   flushing = true;
   drawOffbar();
+  let 새실패 = 0;
   while (queue.length){
-    const job = queue[0];
-    try {
-      const r = await send(job);
-      if (r.error) throw r.error;
-      queue.shift();                       /* 보냈으면 뺍니다 */
-    } catch (e){
-      if (isOffline(e)) break;             /* 또 끊겼습니다. 다음 기회에 이어서 */
-      /* 네트워크가 아닌 이유로 실패한 것은 다시 보내도 같습니다.
-         무한히 붙잡고 있으면 뒤에 쌓인 것까지 못 나갑니다. 버리고 알립니다. */
-      queue.shift();
-      /* 표 이름(trip_members…)과 영어 오류를 그대로 띄우고 있었습니다.
-         사용자가 할 수 있는 일이 없는 글자라 기록으로 보냅니다. */
-      logErr?.(`큐 저장 실패: ${job.action} ${job.table} · ${e?.message || e}`, 'queue');
-      toast('저장 하나가 안 됐어요. 그 내용만 다시 넣어주세요.');
+    const job = 준비(queue[0]);     /* 예전 판이 쌓아 둔 추가에도 id 를 붙입니다 */
+    queue[0] = job; qsave();        /* 붙인 id 를 먼저 적어 둡니다 — 여기서 끊겨도 다음에 같은 id 로 */
+    let v;
+    try { v = await 판정(job, await send(job)); }
+    catch (e){ v = { ok:false, error:e }; }
+    /* 또 끊겼습니다. 버리지 않고 다음 기회에 이어서 — 판정이 돌려준 오류도 같이 봅니다. */
+    if (!v.ok && v.error && isOffline(v.error)) break;
+    queue.shift();
+    /* ⚠ 0건도 실패입니다(write 와 같은 기준). 버리지 않고 «저장 못 한 것»으로 옮깁니다.
+       표 이름·영어 원문은 기록으로 보내고(logErr), 목록에는 사람 말을 둡니다. */
+    if (!v.ok){
+      새실패++;
+      실패담기(job, v.norow ? 영건말(job) : human(v.error));
+      logErr?.(`큐 저장 실패: ${job.action} ${job.table} · ${v.norow ? '0건' : (v.error?.message || v.error)}`, 'queue');
     }
     qsave();
   }
   flushing = false;
   drawOffbar();
+  if (새실패) toast(`저장 못 한 것이 ${새실패}건 있어요. 위 띠를 눌러 확인해 주세요.`);
   /* 큐가 다 나갔으면 서버 쪽 진짜 값으로 화면을 맞춥니다.
      무엇을 다시 받아올지는 app.js 가 setOnDrained 로 넣어줍니다. */
   if (!queue.length) await onDrained?.();
 }
 
+/* ── 저장 못 한 것 보기·복구 (2026-10-16) ─────────────────────────────── */
+const 표이름 = { plans:'일정', expenses:'지출' };
+const 동작이름 = { insert:'추가', update:'수정', delete:'삭제' };
+const 무엇 = j => `${표이름[j.table] || j.table} ${동작이름[j.action] || j.action}`
+                + (j.row?.title ? ` · ${j.row.title}` : '');
+export const failedSaves = () => 실패.map(f => ({ 무엇: 무엇(f.job), 이유: f.why, 언제: f.at }));
+
+/* 전부 다시 대기줄 «앞»으로 넣고 흘려보냅니다. 앞인 까닭: 실패한 것이 뒤에 쌓인 것보다
+   먼저 들어온 것이라 순서를 지켜야 합니다(같은 일정의 추가 → 수정 같은 짝). */
+export async function retryFailed(){
+  if (!실패.length) return 0;
+  const n = 실패.length;
+  queue.unshift(...실패.map(f => f.job));
+  실패 = []; fsave(); qsave();
+  await flushQueue();
+  return n;
+}
+export function dropFailed(){ 실패 = []; fsave(); drawOffbar(); }
+
+/* 목록 판 — 띠를 누르면 뜹니다. 성향 바뀜 알림(b854)과 같은 틀(.pshpop/.pshcard)입니다.
+   ⚠ 뒤로가기 기록을 남기지 않습니다(덮는 판이 아니라 잠깐 보는 상자). 화면이 바뀌면 닫습니다. */
+function 실패보기(){
+  if (!실패.length) return;
+  document.getElementById('failpop')?.remove();
+  const 판 = document.createElement('div');
+  판.id = 'failpop'; 판.className = 'pshpop';
+  판.innerHTML = `<div class="pshcard" role="dialog" aria-label="저장 못 한 것">
+    <h3 class="pshtitle">저장 못 한 것 ${실패.length}건</h3>
+    <ul class="failist">${실패.map(f => `<li><b>${esc(무엇(f.job))}</b><span>${esc(f.why)}</span></li>`).join('')}</ul>
+    <div class="pshbtns">
+      <button type="button" class="primary" data-fail="retry">다시 보내기</button>
+      <button type="button" data-fail="drop">버리기</button>
+      <button type="button" class="pshx" data-fail="close">닫기</button>
+    </div></div>`;
+  const 닫기 = () => 판.remove();
+  판.addEventListener('click', async e => {
+    if (e.target === 판) return 닫기();
+    const 무 = e.target.closest('[data-fail]')?.dataset.fail; if (!무) return;
+    if (무 === 'close') return 닫기();
+    if (무 === 'drop'){
+      /* 되돌릴 수 없는 일이라 한 번 묻습니다. */
+      if (!confirm('버리면 이 내용은 다시 볼 수 없어요. 버릴까요?')) return;
+      dropFailed(); 닫기(); return toast('버렸어요');
+    }
+    if (무 === 'retry'){
+      닫기();
+      if (netIsDown()) return toast('연결이 돌아오면 다시 보내 볼게요');
+      await retryFailed();
+      if (!실패.length) toast('다시 보냈어요');
+    }
+  });
+  document.body.appendChild(판);
+}
+if (typeof window !== 'undefined')
+  addEventListener('popstate', () => document.getElementById('failpop')?.remove());
+
 export function drawOffbar(){
   const bar = $('offbar'); if (!bar) return;
-  const off = netIsDown(), n = queue.length;
-  bar.classList.toggle('hide', !off && !n);
-  bar.textContent = off
+  const off = netIsDown(), n = queue.length, f = 실패.length;
+  bar.classList.toggle('hide', !off && !n && !f);
+  let 글 = off
     ? (n ? `오프라인 · 저장할 것 ${n}건을 들고 있어요` : '오프라인 · 지금 보고 있는 것은 마지막으로 받아둔 내용이에요')
     : (n ? `보내는 중… 남은 것 ${n}건` : '');
+  /* 저장 못 한 것이 있으면 띠가 그 목록으로 가는 단추가 됩니다(2026-10-16). */
+  if (f) 글 = (글 ? 글 + ' · ' : '') + `저장 못 한 것 ${f}건 · 눌러서 보기`;
+  bar.textContent = 글;
+  bar.classList.toggle('tap', !!f);
+  bar.onclick = f ? 실패보기 : null;
 }
 addEventListener('online',  () => { drawOffbar(); flushQueue(); });
 addEventListener('offline', drawOffbar);
@@ -287,5 +406,6 @@ addEventListener('offline', drawOffbar);
    화면의 띠만 보고는 안에 뭐가 쌓였는지 알 수가 없습니다. */
 if (typeof window !== 'undefined') window.__queue = () => ({
   쌓인것: queue.length, 목록: queue.map(j => `${j.action} ${j.table}`),
+  저장못함: 실패.length,
   보내는중: flushing, 연결끊김: netIsDown(),
 });

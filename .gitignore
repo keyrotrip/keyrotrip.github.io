@@ -23,5 +23,5 @@ tools/fonts/
 
 # npm — 검사에만 씁니다. 앱은 빌드 없이 그대로 올라갑니다.
 node_modules/
-package-lock.json
+# package-lock.json 은 이제 올립니다(2026-10-16) — CI 가 `npm ci` 로 그 판 그대로 받습니다.
 _*.html

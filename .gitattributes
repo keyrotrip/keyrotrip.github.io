@@ -1,0 +1,3 @@
+# 셸 스크립트는 늘 LF 로(2026-10-16). 윈도에서 CRLF 로 받으면 bash 가 "\r: command not found" 로 죽습니다
+# (tools/check-all.sh · bump.sh). 나머지 파일은 예전 그대로 둡니다.
+*.sh text eol=lf

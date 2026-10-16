@@ -24,11 +24,13 @@
  *   누르는 것이 곧 봤다는 증거입니다. 그전까지는 홈을 그릴 때마다 다시
  *   붙습니다 — 그게 「다시 열 이유」의 뜻이기도 합니다.
  */
-import { esc } from './dom.js?v=b880';
-import { sb } from './db.js?v=b880';
-import { netTimeout } from './net.js?v=b880';
-import { cities } from './cities.js?v=b880';
-import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b880';
+import { esc } from './dom.js?v=b881';
+/* 서버 질의는 personadata.js 에(2026-10-16) — 성향 기능의 표·칸을 한 곳에서 봅니다. */
+import { 내별점읽기, 성향재료칸, 올린성향읽기, 성향올리기 } from './personadata.js?v=b881';
+import { netTimeout } from './net.js?v=b881';
+import { cities } from './cities.js?v=b881';
+import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b881';
+import { 성향문턱 } from './personacalc.js?v=b881';
 
 let ctx = { me: () => null, 열기: () => {} };
 export function setShiftCtx(o){ ctx = { ...ctx, ...o }; }
@@ -41,9 +43,10 @@ export function setShiftCtx(o){ ctx = { ...ctx, ...o }; }
    바꿔도 서로 안 섞입니다. */
 const KEY = uid => 't2:pcode:' + uid;
 /* 성향이 서는 문턱 — **해외 10곳**(2026-10-03 사용자). persona.js · people.js · rating.js 와 **같은 값**이어야
-   합니다 — 여기만 낮으면 아직 유형이 없는 사람에게 「바뀌었다」고 합니다.
+   합니다 — 여기만 낮으면 아직 유형이 없는 사람에게 「바뀌었다」고 합니다. 그래서 넷 다 personacalc.js 의
+   `성향문턱` 하나를 씁니다(2026-10-16 — 전엔 따로 적힌 10 이 넷).
    ⚠ 올린 날(b828) 해외 5~9곳이던 사람은 여기서 서버 코드가 지워집니다(아래 「문턱 아래로 내려가면 지웁니다」). */
-const 문턱 = 10;
+const 문턱 = 성향문턱;
 
 const 읽기 = uid => { try { return localStorage.getItem(KEY(uid)) || ''; } catch { return ''; } };
 const 쓰기 = (uid, v) => { try { localStorage.setItem(KEY(uid), v); } catch {} };
@@ -84,11 +87,11 @@ export function savePersona(uid, code, ax = null){
   try { if ((localStorage.getItem(올린열쇠(uid)) ?? '') === 값) return; } catch { return; }
   서버코드 = { uid, code: code || null };
   const 보냄 = 숫자칸없음 ? { persona: code } : { persona: code, persona_ax: 숫자 };
-  sb.from('profiles').update(보냄).eq('id', uid)
+  성향올리기(uid, 보냄)
     .then(r => {
       if (r.error && !숫자칸없음 && /persona_ax/.test(r.error.message || '')){
         숫자칸없음 = true;
-        return sb.from('profiles').update({ persona: code }).eq('id', uid)
+        return 성향올리기(uid, { persona: code })
           .then(r2 => { if (!r2.error) try { localStorage.setItem(올린열쇠(uid), code || ''); } catch {} });
       }
       if (!r.error) try { localStorage.setItem(올린열쇠(uid), 값); } catch {}
@@ -108,7 +111,7 @@ export const knownPersona = uid =>
 export async function prevPersona(uid){
   if (!uid) return null;
   if (서버코드.uid === uid && 서버코드.code !== undefined) return 서버코드.code;
-  const r = await netTimeout(sb.from('profiles').select('persona').eq('id', uid).maybeSingle());
+  const r = await netTimeout(올린성향읽기(uid));
   if (r && !r.error){
     서버코드 = { uid, code: r.data?.persona || null };
     return 서버코드.code;
@@ -129,8 +132,7 @@ export async function checkPersonaShift(){
   if (!me) return;
   /* v2: 다시 간 횟수(visits)도 받고, 지난번 코드(서버)를 넘겨 흔들림을 막습니다. */
   const [r, 전코드] = await Promise.all([
-    netTimeout(sb.from('city_ratings')
-      .select('city_id,stars,visits').eq('user_id', me.id).not('stars', 'is', null)),
+    netTimeout(내별점읽기(me.id, 성향재료칸.셈만, { 별있는것만: true })),
     prevPersona(me.id)]);
   if (!r || r.error || !Array.isArray(r.data)) return;
   /* ⚠ 도시 목록이 아직 없으면 해외를 못 가립니다 — 그때 세면 해외 0곳으로 보고 서버 코드를 지워 버립니다. */
@@ -174,10 +176,10 @@ function 그리기(){
   팝.innerHTML = `<div class="pshcard" role="dialog" aria-modal="true" aria-label="성향이 바뀌었어요">
       <p class="pshtitle">성향이 바뀌었어요</p>
       <div class="pshpair">
-        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b880" alt="">
+        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b881" alt="">
           <figcaption><b>${esc(전)}</b><span>${esc(앞)}</span></figcaption></figure>
         <i aria-hidden="true">→</i>
-        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b880" alt="">
+        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b881" alt="">
           <figcaption><b>${esc(지금)}</b><span>${esc(뒤)}</span></figcaption></figure>
       </div>
       <p class="pshwhy">${esc(personaShiftWhy(전, 지금, 대기.규칙) || '최근에 매긴 곳들이 그렇게 말해요.')}</p>

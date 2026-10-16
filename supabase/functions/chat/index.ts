@@ -22,11 +22,28 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const MODEL = 'gemini-3.6-flash';              // 도쿄 앱에서 쓰던 것과 같은 모델
 const MODEL_FALLBACK = 'gemini-3.5-flash-lite'; // 한도(429)에 걸리면 가벼운 쪽으로
 
-/* 관리자가 화면에서 고른 모델(db/047). 요청을 받을 때마다 설정에서 채웁니다.
-   전역이지만 **모든 요청에 같은 값**이라 서로 방해하지 않습니다 —
-   부르는 자리가 여럿이라 인자로 실어 나르면 그 줄들만 늘어납니다.
-   설정을 못 읽으면 위의 MODEL 그대로 갑니다. */
-let activeModel = MODEL;
+/* 관리자가 화면에서 고른 모델(db/047)은 **요청마다** 설정에서 읽어 그 요청 안에서만
+   씁니다(아래 핸들러의 `모델`). 예전엔 전역 변수(activeModel)에 담았는데, 한 함수
+   인스턴스가 요청 여럿을 동시에 받으므로 설정을 못 읽은 요청이 다른 요청의 값을 그대로
+   이어 쓰거나, 관리자가 바꾼 순간 진행 중인 요청의 모델이 중간에 바뀔 수 있었습니다
+   (2026-10-16). 설정을 못 읽으면 위의 MODEL 로 갑니다. */
+
+/* ── 시간 예산(2026-10-16) ──────────────────────────────────────────────
+   함수 한도(150초)에 닿으면 플랫폼이 546 으로 끊고, 화면은 이유를 모른 채 기다립니다.
+   한 요청 전체에 **하나의 마감**을 두고, 바깥 호출 하나하나에도 상한을 둡니다.
+   - 요청 전체: 120초(한도 150초 안에서 답을 꾸릴 여유 30초)
+   - Gemini 한 번: 60초(장소·주소 모드는 더 짧게 따로 줍니다)
+   - Tavily 한 번: 12초
+   남은 시간이 모자라면 부르지 않고 599 로 돌려줍니다 — 부르는 쪽은 실패로 다룹니다. */
+const 요청예산ms = 120_000;
+const GEMINI_한번ms = 60_000;
+const TAVILY_한번ms = 12_000;
+const 최소남은ms = 3_000;          // 이보다 적게 남았으면 새로 부르지 않습니다
+
+/* ── 입력 상한(2026-10-16) ── 화면 코드는 누구나 고칠 수 있으므로 서버가 다시 봅니다.
+   화면이 보내는 실제 크기(불러오기 8,000자 · 리포트 한마디 수백 자)보다 넉넉히. */
+const 요청최대바이트 = 9_500_000;   // 사진 넷(합 8MB, base64) + 글
+const 글상한 = { chat: 6000, import: 9000, map: 2000 } as const;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -38,16 +55,26 @@ const json = (body: unknown, status = 200) =>
     status, headers: { ...CORS, 'Content-Type': 'application/json' },
   });
 
+/* 서버에서 만드는 클라이언트는 세션을 담아 둘 곳도, 토큰을 갱신할 까닭도 없습니다.
+   기본값 그대로면 요청마다 클라이언트 둘이 **갱신용 타이머(setInterval)를 켜고 안 끕니다**
+   — 시험(chat_handler_test)이 잡았습니다(2026-10-16). Supabase 가 서버에 권하는 설정입니다. */
+const 서버용인증 = { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false };
+
 /* ⚠ `extra`(생성 설정 덧붙이기)와 `기다림`(ms, 0 이면 제한 없음)은 b784 에 더했습니다.
    **안 넘기면 예전과 똑같이** 돕니다 — 대화·초안·불러오기는 그대로입니다.
    ⚠⚠ places 모드가 세 줄짜리에도 **150초를 채우고 546(WORKER_RESOURCE_LIMIT)** 으로
      죽었습니다(2026-09-28 실측). 여기엔 시간 제한도 답 길이 제한도 없어서, 모델이
      답을 끝없이 이어 쓰면(JSON 뒤 빈칸 반복이 흔한 꼴) 함수 한도까지 붙잡혀 있습니다.
-     제한을 넘기면 코드 599 로 돌려줍니다 — 부르는 쪽이 다른 모델로 넘깁니다. */
-async function callGemini(model: string, key: string, contents: unknown, temp = 0.7,
-                          extra: Record<string, unknown> = {}, 기다림 = 0) {
-  const ac = 기다림 ? new AbortController() : null;
-  const 타이머 = ac ? setTimeout(() => ac.abort(), 기다림) : 0;
+     제한을 넘기면 코드 599 로 돌려줍니다 — 부르는 쪽이 다른 모델로 넘깁니다.
+   2026-10-16: 이제 **모든** 부름에 제한이 있습니다. `기다림`을 안 주면 GEMINI_한번ms,
+     `마감`(요청 전체의 끝, ms 시각)을 주면 그보다 늦게까지 기다리지 않습니다.
+     연결 오류도 던지지 않고 599 로 돌려줍니다 — 부르는 쪽은 모두 code 로 판단합니다. */
+export async function callGemini(model: string, key: string, contents: unknown, temp = 0.7,
+                          extra: Record<string, unknown> = {}, 기다림 = 0, 마감 = Infinity) {
+  const 남은 = Math.min(기다림 || GEMINI_한번ms, 마감 - Date.now());
+  if (!(남은 >= 최소남은ms)) return { code: 599, body: '요청 시간 예산을 다 씀' };
+  const ac = new AbortController();
+  const 타이머 = setTimeout(() => ac.abort(), 남은);
   try {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -62,15 +89,14 @@ async function callGemini(model: string, key: string, contents: unknown, temp = 
             ...extra,
           },
         }),
-        signal: ac?.signal,
+        signal: ac.signal,
       },
     );
     return { code: res.status, body: await res.text() };
   } catch (e) {
-    if (!ac) throw e;                  /* 제한을 안 건 부름은 예전처럼 던집니다 */
     return { code: 599, body: String(e) };
   } finally {
-    if (타이머) clearTimeout(타이머);
+    clearTimeout(타이머);
   }
 }
 
@@ -120,9 +146,12 @@ function searchDomains(text: string, country: string) {
   return null;
 }
 
+/* 2026-10-16: Tavily 부름에 제한 시간이 없었습니다 — 붐비면 요청 전체를 함수 한도까지
+   붙잡았습니다. 이제 한 번에 TAVILY_한번ms, 그리고 요청의 `마감`을 넘기지 않습니다.
+   모자라면 부르지 않고 null(검색 실패)입니다 — 크레딧도 안 나갑니다. */
 // deno-lint-ignore no-explicit-any
-async function webSearch(key: string, admin: any, query: string,
-                         n: number, domains: string[] | null) {
+export async function webSearch(key: string, admin: any, query: string,
+                         n: number, domains: string[] | null, 마감 = Infinity) {
   const ck = query + '|' + (domains?.join(',') ?? '');
   // 같은 검색은 다시 안 합니다. Tavily 는 한 번이 크레딧 한 개입니다 (037).
   try {
@@ -143,17 +172,33 @@ async function webSearch(key: string, admin: any, query: string,
     };
     if (domains?.length) body.include_domains = domains;
 
-    const res = await fetch('https://api.tavily.com/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
-      body: JSON.stringify(body),
-    });
-    // 여기까지 왔으면 크레딧이 나갔습니다. 결과가 비거나 실패해도 나간 것은
-    // 나간 것이라 res.ok 와 상관없이 셉니다 — 안 그러면 실제보다 적게 잡힙니다.
-    admin.rpc('search_bump', { p_hit: false }).then(() => {}, () => {});
-    if (!res.ok) return null;
+    const 남은 = Math.min(TAVILY_한번ms, 마감 - Date.now());
+    if (!(남은 >= 최소남은ms)) return null;
+    const ac = new AbortController();
+    const 타이머 = setTimeout(() => ac.abort(), 남은);
+    let res: Response;
     // deno-lint-ignore no-explicit-any
-    let raw: any[] = (await res.json())?.results ?? [];
+    let raw: any[];
+    try {
+      res = await fetch('https://api.tavily.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+        body: JSON.stringify(body),
+        signal: ac.signal,
+      });
+      // 여기까지 왔으면 크레딧이 나갔습니다. 결과가 비거나 실패해도 나간 것은
+      // 나간 것이라 res.ok 와 상관없이 셉니다 — 안 그러면 실제보다 적게 잡힙니다.
+      admin.rpc('search_bump', { p_hit: false }).then(() => {}, () => {});
+      if (!res.ok) {
+        console.error('tavily', res.status);
+        await res.body?.cancel().catch(() => {});
+        return null;
+      }
+      raw = (await res.json())?.results ?? [];   // 본문 읽기도 같은 제한 시간 안입니다
+    } finally {
+      clearTimeout(타이머);
+    }
+    if (!Array.isArray(raw)) return null;
 
     // include_domains 는 강제가 아니라 선호입니다. 건수를 못 채우면 다른 사이트로
     // 메워서, tabelog 로 좁혔는데 위키백과가 섞여 들어왔습니다. 우리가 부른 곳만 남깁니다.
@@ -181,8 +226,214 @@ async function webSearch(key: string, admin: any, query: string,
       await admin.rpc('sweep_search_cache');   // 오래된 것 치우기
     } catch { /* 못 담아도 답은 나갑니다 */ }
     return items;
-  } catch {
+  } catch (e) {
+    /* 시간 초과·연결 오류. 이름만 남깁니다(열쇠가 실린 머리는 오류 글에 안 들어갑니다). */
+    console.error('tavily 실패', (e as Error)?.name ?? 'Error');
     return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// 안전한 바깥 요청 (2026-10-16)
+//
+// 사용자가 붙여 넣은 주소를 **서버가 대신** 받아 옵니다(블로그 · 지도 단축 주소 · iframe).
+// 그 주소는 무엇이든 될 수 있습니다 — `http://169.254.169.254/`(클라우드 메타데이터),
+// `http://localhost:…`, 사설망, 또는 그런 곳으로 «리다이렉트하는» 바깥 주소.
+// ⚠⚠ 전에는 검사 없이 `redirect:'follow'` 로 끝까지 따라갔고, iframe 주소도 그대로 받았고,
+//   지도 단축 주소는 주소 «어디에든» goo.gl 글자가 있으면 받았습니다(?x=goo.gl 로 아무 곳이나).
+//   본문 크기도 Content-Length 머리만 믿었습니다(머리가 없거나 거짓이면 끝까지 받음).
+//
+// 그래서 사용자 주소를 받는 길은 전부 아래 `안전요청` 하나를 지납니다.
+//   1. 주소 검사 — http/https · 기본 포트(80/443) · 아이디·비번 없음 · 이름 검사(localhost·
+//      .local·.internal·한 낱말 이름) · 숫자로 적힌 IP 가 내부·예약 대역이면 막음.
+//      `0x7f.1`·`2130706433` 같은 꼴은 URL 해석기가 `127.0.0.1` 로 풀어 줍니다(WHATWG).
+//   2. DNS 검사 — 이름을 IP 로 풀어 **하나라도** 내부·예약 대역이면 막음(이름만 바깥인 척).
+//   3. 리다이렉트 — 저절로 안 따라갑니다(redirect:'manual'). 매 단계 1·2 를 다시, 최대 4번.
+//   4. 시간 — 처음부터 본문 끝까지 **한 번의** 제한(단계마다 새로 주지 않음).
+//   5. 크기 — 본문을 흘려 받으며 상한에서 끊음. 글이 아닌 것(그림·영상)은 안 받음.
+//
+// ⚠ 남는 위험 — DNS 재바인딩: 우리가 이름을 푼 «직후» IP 가 바뀌면 fetch 가 다시 풀 때 다른
+//   곳으로 갈 수 있습니다. Deno 의 fetch 에 «이 IP 로만 연결»을 지정할 길이 없어서입니다.
+//   (docs/운영-설정-확인.md 「chat 바깥 요청」)
+// ⚠ 이 실행 환경에서 DNS 를 못 풀면(Deno.resolveDns 가 없거나 막힘) 2번을 못 합니다. 그때는
+//   «알려진 블로그·지도 이름»만 받고 나머지는 막습니다 — 닫힌 쪽으로 기울입니다.
+// ⚠ 시험은 모의 네트워크로만: supabase/tests/chat_safe_fetch_test.ts (`__시험용망` 으로 바꿔 끼움).
+// ─────────────────────────────────────────────────────────────────────
+/** 이름 → IP 들. null 이면 «이 환경에서는 못 풂». */
+type 해석기 = (host: string) => Promise<string[] | null>;
+
+const 바깥최대단계 = 4;
+
+/** 점 넷 IPv4 → 숫자 넷. 아니면 null. */
+function v4(ip: string): number[] | null {
+  const m = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return null;
+  const p = m.slice(1).map(Number);
+  return p.every((n) => n <= 255) ? p : null;
+}
+function 막힌v4([a, b, c]: number[]): boolean {
+  return a === 0 || a === 10 || a === 127 || a >= 224 ||   // this-net · 사설 · 루프백 · 멀티캐스트·예약
+    (a === 100 && b >= 64 && b <= 127) ||                   // CGNAT 100.64/10
+    (a === 169 && b === 254) ||                             // 링크 로컬(메타데이터 169.254.169.254)
+    (a === 172 && b >= 16 && b <= 31) ||                    // 사설
+    (a === 192 && b === 168) ||                             // 사설
+    (a === 192 && b === 0 && (c === 0 || c === 2)) ||       // IETF · TEST-NET-1
+    (a === 192 && b === 88 && c === 99) ||                  // 6to4 릴레이
+    (a === 198 && (b === 18 || b === 19)) ||                // 벤치마크
+    (a === 198 && b === 51 && c === 100) ||                 // TEST-NET-2
+    (a === 203 && b === 0 && c === 113);                    // TEST-NET-3
+}
+/** IPv6 → 16바이트. 못 읽으면 null. `::ffff:1.2.3.4` 처럼 끝에 IPv4 가 붙은 꼴도 읽습니다. */
+function v6(ip: string): number[] | null {
+  let s = ip.replace(/^\[|\]$/g, '').toLowerCase();
+  const 영역 = s.indexOf('%'); if (영역 >= 0) s = s.slice(0, 영역);        // fe80::1%eth0
+  let 꼬리: number[] | null = null;
+  const m = s.match(/^(.*:)(\d{1,3}(?:\.\d{1,3}){3})$/);
+  if (m) { 꼬리 = v4(m[2]); if (!꼬리) return null; s = m[1] + 'X'; }     // 두 칸을 X 하나로
+  const 반 = s.split('::');
+  if (반.length > 2) return null;
+  const 쪼개 = (t: string) => (t ? t.split(':') : []);
+  const 앞 = 쪼개(반[0]), 뒤 = 반.length === 2 ? 쪼개(반[1]) : [];
+  const 칸수 = (a: string[]) => a.reduce((n, x) => n + (x === 'X' ? 2 : 1), 0);
+  const 빈칸 = 반.length === 2 ? 8 - 칸수(앞) - 칸수(뒤) : 0;
+  if (반.length === 1 && 칸수(앞) !== 8) return null;
+  if (빈칸 < 0) return null;
+  const out: number[] = [];
+  for (const g of [...앞, ...Array(빈칸).fill('0'), ...뒤]) {
+    if (g === 'X') { out.push(...꼬리!); continue; }
+    if (!/^[0-9a-f]{1,4}$/.test(g)) return null;
+    const n = parseInt(g, 16); out.push(n >> 8, n & 255);
+  }
+  return out.length === 16 ? out : null;
+}
+function 막힌v6(b: number[]): boolean {
+  const 영 = (i: number, j: number) => b.slice(i, j).every((x) => x === 0);
+  const 품은 = b.slice(12);
+  if (영(0, 16) || (영(0, 15) && b[15] === 1)) return true;                  // :: · ::1
+  if (영(0, 10) && b[10] === 0xff && b[11] === 0xff) return 막힌v4(품은);     // ::ffff:a.b.c.d
+  if (영(0, 12)) return 막힌v4(품은);                                          // ::a.b.c.d(옛 호환)
+  if (b[0] === 0 && b[1] === 0x64 && b[2] === 0xff && b[3] === 0x9b && 영(4, 12)) return 막힌v4(품은); // 64:ff9b:: NAT64
+  if ((b[0] & 0xfe) === 0xfc) return true;                                    // fc00::/7 사설(ULA)
+  if (b[0] === 0xfe && (b[1] & 0x80) === 0x80) return true;                   // fe80::/10 · fec0::/10
+  if (b[0] === 0xff) return true;                                             // 멀티캐스트
+  if (b[0] === 0x20 && b[1] === 0x01 && b[2] === 0x0d && b[3] === 0xb8) return true; // 2001:db8:: 문서용
+  if (b[0] === 0x01 && 영(1, 8)) return true;                                 // 100::/64 버림
+  return false;
+}
+/** 내부·예약 주소인가. 못 읽는 것도 막습니다(닫힌 쪽). */
+export function 막힌주소(ip: string): boolean {
+  const a = v4(ip); if (a) return 막힌v4(a);
+  const b = v6(ip); if (b) return 막힌v6(b);
+  return true;
+}
+
+/* DNS 를 못 푸는 환경에서도 받는 이름 — 이 기능이 실제로 받는 곳들(블로그·지도). */
+const 알려진이름 = /(^|\.)(naver\.com|naver\.me|tistory\.com|brunch\.co\.kr|velog\.io|blogspot\.com|wordpress\.com|medium\.com|goo\.gl|google\.(com|co\.[a-z]{2}|[a-z]{2}))$/;
+
+const 기본해석: 해석기 = async (host) => {
+  // deno-lint-ignore no-explicit-any
+  const R = (Deno as any).resolveDns;
+  if (typeof R !== 'function') return null;
+  let 못씀 = false;
+  const 묻기 = async (t: string): Promise<string[]> => {
+    try { return await R(host, t) as string[]; }
+    catch (e) { if (e instanceof Deno.errors.NotFound) return []; 못씀 = true; return []; }
+  };
+  const [a, b] = await Promise.all([묻기('A'), 묻기('AAAA')]);
+  if (못씀 && !a.length && !b.length) return null;
+  return [...a, ...b];
+};
+
+/* 시험이 모의 네트워크를 끼울 자리. 운영에서는 진짜 fetch·DNS 입니다. */
+const 바깥망 = { fetch: (u: string, i?: RequestInit) => fetch(u, i), resolve: 기본해석 };
+export function __시험용망(x: { fetch?: typeof 바깥망.fetch; resolve?: 해석기 }) {
+  if (x.fetch) 바깥망.fetch = x.fetch;
+  if (x.resolve) 바깥망.resolve = x.resolve;
+}
+
+export async function 주소검사(raw: string, 해석: 해석기 = 바깥망.resolve):
+    Promise<{ ok: true; url: URL } | { ok: false; why: string }> {
+  let u: URL;
+  try { u = new URL(raw); } catch { return { ok: false, why: '주소 꼴이 아님' }; }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return { ok: false, why: 'http·https 만 받음' };
+  if (u.username || u.password) return { ok: false, why: '아이디·비번이 든 주소' };
+  if (u.port && u.port !== '80' && u.port !== '443') return { ok: false, why: '기본 포트가 아님' };
+  const host = u.hostname.toLowerCase().replace(/\.$/, '');
+  if (!host) return { ok: false, why: '이름이 없음' };
+  if (v4(host) || host.startsWith('['))
+    return 막힌주소(host) ? { ok: false, why: '내부·예약 주소' } : { ok: true, url: u };
+  if (host === 'localhost' || /\.(localhost|local|internal|home\.arpa|lan)$/.test(host) || !host.includes('.'))
+    return { ok: false, why: '내부 이름' };
+  const ips = await 해석(host).catch(() => null);
+  if (ips === null)
+    return 알려진이름.test(host) ? { ok: true, url: u }
+                                 : { ok: false, why: 'DNS 확인 불가 — 알려진 블로그·지도만 받음' };
+  if (!ips.length) return { ok: false, why: '이름을 못 찾음' };
+  if (ips.some(막힌주소)) return { ok: false, why: '이름이 내부·예약 주소로 풀림' };
+  return { ok: true, url: u };
+}
+
+/** 본문을 상한(바이트)까지만 흘려 받습니다. 넘으면 그 자리에서 끊고 나머지는 안 받습니다. */
+async function 상한까지(res: Response, max: number): Promise<{ text: string; truncated: boolean }> {
+  if (!res.body) return { text: '', truncated: false };
+  const r = res.body.getReader();
+  const 조각: Uint8Array[] = []; let n = 0, 잘림 = false;
+  while (true) {
+    const { done, value } = await r.read();
+    if (done) break;
+    const 남은 = max - n;
+    if (value.length >= 남은) {
+      조각.push(value.subarray(0, 남은)); n += 남은; 잘림 = true;
+      await r.cancel().catch(() => {});
+      break;
+    }
+    조각.push(value); n += value.length;
+  }
+  const 합 = new Uint8Array(n); let k = 0;
+  for (const c of 조각) { 합.set(c, k); k += c.length; }
+  return { text: new TextDecoder().decode(합), truncated: 잘림 };
+}
+
+export type 안전응답 =
+  | { ok: true; status: number; url: string; text: string; truncated: boolean }
+  | { ok: false; why: string };
+
+/** 사용자가 준 주소를 받는 **유일한** 길. 실패는 던지지 않고 {ok:false, why} 로 돌려줍니다. */
+export async function 안전요청(raw: string, o: {
+  ms: number; maxBytes: number; headers?: Record<string, string>;
+  maxRedirects?: number; signal?: AbortSignal;
+}): Promise<안전응답> {
+  const ac = new AbortController();
+  const 끊기 = () => ac.abort();
+  const t = setTimeout(끊기, o.ms);
+  if (o.signal?.aborted) ac.abort();
+  o.signal?.addEventListener('abort', 끊기, { once: true });
+  const 버리기 = (res: Response) => res.body?.cancel().catch(() => {});
+  try {
+    let 지금 = raw;
+    for (let 단계 = 0; ; 단계++) {
+      const 검 = await 주소검사(지금);
+      if (!검.ok) return { ok: false, why: 검.why };
+      if (ac.signal.aborted) return { ok: false, why: '시간 초과' };
+      const res = await 바깥망.fetch(검.url.href, { signal: ac.signal, redirect: 'manual', headers: o.headers });
+      const 갈곳 = res.headers.get('location');
+      if (res.status >= 300 && res.status < 400 && 갈곳) {
+        await 버리기(res);
+        if (단계 >= (o.maxRedirects ?? 바깥최대단계)) return { ok: false, why: '리다이렉트가 너무 많음' };
+        try { 지금 = new URL(갈곳, 검.url).href; } catch { return { ok: false, why: '리다이렉트 주소가 이상함' }; }
+        continue;
+      }
+      const 종류 = (res.headers.get('content-type') || '').toLowerCase();
+      if (종류 && !/text\/|html|xml|json/.test(종류)) { await 버리기(res); return { ok: false, why: '글이 아님' }; }
+      if (Number(res.headers.get('content-length') || 0) > o.maxBytes * 4) { await 버리기(res); return { ok: false, why: '너무 큼' }; }
+      const { text, truncated } = await 상한까지(res, o.maxBytes);
+      return { ok: true, status: res.status, url: 검.url.href, text, truncated };
+    }
+  } catch {
+    return { ok: false, why: ac.signal.aborted ? '시간 초과' : '받지 못함' };
+  } finally {
+    clearTimeout(t);
+    o.signal?.removeEventListener('abort', 끊기);
   }
 }
 
@@ -214,39 +465,29 @@ const BODY_PATTERNS: RegExp[] = [
   /<main[\s\S]*?<\/main>/i,
 ];
 
-/** 시간 제한을 건 fetch. 없으면 느린 블로그 하나가 요청 전체를 붙잡습니다. */
+/** 시간 제한을 건 받기. 없으면 느린 블로그 하나가 요청 전체를 붙잡습니다.
+ *  ⚠ 2026-10-16 부터 `안전요청` 을 지납니다(위 머리말) — 주소·리다이렉트 매 단계·DNS 검사. */
 async function fetchText(u: string, ms: number) {
-  const ac = new AbortController();
-  const t = setTimeout(() => ac.abort(), ms);
-  try {
-    const res = await fetch(u, {
-      signal: ac.signal,
-      redirect: 'follow',
-      headers: {
-        // 모바일 브라우저인 척해야 모바일 본문이 옵니다.
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ' +
-                      'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile Safari/604.1',
-        'Accept-Language': 'ko,en;q=0.8',
-      },
-    });
-    if (!res.ok) return null;
-
-    // ── 크기를 재고 받습니다 ──
-    // 크기를 안 재고 받으면 큰 페이지에서 손해입니다. 네이버·티스토리 글 한 장의 HTML 이
-    // 수 MB 인데 그걸 **셋을 동시에** 받아서, 각각 정규식 여덟 번을 통과시켰습니다.
-    // replace 는 그때마다 문자열을 통째로 새로 만듭니다 — 3장 × 3MB × 8번이면
-    // 수십 MB 가 순식간에 오갑니다. 로그에 예외 한 줄 없이 shutdown 만 찍힌 것이
-    // 그 흔적입니다(예외가 났으면 Uncaught 가 남습니다).
-    // 본문은 앞쪽에 있습니다. 뒤쪽은 댓글·추천글·꼬리말이라 잘라도 손해가 없습니다.
-    const len = Number(res.headers.get('content-length') || 0);
-    if (len > HTML_MAX * 4) return null;      // 대놓고 큰 것은 아예 안 받습니다
-    const html = await res.text();
-    return html.length > HTML_MAX ? html.slice(0, HTML_MAX) : html;
-  } catch {
-    return null;                 // 시간 초과도 여기로 옵니다
-  } finally {
-    clearTimeout(t);
-  }
+  // ── 크기를 재고 받습니다 ──
+  // 크기를 안 재고 받으면 큰 페이지에서 손해입니다. 네이버·티스토리 글 한 장의 HTML 이
+  // 수 MB 인데 그걸 **셋을 동시에** 받아서, 각각 정규식 여덟 번을 통과시켰습니다.
+  // replace 는 그때마다 문자열을 통째로 새로 만듭니다 — 3장 × 3MB × 8번이면
+  // 수십 MB 가 순식간에 오갑니다. 로그에 예외 한 줄 없이 shutdown 만 찍힌 것이
+  // 그 흔적입니다(예외가 났으면 Uncaught 가 남습니다).
+  // 본문은 앞쪽에 있습니다. 뒤쪽은 댓글·추천글·꼬리말이라 잘라도 손해가 없습니다.
+  // ⚠ 전에는 Content-Length 머리만 보고 거르고 `res.text()` 로 끝까지 받았습니다 — 머리가
+  //   없거나 거짓이면 그대로 다 받았습니다. 이제 흘려 받으며 HTML_MAX 바이트에서 끊습니다.
+  const r = await 안전요청(u, {
+    ms, maxBytes: HTML_MAX,
+    headers: {
+      // 모바일 브라우저인 척해야 모바일 본문이 옵니다.
+      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ' +
+                    'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile Safari/604.1',
+      'Accept-Language': 'ko,en;q=0.8',
+    },
+  });
+  if (!r.ok || r.status < 200 || r.status >= 300) return null;   // 시간 초과·막힌 주소도 여기로
+  return r.text;
 }
 
 function htmlToText(html: string) {
@@ -288,9 +529,12 @@ async function readBlog(raw: string) {
   if (html && text.length < 200) {
     const inner = html.match(/<iframe[^>]+src="([^"]+)"/i)?.[1];
     if (inner) {
-      const abs = inner.startsWith('http') ? inner
-                : 'https://m.blog.naver.com' + (inner.startsWith('/') ? inner : '/' + inner);
-      html = await fetchText(abs, BLOG_MS);
+      /* ⚠ iframe 주소는 **남이 쓴 페이지**가 정합니다 — `<iframe src="http://169.254.169.254/">`
+         를 넣은 글을 링크로 주면 서버가 거기로 갔습니다. 이제 fetchText → 안전요청 이 같은
+         검사를 합니다. 상대 주소는 예전처럼 m.blog.naver.com 기준으로 풉니다(`//다른곳` 꼴도). */
+      let abs = '';
+      try { abs = new URL(inner.replace(/&amp;/g, '&'), 'https://m.blog.naver.com/').href; } catch { /* 이상한 주소는 버림 */ }
+      html = abs ? await fetchText(abs, BLOG_MS) : null;
       text = html ? htmlToText(html) : '';
     }
   }
@@ -328,16 +572,20 @@ const isGoogleMap = (u: string) => GMAP_RE.test(String(u || '').trim());
 
 /** 단축 주소를 펼칩니다. 실패하면 원래 주소를 그대로 씁니다. */
 async function unshortenMap(u: string) {
-  if (!/goo\.gl/i.test(u)) return u;          // 이미 긴 주소면 받아올 이유가 없습니다
-  const ac = new AbortController();
-  const t = setTimeout(() => ac.abort(), BLOG_MS);
+  /* ⚠ 전에는 `/goo\.gl/` 글자가 주소 «어디에든» 있으면 받았습니다 — `http://내부주소/?goo.gl`
+     꼴로 아무 곳이나 받게 할 수 있었습니다. 이제 **주소의 이름**이 goo.gl 일 때만 받습니다. */
+  let host = '';
+  try { host = new URL(u).hostname.toLowerCase(); } catch { return u; }
+  if (host !== 'goo.gl' && !host.endsWith('.goo.gl')) return u;   // 이미 긴 주소면 받아올 이유가 없습니다
   try {
     // **UA 를 진짜 브라우저로 바꿨다가 되돌렸습니다.** 그러면 구글이
     // 동의 페이지(consent.google.com)로 보내서, 이름조차 못 뽑게 됐습니다 —
     // 고치기 전보다 나빠졌습니다. 재보고 알았습니다. 원래대로 둡니다.
-    const res = await fetch(u, { signal: ac.signal, redirect: 'follow',
-      headers: { 'user-agent': 'Mozilla/5.0' } });
-    const html = await res.text();
+    // ⚠ 리다이렉트는 안전요청 이 한 단계씩 검사하며 따라갑니다(최종 주소는 r.url).
+    const r = await 안전요청(u, { ms: BLOG_MS, maxBytes: HTML_MAX, headers: { 'user-agent': 'Mozilla/5.0' } });
+    if (!r.ok) return u;
+    const res = { url: r.url };
+    const html = r.text;
 
     // 보통은 302 를 따라가면 res.url 이 긴 주소입니다.
     // 동의 페이지처럼 **지도 주소가 아닌 곳**으로 갔으면 그건 쓰면 안 됩니다.
@@ -366,7 +614,6 @@ async function unshortenMap(u: string) {
     }
     return full;
   } catch { return u; }
-  finally { clearTimeout(t); }
 }
 
 /** 주소에서 장소 이름과 좌표를 뽑습니다. 글자 하나도 받아오지 않습니다. */
@@ -411,7 +658,8 @@ async function readGoogleMap(raw: string) {
   };
 }
 
-async function readLinks(message: string) {
+/* 시험(supabase/tests/chat_safe_fetch_test.ts)이 부르려고 내보냅니다 — 하는 일은 그대로입니다. */
+export async function readLinks(message: string) {
   const urls = [...new Set(String(message ?? '')
     .match(/https?:\/\/[^\s<>"']+/g) ?? [])].slice(0, BLOG_MAX);
   if (!urls.length) return { block: '', report: [] as { link: string; ok: boolean }[] };
@@ -486,7 +734,8 @@ function splitText(s: string, size: number, maxParts: number) {
 
 /** 한 번 물어보고 글자만 꺼냅니다. 한도(429)에 걸리면 가벼운 모델로 한 번 더. */
 // deno-lint-ignore no-explicit-any
-async function askGemini(key: string, contents: any[], fast = false) {
+async function askGemini(key: string, contents: any[], fast: boolean,
+                         모델: string, 마감: number) {
   // 불러오기는 '읽어서 옮기기'입니다. 추론이 아니라 추출이라 가벼운 모델로 충분하고
   // 훨씬 빠릅니다. 실측: 큰 모델로 34초였습니다. 실패하면 큰 모델로 한 번 더.
   // temperature 0 — 옮겨 적는 일에 창의성은 손해입니다.
@@ -495,14 +744,14 @@ async function askGemini(key: string, contents: any[], fast = false) {
      느린 것보다 나쁩니다 — 사용자는 3개가 없어진 줄 모르고 넘어갑니다.
      모델은 되돌리고, fast 는 이제 **temperature 0** 만 뜻합니다.
      옮겨 적는 일에 무작위성은 손해라 그것만은 남깁니다. */
-  const first = activeModel;
+  const first = 모델;
   const second = MODEL_FALLBACK;
-  let r = await callGemini(first, key, contents, fast ? 0 : 0.7);
+  let r = await callGemini(first, key, contents, fast ? 0 : 0.7, {}, 0, 마감);
   /* 실패하면 **왜** 실패했는지 남깁니다. 성공 경로에만 로그를 두었더니
      TIMING 이 통째로 사라졌고, 그러면 "안 찍힌다"만 알고 이유를 모릅니다. */
   if (r.code !== 200){
     console.log(`ASK ${first} -> ${r.code} ${String(r.body).slice(0, 300)}`);
-    r = await callGemini(second, key, contents, fast ? 0 : 0.7);
+    r = await callGemini(second, key, contents, fast ? 0 : 0.7, {}, 0, 마감);
     if (r.code !== 200)
       console.log(`ASK ${second} -> ${r.code} ${String(r.body).slice(0, 300)}`);
   }
@@ -523,7 +772,9 @@ function distKm(a: number, b: number, c: number, d: number) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-Deno.serve(async (req) => {
+/* 요청 하나를 처리합니다. 시험(supabase/tests/chat_handler_test.ts)이 서버 없이 부르려고
+   이름을 붙여 내보냅니다 — 하는 일은 예전 Deno.serve(async (req) => …) 와 같습니다. */
+export async function 처리(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   // ── 단계별 시간 재기 ──
@@ -534,6 +785,18 @@ Deno.serve(async (req) => {
   const T0 = Date.now();
   const lap: string[] = [];
   const mark = (name: string) => lap.push(`${name} ${Date.now() - T0}ms`);
+  /* 요청 전체의 끝(위 「시간 예산」). 바깥 호출은 모두 이 시각을 넘기지 않습니다. */
+  const 마감 = T0 + 요청예산ms;
+  /* 사용자에게는 쉬운 말과 이 번호만, 로그에는 자세한 까닭과 이 번호를 남깁니다.
+     문의가 오면 번호로 로그를 찾습니다(2026-10-16 — 전에는 내부 오류 글을 그대로 돌려줬습니다). */
+  const 요청번호 = crypto.randomUUID().slice(0, 8);
+  const 내부오류 = (어디: string, e: unknown, 말 = '잠시 문제가 생겼어요. 조금 뒤 다시 해주세요.',
+                    status = 500) => {
+    // deno-lint-ignore no-explicit-any
+    const x = e as any;
+    console.error(`[${요청번호}] ${어디}`, x?.code ?? '', String(x?.message ?? x ?? '').slice(0, 300));
+    return json({ error: 말, ref: 요청번호 }, status);
+  };
 
   try {
     const key = Deno.env.get('GEMINI_KEY');
@@ -545,14 +808,40 @@ Deno.serve(async (req) => {
     const url = Deno.env.get('SUPABASE_URL')!;
     // 부른 사람의 토큰으로 읽습니다 — RLS 가 그대로 걸립니다.
     const asUser = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: auth } },
+      global: { headers: { Authorization: auth } }, auth: 서버용인증,
     });
     const { data: { user } } = await asUser.auth.getUser();
     if (!user) return json({ error: '로그인이 필요해요.' }, 401);
 
     mark('auth');
-    const body = await req.json().catch(() => ({}));
+    /* 크기를 먼저 봅니다 — 다 받은 뒤에 보면 이미 메모리에 올라온 뒤입니다.
+       Content-Length 가 없는(나눠 보내는) 요청도 흘려 받으며 상한에서 끊습니다. */
+    if (Number(req.headers.get('content-length') ?? 0) > 요청최대바이트)
+      return json({ error: '보낸 것이 너무 커요. 사진을 줄이거나 나눠서 보내주세요.' }, 413);
+    // deno-lint-ignore no-explicit-any
+    let body: any = {};
+    {
+      const 받음 = await 상한까지(new Response(req.body), 요청최대바이트 + 1);
+      if (받음.truncated)
+        return json({ error: '보낸 것이 너무 커요. 사진을 줄이거나 나눠서 보내주세요.' }, 413);
+      try { body = JSON.parse(받음.text || '{}'); } catch { body = {}; }
+      if (!body || typeof body !== 'object' || Array.isArray(body)) body = {};
+    }
     const { trip_id, message, mode, prefs, image, images } = body;
+
+    /* 모양 검사(2026-10-16). 예전엔 무엇이 와도 String() 으로 펴서 썼습니다. */
+    const 모드들 = [undefined, null, 'map', 'draft', 'import', 'places', 'addr'];
+    if (!모드들.includes(mode)) return json({ error: '알 수 없는 요청이에요.' }, 400);
+    if (trip_id != null && !(typeof trip_id === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trip_id)))
+      return json({ error: '어느 여행인지 알 수 없어요.' }, 400);
+    if (message != null && typeof message !== 'string')
+      return json({ error: '물어볼 말을 글로 적어주세요.' }, 400);
+    {
+      const 상한 = mode === 'map' ? 글상한.map : mode === 'import' ? 글상한.import : 글상한.chat;
+      if (String(message ?? '').length > 상한)
+        return json({ error: `한 번에 ${상한.toLocaleString()}자까지 보낼 수 있어요. 나눠서 보내주세요.` }, 400);
+    }
 
     // ── 구글 지도 주소 하나 읽기 ──────────────────────────────────
     // **AI 를 안 씁니다.** 한도도 안 닳고 값도 안 나갑니다 — 주소를 펴서
@@ -575,11 +864,14 @@ Deno.serve(async (req) => {
     // **지도 주소 읽기 다음입니다** — 그건 AI 를 안 쓰므로 껐을 때도
     // 살아 있어야 맞습니다.
     try {
-      const { data: sw } = await asUser.rpc('public_flags');
+      const { data: sw, error: swErr } = await asUser.rpc('public_flags');
       // 못 읽으면 켜진 것으로 봅니다 — 설정을 못 읽었다고 앱을 멈추면 안 됩니다.
+      // (그래도 아래 ai_take 가 한도를 셉니다. 그것마저 못 읽으면 거기서 멈춥니다.)
+      // 2026-10-16: 못 읽은 것을 조용히 넘기지 않고 로그에 남깁니다.
+      if (swErr) console.error(`[${요청번호}] public_flags`, swErr.code ?? '', String(swErr.message ?? '').slice(0, 200));
       if (sw && sw.ai === false)
         return json({ error: 'AI 기능을 잠시 멈춰뒀어요. 곧 다시 열립니다.' }, 200);
-    } catch { /* 그대로 갑니다 */ }
+    } catch (e) { console.error(`[${요청번호}] public_flags`, String(e).slice(0, 200)); }
 
     // 초안은 버튼만 눌러도 됩니다. 사용자가 문장을 쓰지 않습니다.
     const draft = mode === 'draft';
@@ -630,18 +922,27 @@ Deno.serve(async (req) => {
     // 둘은 서로를 안 기다려도 되는 일입니다.
     // 관리자가 화면에서 바꾸는 값들입니다(db/047). 표가 비었거나 못 읽으면
     // 아래 기본값으로 갑니다 — 설정을 못 읽었다고 답을 안 해주면 안 됩니다.
-    const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    const [{ data: take, error: takeErr }, { data: cfgRows }] = await Promise.all([
+    const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: 서버용인증 });
+    const [{ data: take, error: takeErr }, { data: cfgRows, error: cfgErr }] = await Promise.all([
       admin.rpc('ai_take', { p_user: user.id,
                              p_kind: draft ? 'draft' : (imp || geo || addrMode) ? 'import' : 'chat' }),
       admin.from('app_settings').select('key,value'),
     ]);
-    const cfg: Record<string, any> =
+    /* 사용량을 못 셌으면 **멈춥니다** — 한도를 모른 채 AI 를 부르면 돈이 샙니다.
+       DB 오류 글(표·함수 이름이 들어 있음)은 로그에만, 사용자에겐 쉬운 말만(2026-10-16). */
+    if (takeErr) return 내부오류('ai_take', takeErr);
+    /* 설정은 «못 읽으면 기본값»을 유지합니다(답을 안 해주는 것보다 낫다 — 위 주석).
+       다만 조용히 넘기지 않고 로그에 남기고, 돈이 드는 쪽(웹 검색)은 **끈 것**으로 봅니다 —
+       관리자가 꺼 둔 것을 설정을 못 읽었다는 이유로 켜면 안 됩니다. */
+    if (cfgErr) console.error(`[${요청번호}] app_settings`, cfgErr.code ?? '', String(cfgErr.message ?? '').slice(0, 200));
+    // deno-lint-ignore no-explicit-any
+    const cfg: Record<string, any> = cfgErr ? {} :
+      // deno-lint-ignore no-explicit-any
       Object.fromEntries((cfgRows ?? []).map((r: any) => [r.key, r.value]));
     // 모델 이름은 DB 쪽에서 이미 목록으로 걸러집니다. 그래도 빈 값이면 기본으로.
-    activeModel     = String(cfg.ai_model?.name || MODEL);
-    const searchOn  = cfg.web_search?.on !== false;
-    if (takeErr) return json({ error: takeErr.message }, 500);
+    // **이 요청 안에서만** 씁니다(위 MODEL 머리말 — 예전 전역 activeModel).
+    const 모델      = String(cfg.ai_model?.name || MODEL);
+    const searchOn  = !cfgErr && cfg.web_search?.on !== false;
     if (!take?.ok)
       return json({
         // 여기는 **사람을 잃는 자리**입니다. 쓸모를 느끼는 순간에 막히면
@@ -718,8 +1019,8 @@ Deno.serve(async (req) => {
          빠릅니다. 못 하면 큰 모델이 받습니다. (불러오기에서 가벼운 모델이 «줄을
          빠뜨린» 일이 있었지만, 여기서 빠진 줄은 핀이 안 찍힐 뿐 틀린 핀이 되지는
          않습니다.) */
-      for (const m of [MODEL_FALLBACK, activeModel]) {
-        const r = await callGemini(m, key, 물음, 0, { maxOutputTokens: 상한 }, 45000);
+      for (const m of [MODEL_FALLBACK, 모델]) {
+        const r = await callGemini(m, key, 물음, 0, { maxOutputTokens: 상한 }, 45000, 마감);
         if (r.code !== 200) {
           console.log(`PLACES ${m} -> ${r.code} ${String(r.body).slice(0, 300)} | ${Date.now() - T0}ms`);
           continue;
@@ -785,7 +1086,7 @@ Deno.serve(async (req) => {
       const 찾음: any[][] = await Promise.all(items.map(async (it) => {
         const q = [말(it?.name, 60), 말(it?.area, 30), country === 'JP' ? '住所' : 'address']
           .filter(Boolean).join(' ');
-        try { return (await webSearch(tavily, admin, q, 5, null)) ?? []; } catch { return []; }
+        try { return (await webSearch(tavily, admin, q, 5, null, 마감)) ?? []; } catch { return []; }
       }));
       mark('search');
       const 목록 = items.map((it, i) => {
@@ -810,12 +1111,12 @@ Deno.serve(async (req) => {
         '              "src": "https://…" 또는 null } ] }',
       ].join('\n');
       let 답 = '';
-      for (const m of [MODEL_FALLBACK, activeModel]) {
+      for (const m of [MODEL_FALLBACK, 모델]) {
         const r = await callGemini(m, key, [
           { role: 'user',  parts: [{ text: addrSystem }] },
           { role: 'model', parts: [{ text: '알겠습니다. 결과에 적힌 주소만 옮기겠습니다.' }] },
           { role: 'user',  parts: [{ text: 목록 }] },
-        ], 0, { maxOutputTokens: 1500 }, 30000);
+        ], 0, { maxOutputTokens: 1500 }, 30000, 마감);
         if (r.code !== 200) {
           console.log(`ADDR ${m} -> ${r.code} ${String(r.body).slice(0, 200)} | ${Date.now() - T0}ms`);
           continue;
@@ -915,6 +1216,9 @@ Deno.serve(async (req) => {
        (아래 dropDup 참고 — 프롬프트가 안 지키는 것을 코드가 지킵니다). */
     // deno-lint-ignore no-explicit-any
     let candList: any[] = [];
+    /* 읽다가 오류가 난 표 이름(아래 「못 읽은 것을 «없음»으로 쓰지 않습니다」). */
+    const 못읽은: string[] = [];
+    const 못읽음말 = '- (서버 사정으로 지금 못 읽었다. «없다»고 말하지 말고, 필요하면 «지금 확인이 안 된다»고 한다)';
     if (trip_id) {
       // 넷을 차례로 물었습니다. 넷 다 trip_id 하나만 있으면 되는데도
       // 앞의 답을 기다렸습니다 — 오갈 때마다 붙는 시간이 그대로 쌓입니다.
@@ -928,15 +1232,15 @@ Deno.serve(async (req) => {
       // 같은 Promise.all 에 넣습니다 — 줄을 더 세우면 제일 느린 하나만큼만 늘어납니다.
       const [tripRes, legRes, planRes, expRes,
              memRes, bookRes, candRes, packRes] = await Promise.all([
+        /* ⚠ select 글은 **한 덩어리**로 둡니다. '…' + '…' 로 이으면 supabase-js 가 열 이름을
+           못 읽어 타입이 오류 꼴이 되고 `deno check` 가 12건을 냈습니다(2026-10-16 고침). */
         asUser.from('trips')
-          .select('title,destination,country,start_date,end_date,timezone,currency,' +
-                  'home_currency,walk_max_km,transit_factor,transit_base_min')
+          .select('title,destination,country,start_date,end_date,timezone,currency,home_currency,walk_max_km,transit_factor,transit_base_min')
           .eq('id', trip_id).maybeSingle(),
         // 여러 도시·나라를 도는 여행이면 구간마다 통화·시간대·이동방식이 다릅니다.
         // 이걸 안 주면 AI 가 여행 전체를 한 도시로 보고 답합니다.
         asUser.from('trip_legs')
-          .select('destination,country,start_date,end_date,timezone,currency,' +
-                  'center_lat,center_lng,walk_max_km,transit_factor,transit_base_min')
+          .select('destination,country,start_date,end_date,timezone,currency,center_lat,center_lng,walk_max_km,transit_factor,transit_base_min')
           .eq('trip_id', trip_id).order('start_date'),
         asUser.from('plans')
           .select('date,start_time,end_time,category,title,memo')
@@ -965,6 +1269,27 @@ Deno.serve(async (req) => {
         asUser.from('packing').select('title,done')
           .eq('trip_id', trip_id).is('deleted_at', null).limit(60),
       ]);
+
+      /* ── 못 읽은 것을 «없음»으로 쓰지 않습니다(2026-10-16) ──
+         예전엔 오류가 나도 data 가 null 이라 그대로 «(없음)»이 되었고, AI 는
+         «일정이 하나도 없네요»처럼 **틀린 말을 자신 있게** 했습니다.
+         - 여행·구간·일정: 이것 없이는 답이 틀립니다 → 요청을 멈추고 다시 해 달라고 합니다.
+         - 나머지(지출·일행·예약·담은 곳·준비물): 그 칸에 «못 읽음»을 적어 AI 가 없다고
+           단정하지 않게 합니다. 까닭은 로그에만 남깁니다. */
+      for (const [이름, r] of [['trips', tripRes], ['trip_legs', legRes], ['plans', planRes]] as const)
+        if (r.error) return 내부오류(`db ${이름}`, r.error,
+          '여행 자료를 지금 못 읽었어요. 조금 뒤 다시 해주세요.', 503);
+      /* 없는 여행(지웠거나, 나왔거나, 남의 것 — RLS)을 «여행 없음»으로 답하지 않습니다. */
+      if (!tripRes.data)
+        return json({ error: '이 여행을 찾을 수 없어요. 여행 목록을 새로 고친 뒤 다시 해주세요.' }, 404);
+      for (const [이름, r] of [['expenses', expRes], ['trip_members', memRes], ['bookings', bookRes],
+                               ['candidates', candRes], ['packing', packRes]] as const)
+        if (r.error) {
+          console.error(`[${요청번호}] db ${이름}`, r.error.code ?? '', String(r.error.message ?? '').slice(0, 200));
+          못읽은.push(이름);
+        }
+      const 칸 = (이름: string, 있을때: string, 없을때: string) =>
+        못읽은.includes(이름) ? 못읽음말 : 있을때 || 없을때;
 
       const trip = tripRes.data;
       tripRow = trip;
@@ -1005,9 +1330,9 @@ Deno.serve(async (req) => {
             `${p.memo ? ' — ' + p.memo : ''}`).join('\n') || '- (없음)',
           '',
           '[최근 지출]',
-          (exp ?? []).map((e) =>
+          칸('expenses', (exp ?? []).map((e) =>
             `- ${e.date} ${e.title} ${e.amount}${e.currency}` +
-            `${e.category ? ' (' + e.category + ')' : ''}`).join('\n') || '- (없음)',
+            `${e.category ? ' (' + e.category + ')' : ''}`).join('\n'), '- (없음)'),
           '',
           // ── 여기서부터가 2026-08-10 에 더한 것입니다 ──
           // **오늘이 며칠인지를 안 알려주고 있었습니다.** 모델이 아는 '오늘'은
@@ -1017,6 +1342,7 @@ Deno.serve(async (req) => {
           // 밀립니다(b248 에서 세 군데가 걸렸습니다). `en-CA` 가 YYYY-MM-DD 를 줍니다.
           `[오늘] ${todayThere}${dayNote}`,
           '',
+          못읽은.includes('trip_members') ? '[일행]\n' + 못읽음말 :
           `[일행] ${(memRes.data ?? []).length}명` +
             ((memRes.data ?? []).some((m) => m.nickname)
               ? ' — ' + (memRes.data ?? []).map((m) =>
@@ -1025,16 +1351,17 @@ Deno.serve(async (req) => {
               : ''),
           '',
           '[예약] 도착·출발 시각이 첫날과 마지막 날에 무엇을 넣을 수 있는지를 정한다.',
-          (bookRes.data ?? []).map((b) =>
+          칸('bookings', (bookRes.data ?? []).map((b) =>
             `- ${b.kind ?? ''} ${b.title} ${b.start_date ?? ''} ${b.start_time?.slice(0, 5) ?? ''}` +
             `${b.end_date ? ` ~ ${b.end_date} ${b.end_time?.slice(0, 5) ?? ''}` : ''}`)
-            .join('\n') || '- (없음)',
+            .join('\n'), '- (없음)'),
           '',
           // ⚠ **처음에 '안 챙긴 것'만 보냈다가 물렸습니다** (2026-08-11, 실제로 물어봄).
           // AI 가 "목록에 없는 기본 필수품인 여권도 챙기세요"라고 답했는데
           // 여권은 목록에 있고 이미 챙긴 것이었습니다. **안 보내면 없는 것이 됩니다.**
           // 챙긴 것도 이름만 같이 보냅니다 — 그래야 이미 한 일을 또 시키지 않습니다.
           (() => {
+            if (못읽은.includes('packing')) return '[준비물]\n' + 못읽음말;
             const pk = packRes.data ?? [];
             if (!pk.length) return '[준비물] (아직 없음)';
             const left = pk.filter((p) => !p.done).map((p) => p.title);
@@ -1050,6 +1377,11 @@ Deno.serve(async (req) => {
             // deno-lint-ignore no-explicit-any
             const cd = (candRes.data ?? []) as any[];
             candList = cd;
+            /* 못 읽었으면 «빼야 할 곳이 없다»가 아니라 «모른다»입니다. 이때 카드 거르기
+               (dropDup)는 빈 목록이라 아무것도 안 거릅니다 — 이미 담은 곳이 카드로 다시
+               나올 수 있습니다(예전과 같음). */
+            if (못읽은.includes('candidates'))
+              return '[추천에서 빼야 할 곳]\n- (이미 담아둔 곳을 지금 못 읽었다. 담아둔 곳이 없다고 말하지 않는다)';
             /* ⚠ 처음엔 '[담아둔 곳] … 다시 권하지 마라' 로 적었는데 **모델이
                목록을 보고 "여기서 고르라"로 읽어 그중 셋을 그대로 추천**했습니다.
                제목부터 "빼라"로 바꾸고, 목록 **앞뒤로** 못박습니다. */
@@ -1067,6 +1399,13 @@ Deno.serve(async (req) => {
     // ── 사람에게 딸린 자료 ── 여행을 골랐든 안 골랐든 늘 붙입니다.
     // 여행 블록 밖에 있는 것이 핵심입니다 — 위 주석 참고.
     const [prefRes, rateRes, placeRes] = await meP;
+    /* 취향·별점을 못 읽었으면 «등록된 취향이 없다»고 답하지 않게 적어 둡니다(2026-10-16). */
+    const 내자료못읽음 = ([['user_prefs', prefRes], ['city_ratings', rateRes], ['plan_ratings', placeRes]] as const)
+      .filter(([이름, r]) => {
+        if (!r.error) return false;
+        console.error(`[${요청번호}] db ${이름}`, r.error.code ?? '', String(r.error.message ?? '').slice(0, 200));
+        return true;
+      }).length > 0;
     {
       const p = prefRes.data ?? {};
       const bits = [
@@ -1106,6 +1445,9 @@ Deno.serve(async (req) => {
                 .join('\n')
             : '';
         })(),
+        내자료못읽음
+          ? '[취향·별점] 일부를 서버 사정으로 지금 못 읽었다. 취향이나 별점이 «없다»고 말하지 않는다.'
+          : '',
       ].filter(Boolean).join('\n');
       if (mine) ctx = ctx ? ctx + '\n\n' + mine : mine;
     }
@@ -1187,7 +1529,7 @@ Deno.serve(async (req) => {
       const dest = tripRow?.destination ?? '';
       hits = await webSearch(tavily, admin,
         searchQuery(String(message), dest), 5,
-        searchDomains(String(message), tripRow?.country ?? ''));
+        searchDomains(String(message), tripRow?.country ?? ''), 마감);
     }
     const searchBlock = hits?.length
       ? '\n[방금 검색한 결과] — 아래 내용을 근거로 답한다\n' +
@@ -1352,11 +1694,21 @@ Deno.serve(async (req) => {
         .select('role,content')
         .order('created_at', { ascending: false })
         .limit(12);
-      const { data: past } = trip_id
+      const { data: past, error: pastErr } = trip_id
         ? await q.eq('trip_id', trip_id)
         : await q.is('trip_id', null);
+      /* 못 읽었으면 «처음 하는 대화»로 꾸미지 않습니다(2026-10-16) — 「1번 넣어줘」를
+         엉뚱하게 알아듣는 대신 되묻게 합니다. 까닭은 로그에만. */
+      if (pastErr) {
+        console.error(`[${요청번호}] db chats`, pastErr.code ?? '', String(pastErr.message ?? '').slice(0, 200));
+        history = [
+          { role: 'user', parts: [{ text: '[알림] 앞서 나눈 대화를 서버 사정으로 지금 못 읽었다. ' +
+              '이번 말이 앞 대화를 가리키면(「1번」, 「그거」) 무엇인지 되묻는다.' }] },
+          { role: 'model', parts: [{ text: '알겠습니다. 앞 대화를 가리키면 되묻겠습니다.' }] },
+        ];
+      }
       let left = 4000;                       /* 글자 예산 */
-      history = (past ?? [])                 /* 최신순으로 왔습니다 */
+      if (!pastErr) history = (past ?? [])   /* 최신순으로 왔습니다 */
         .filter((m) => m?.content)
         .filter((m) => {                     /* 예산 안에 드는 것까지만 */
           const n = String(m.content).length;
@@ -1426,7 +1778,7 @@ Deno.serve(async (req) => {
             `아래가 옮길 일정이다. 전체를 ${chunks.length}조각으로 나눈 것 중 ` +
             `${i + 1}번째다. **이 조각에 적힌 것만** 옮기고, 여기 없는 날은 만들지 않는다.` +
             '\n\n' + c }] },
-      ], true)));
+      ], true, 모델, 마감)));
 
       // 조각끼리 같은 일정을 겹쳐 낼 수 있습니다(앞뒤가 잘린 자리).
       // 날짜·시각·제목이 같으면 같은 것으로 봅니다.
@@ -1454,11 +1806,11 @@ Deno.serve(async (req) => {
     } else if (imp) {
       /* 조각을 안 나눈 짧은 자료도 똑같이 가벼운 모델로 갑니다.
          여기만 큰 모델로 두면 "짧은 게 더 느린" 이상한 일이 생깁니다. */
-      const t = await askGemini(key, contents, true);
+      const t = await askGemini(key, contents, true, 모델, 마감);
       if (!t) return json({ error: 'AI가 답을 안 줬어요. 잠시 뒤 다시 물어봐주세요.' }, 502);
       raw = t;
     } else {
-      let r = await callGemini(activeModel, key, contents);
+      let r = await callGemini(모델, key, contents, 0.7, {}, 0, 마감);
       /* **429 만 다시 물어보고 있었습니다.** 그런데 무료 등급에서 훨씬 흔한 것은
          503 "The model is overloaded" 입니다 — 그건 재시도 없이 곧장
          "AI가 답을 안 줬어요"로 나갔습니다. 사용자가 실제로 그 화면을 만났고,
@@ -1473,12 +1825,12 @@ Deno.serve(async (req) => {
            답의 품질을 잃습니다. */
         if (r.code >= 500){
           await new Promise((s) => setTimeout(s, 1200));
-          r = await callGemini(activeModel, key, contents);
+          r = await callGemini(모델, key, contents, 0.7, {}, 0, 마감);
         }
         /* 그래도 안 되면(또는 한도 429 라면) 가벼운 모델로 넘깁니다. */
         if (r.code !== 200){
           console.error('gemini 재시도', r.code, String(r.body).slice(0, 300));
-          r = await callGemini(MODEL_FALLBACK, key, contents);
+          r = await callGemini(MODEL_FALLBACK, key, contents, 0.7, {}, 0, 마감);
         }
       }
       if (r.code !== 200){
@@ -1639,6 +1991,11 @@ Deno.serve(async (req) => {
       days: (draft || imp) ? days : undefined,
     });
   } catch (e) {
-    return json({ error: String((e as Error)?.message ?? e) }, 500);
+    /* 예상 못 한 오류. 예전엔 오류 글을 그대로 돌려줬습니다(내부 이름·경로가 실림).
+       이제 로그에만 남기고 사용자에겐 쉬운 말과 번호만(2026-10-16). */
+    console.error(`[${요청번호}] 예상 못 한 오류 | ` + lap.join(' | '));
+    return 내부오류('catch', e);
   }
-});
+}
+
+Deno.serve(처리);

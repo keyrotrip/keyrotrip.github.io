@@ -22,3 +22,5 @@ closedir $d;
 print $_ eq '' ? '' : "  빠짐: $_\n" for @miss;
 print @miss ? "⚠ ".scalar(@miss)."개가 modulepreload 에 없습니다\n"
             : "  modulepreload 다 있음\n";
+# 2026-10-16: 빠진 것이 있으면 1 로 끝냅니다 — tools/check-all.sh 와 CI 가 이 값으로 멈춥니다.
+exit(@miss ? 1 : 0);

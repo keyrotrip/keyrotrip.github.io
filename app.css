@@ -7350,3 +7350,13 @@ body.sharedon{ overflow:hidden; }
  ⚠ 「다녀온 뒤 평가」 화면의 맛집 줄은 사진 자리만큼 밀릴 까닭이 없습니다
    (.rcc-list 에서 한 것과 같은 까닭 — b878 주석). */
 #rvt_cities .cmask.thin .cmbtns{ padding-left:0; }
+
+/* ── 저장 못 한 것(2026-10-16, net.js) ──────────────────────────────────
+ * 오프라인 띠가 「저장 못 한 것 N건 · 눌러서 보기」일 때만 누를 수 있습니다.
+ * 목록 판은 성향 바뀜 알림(.pshpop/.pshcard)과 같은 틀이고 여기는 줄 모양만. */
+.offbar.tap{ cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+.failist{ list-style:none; margin:12px 0 0; padding:0; max-height:40vh; overflow:auto; }
+.failist li{ padding:9px 0; border-top:1px solid var(--divider-soft); }
+.failist li:first-child{ border-top:0; }
+.failist b{ display:block; font-size:var(--f-lg); font-weight:700; color:var(--ink); }
+.failist span{ display:block; margin-top:3px; font-size:var(--f-md); color:var(--ink-48); word-break:keep-all; }

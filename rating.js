@@ -14,20 +14,22 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b880';
-import { sb } from './db.js?v=b880';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b880';
-import { dateRange } from './calc.js?v=b880';
-import { starHtml, paintStars, starValue } from './stars.js?v=b880';
+import { $, esc, josa, tipOff } from './dom.js?v=b881';
+import { sb } from './db.js?v=b881';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b881';
+import { dateRange } from './calc.js?v=b881';
+import { starHtml, paintStars, starValue } from './stars.js?v=b881';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b880';
+         countryInfo } from './cities.js?v=b881';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b880';
-import { openCity } from './city.js?v=b880';
-import { loadCities } from './citysearch.js?v=b880';
+         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b881';
+import { openCity } from './city.js?v=b881';
+import { loadCities } from './citysearch.js?v=b881';
 /* 한줄평 · 맛집 묻기(b861). cmtask.js 는 rating.js 를 안 읽습니다(저장은 ctx) — 고리 없음. */
-import { 물을까, 묻기Html } from './cmtask.js?v=b880';
+import { 물을까, 묻기Html } from './cmtask.js?v=b881';
+/* 성향 확정 문턱(해외 10곳)은 personacalc.js 한 곳에. 그 파일은 아무 화면도 안 읽어 고리가 안 생깁니다. */
+import { 성향문턱 } from './personacalc.js?v=b881';
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }
@@ -176,12 +178,13 @@ const 대륙of = c => continentOf[모국(c)] || '기타';
  * ⚠ **별점을 서버에서 받기 전에는 안 띄웁니다**(`별받음`) — 안 받은 0 과 진짜 0 을 못 가리면 매긴 사람에게도
  *   「가본 곳엔 별을…」이 뜹니다(b705 「모르면 안 띄운다」).
  * ⚠ 문턱은 persona.js · pshift.js · people.js 의 `문턱` 과 같은 값이어야 합니다 — **10**(2026-10-03 사용자 「문턱 10곳으로 하자」,
- *   5곳이면 한 곳 더 매길 때 유형이 바뀌는 사람이 61% 였음 — card.js personaAxes 머리).
+ *   5곳이면 한 곳 더 매길 때 유형이 바뀌는 사람이 61% 였음 — personacalc.js personaAxes 머리).
+ *   그래서 값은 personacalc.js 의 `성향문턱` 하나이고, 여기서는 app.js 가 늘 가져가던 이름 그대로 다시 내보냅니다(2026-10-16).
  * ⚠⚠ **목록의 별은 «조용히» 저장합니다(다시 안 그림) — 그래서 saveRate 가 조용할 때도 이걸 부릅니다**(b807 점검에서
  *   잡음: 바로 밑 목록에서 별을 다섯 번 눌러도 줄이 「가본 곳엔 별을…」 그대로였습니다).
  *   조용할 때는 **숨기지 않습니다** — 누르는 도중에 줄이 사라지면 목록이 한 줄 위로 올라가 다음 별을 잘못 누릅니다.
  *   문턱이 되면 「확정됐어요」로 말만 바꿔 두고, 다음에 목록을 새로 그릴 때(탭 다시 열기·검색) 사라집니다. */
-export const 성향문턱 = 10;
+export { 성향문턱 };
 /* v2: 성향은 **해외** 도시로만 셉니다(card.js personaAxes 머리) — 여기 세는 것도 해외만.
    제자리 안내와 아래 「확정된 순간」이 같이 씁니다. 두 벌로 세면 언젠가 갈립니다. */
 export function 해외매긴수(){   /* ratecc.js(나라별) 막대도 이 셈 하나로(b874) */

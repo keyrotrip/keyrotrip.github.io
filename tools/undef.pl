@@ -71,3 +71,5 @@ for my $f (@js){
   }
 }
 print $bad ? "⚠ $bad 곳\n" : "  없는 이름 없음\n";
+# 2026-10-16: 찾으면 1 로 끝냅니다 — tools/check-all.sh 와 CI 가 이 값으로 멈춥니다.
+exit($bad ? 1 : 0);
