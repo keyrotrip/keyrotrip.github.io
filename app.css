@@ -7416,3 +7416,10 @@ body.sharedon{ overflow:hidden; }
 .gblock{ display:flex; align-items:center; gap:8px; color:var(--ink-48); font-size:var(--f-md); }
 .gblock em{ margin-left:auto; font-style:normal; font-size:var(--f-sm); }
 .gbempty{ padding:14px 0 4px; color:var(--ink-48); font-size:var(--f-md); }
+
+/* ── 이름 정하기 묻기(2026-10-16, nameask.js) — 판은 성향 바뀜 알림 카드(.pshpop/.pshcard) 그대로 ── */
+.nmsub{ margin:8px 0 14px; font-size:var(--f-md); line-height:1.55; color:var(--ink-80); word-break:keep-all; }
+.nmcard .nmin{ width:100%; }
+.nmhint{ min-height:1.4em; margin:6px 0 0; font-size:var(--f-sm); color:var(--ink-48); }
+.nmhint[data-s="ok"]{ color:var(--brand-dark); }
+.nmhint[data-s="bad"]{ color:var(--danger); }

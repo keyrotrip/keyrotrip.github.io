@@ -8,7 +8,7 @@
  *     부르는 쪽의 await · netTimeout 이 예전과 똑같이 돕니다.
  *   - 쓰기(insert·update·delete)는 아직 화면에 있습니다 — 다음 차례(점진).
  * 층: db 만 읽습니다(고리 없음). */
-import { sb } from './db.js?v=b886';
+import { sb } from './db.js?v=b887';
 
 /* 여행 목록 — 다가오는(지금 포함)·다녀온 갈래. `today` 는 YYYY-MM-DD(부르는 쪽이 셈). */
 export function 여행목록읽기(갈래, today){

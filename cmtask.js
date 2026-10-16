@@ -8,11 +8,12 @@
  * 저장: 한줄평은 saveRate(rating.js — ctx 로 받음, 고리 막기) · 맛집은 food_add(db/124).
  * 누르기는 document 에 한 번 — 지구본 카드 · 평가 탭 줄 · 도시 화면 어디에 붙어도 같은 처리.
  */
-import { esc, toast, avatarImg, fitImage } from './dom.js?v=b886';
-import { sb } from './db.js?v=b886';
-import { netTimeout } from './net.js?v=b886';
+import { esc, toast, avatarImg, fitImage } from './dom.js?v=b887';
+import { 이름먼저 } from './nameask.js?v=b887';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
+import { sb } from './db.js?v=b887';
+import { netTimeout } from './net.js?v=b887';
 /* 「내 추천 지우기」를 한 번 더 눌러 정하는 장치. ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b886';
+import { arm } from './ui.js?v=b887';
 
 /* ⚠ 기다리는 시간(검토에서 찾음): netTimeout 기본 2.5초는 «오프라인» 판정까지 켭니다 — 느린 폰 망에서 저장은 됐는데
    「timeout」 오류 + 20초 오프라인 띠가 떴습니다. 쓰기는 10초, 읽기는 8초. 오류 글은 한국어로. */
@@ -209,6 +210,7 @@ async function 남기기(판, 단추){
     const 이름 = 판.querySelector('[data-f="name"]').value.trim(), 말 = 판.querySelector('[data-f="note"]').value.trim();
     /* 사진은 글과 같이 보입니다(글 없는 추천은 줄에 안 나옴) — 사진만 넣었으면 한 마디를 먼저 청합니다(b870) */
     if (판._사진 && !말){ 단추.disabled = false; toast('사진을 넣으려면 한 마디도 적어 주세요'); 판.querySelector('[data-f="note"]')?.focus(); return; }
+    await 이름먼저();
     const r = await netTimeout(sb.rpc('food_add', { p_city: id, p_name: 이름, p_note: 말 || null }), 10000);
     if (!r || r.error){ 단추.disabled = false; toast(오류말(r)); return; }
     (맛집한곳 ||= new Set()).add(id);
@@ -281,6 +283,7 @@ document.addEventListener('click', async e => {
   /* 칠해진 👍 = 글 없이 누른 추천뿐(내가 글을 쓴 가게는 disabled — 위 foodsHtml). 그래서 빼도 지워질 글이 없어 한 번에 뺍니다(b866). */
   const 켜짐 = b.classList.contains('on');
   b.disabled = true;
+  if (!켜짐) await 이름먼저();
   const r = 켜짐
     ? await netTimeout(sb.rpc('food_del_mine', { p_city: b.dataset.city, p_name: b.dataset.fdrec }), 10000)
     : await netTimeout(sb.rpc('food_add', { p_city: b.dataset.city, p_name: b.dataset.fdrec, p_note: null }), 10000);

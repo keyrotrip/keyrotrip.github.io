@@ -15,12 +15,13 @@
  *   shrink」는 그 옛 함수 이야기입니다 — 후기·일기 사진은 여전히 비를 지키는 `fitImage` 입니다.
  *
  * 층: dom.js · db.js · net.js · crop.js 만 씁니다. */
-import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b886';
-import { sb } from './db.js?v=b886';
-import { fail, NOROW } from './net.js?v=b886';
+import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b887';
+import { sb } from './db.js?v=b887';
+import { fail, NOROW } from './net.js?v=b887';
 /* 글자 크기를 바꾸면 탭바도 자랍니다 — 아래 여백을 다시 재게 합니다(b503). */
-import { fitTabBar } from './ui.js?v=b886';
-import { openCrop } from './crop.js?v=b886';
+import { fitTabBar } from './ui.js?v=b887';
+import { openCrop } from './crop.js?v=b887';
+import { 이름상태 } from './nameask.js?v=b887';   /* 「이름을 정하고 남길까요?」가 지금 이름을 알게(nameask 는 이 파일을 안 읽음) */
 
 let ctx = { me: () => null };
 export function setProfileCtx(o){ ctx = { ...ctx, ...o }; }
@@ -54,6 +55,7 @@ let 이름받음 = false;                /* 서버 대답이 왔나 — 안 왔�
 export function setMyName(v){
   myName = (v || '').trim() || null;
   이름받음 = true;
+  이름상태(myName, (ctx.me()?.email || '').split('@')[0], true);
   const el = $('name');
   if (!el) return;
   el.textContent = myName || '이름을 정해 주세요';
@@ -75,6 +77,7 @@ export function setMyName(v){
 /* 로그인·계정 바꿈 — 앞사람 이름을 들고 있지 않게(app.js 가 메일 앞부분을 그리기 전에 부릅니다). */
 export function resetMyName(){
   myName = null; 이름받음 = false;
+  이름상태(null, '', false);
   $('name')?.classList.remove('noname');
   $('tip_name')?.classList.add('hide');      /* 앞사람의 안내 줄을 들고 있지 않게(b807) */
 }

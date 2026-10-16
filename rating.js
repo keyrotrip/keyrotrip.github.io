@@ -14,22 +14,23 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b886';
-import { sb } from './db.js?v=b886';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b886';
-import { dateRange } from './calc.js?v=b886';
-import { starHtml, paintStars, starValue } from './stars.js?v=b886';
+import { $, esc, josa, tipOff } from './dom.js?v=b887';
+import { sb } from './db.js?v=b887';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b887';
+import { dateRange } from './calc.js?v=b887';
+import { starHtml, paintStars, starValue } from './stars.js?v=b887';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b886';
+         countryInfo } from './cities.js?v=b887';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b886';
-import { openCity } from './city.js?v=b886';
-import { loadCities } from './citysearch.js?v=b886';
+         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b887';
+import { openCity } from './city.js?v=b887';
+import { loadCities } from './citysearch.js?v=b887';
 /* 한줄평 · 맛집 묻기(b861). cmtask.js 는 rating.js 를 안 읽습니다(저장은 ctx) — 고리 없음. */
-import { 물을까, 묻기Html } from './cmtask.js?v=b886';
+import { 물을까, 묻기Html } from './cmtask.js?v=b887';
 /* 성향 확정 문턱(해외 10곳)은 personacalc.js 한 곳에. 그 파일은 아무 화면도 안 읽어 고리가 안 생깁니다. */
-import { 성향문턱 } from './personacalc.js?v=b886';
+import { 성향문턱 } from './personacalc.js?v=b887';
+import { 이름먼저 } from './nameask.js?v=b887';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }
@@ -628,6 +629,9 @@ export async function saveRate(cityId, patch, quiet){
    * ⚠ **여기 한 곳에서 막습니다.** 별을 누르는 자리가 아홉 군데인데 거기
    *   마다 적으면 언젠가 한 곳이 빠집니다. 저장은 전부 여기를 지납니다. */
   if (patch && patch.stars === 0) return dropRate(cityId);
+  /* 한줄평은 이름과 같이 남에게 보입니다 — 아직 안 정한 이름이면 먼저 물어봅니다(nameask.js · 저장은 그대로 이어짐).
+     ⚠ 여기 한 곳에서 — 한줄평을 쓰는 자리가 넷(도시 화면·묻기 카드·여행 평가·보관함)입니다. */
+  if (typeof patch?.comment === 'string' && patch.comment.trim()) await 이름먼저();
   /* 문턱째인지 보려고 «저장 전» 수를 잡아 둡니다(위 「확정된 순간」). 별점을 아직 못 받았으면 안 셉니다. */
   const 전 = 별받음 ? 해외매긴수() : null;
   const r = await sb.from('city_ratings')

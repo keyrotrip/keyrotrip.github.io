@@ -12,12 +12,13 @@
  *   bottom:0 은 아이폰 홈 화면 앱에서 키보드 뒤로 갑니다([[ios-keyboard-sheet]]).
  * ⚠ 좋아요·답글 단추는 도시 화면 줄에도 있습니다 — 누르기는 document 에 한 번 답니다(아래).
  */
-import { $, esc, toast, avatarImg } from './dom.js?v=b886';
-import { sb } from './db.js?v=b886';
-import { netTimeout } from './net.js?v=b886';
-import { cities, cityCountry } from './cities.js?v=b886';
-import { arm } from './ui.js?v=b886';
-import { openPhotos } from './photoview.js?v=b886';
+import { $, esc, toast, avatarImg } from './dom.js?v=b887';
+import { 이름먼저 } from './nameask.js?v=b887';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
+import { sb } from './db.js?v=b887';
+import { netTimeout } from './net.js?v=b887';
+import { cities, cityCountry } from './cities.js?v=b887';
+import { arm } from './ui.js?v=b887';
+import { openPhotos } from './photoview.js?v=b887';
 
 let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {}, redrawFoods: () => {} };
 export function setCityRevCtx(o){ ctx = { ...ctx, ...o }; }
@@ -366,6 +367,7 @@ async function 등록(){
   const 글 = $('crv_in').value.trim();
   if (!글 || 보내는중 || (지금?.판 !== 'one' && 지금?.판 !== 'fn')) return;
   보내는중 = true; $('crv_send').disabled = true;
+  await 이름먼저();
   /* 답글에 답하기(b869, A안) — 「@이름 」으로 시작하면 그 사람에게도 알림(p_to). 글을 지워 @이 사라졌으면 안 보냅니다. */
   const 대상 = 지금.대상 && 글.startsWith('@' + 지금.대상.name) ? 지금.대상.id : null;
   const r = 지금.판 === 'fn'
