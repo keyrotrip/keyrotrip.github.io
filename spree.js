@@ -20,15 +20,15 @@
  *
  * 층: dom.js · db.js · cities.js · citysearch.js · stars.js · rateui.js ·
  *     rate.js · rating.js · home.js(지문 비우기만). */
-import { $, esc } from './dom.js?v=b882';
-import { sb } from './db.js?v=b882';
-import { cities } from './cities.js?v=b882';
-import { loadCities } from './citysearch.js?v=b882';
-import { paintStars } from './stars.js?v=b882';
-import { rateHero, starValue } from './rateui.js?v=b882';
-import { saveRate, 방금확정 } from './rating.js?v=b882';
-import { 넘긴줄, 인기 } from './rate.js?v=b882';
-import { resetHomeSig } from './home.js?v=b882';
+import { $, esc } from './dom.js?v=b883';
+import { sb } from './db.js?v=b883';
+import { cities } from './cities.js?v=b883';
+import { loadCities } from './citysearch.js?v=b883';
+import { paintStars } from './stars.js?v=b883';
+import { rateHero, starValue } from './rateui.js?v=b883';
+import { saveRate, 방금확정 } from './rating.js?v=b883';
+import { 넘긴줄, 인기 } from './rate.js?v=b883';
+import { resetHomeSig } from './home.js?v=b883';
 
 /* ⚠ showApp 은 **기본값에도 둡니다.** 없으면 위 돌아가기() 가 조용히
    아무 일도 안 하는데, 그게 b423~b425 동안 그대로 나가 있었습니다. */
