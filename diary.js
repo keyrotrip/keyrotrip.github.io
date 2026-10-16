@@ -21,25 +21,37 @@
  *   `visited_on` 칸은 b536 에 만들었다가 화면을 걷어서 지금 비어 있습니다.
  *   나중에 다녀온 날짜를 다시 받게 되면 그때 이 순서를 바꾸십시오.
  */
-import { $, esc, toTop, coverDeck, backLabel, emptyDo } from './dom.js?v=b888';
-import { sb } from './db.js?v=b888';
-import { cities, countryName, cityCountry, search } from './cities.js?v=b888';
-import { starsRo } from './stars.js?v=b888';
-import { openPhotos } from './photoview.js?v=b888';
+import { $, esc, toTop, coverDeck, emptyDo, toast, copyText } from './dom.js?v=b889';
+import { sb } from './db.js?v=b889';
+import { cities, countryName, cityCountry, search } from './cities.js?v=b889';
+import { openPhotos } from './photoview.js?v=b889';
 
 let ctx = { me: () => null, loadCities: async () => {}, openCity: () => {} };
 export function setDiaryCtx(o){ ctx = { ...ctx, ...o }; }
 
 /* 나온 자리로 돌려보내기 — 지도·성향과 같은 수법입니다(map.js 의 mapBackTo). */
 let 왔던탭 = null;
-export function diaryBackTo(tab){
-  왔던탭 = tab;
-  const L = backLabel(tab);
-  const b = $('diaryback');
-  if (b && L) b.textContent = L;
+/* ⚠ 10-17: 뒤로 단추가 「‹ 내 일기장」(머리 제목을 겸함)이 되어 글자를 «← 기록» 으로 바꾸지 않습니다 — 돌아갈 곳만 기억. */
+export function diaryBackTo(tab){ 왔던탭 = tab; }
+
+/* 명조 제목 — 일기장을 열 때 한 번만 붙입니다(카드 그림이 쓰는 것과 같은 주소라 한 번 받으면 같이 씀). 못 오면 기기 명조. */
+let 명조붙임 = false;
+function 명조(){
+  if (명조붙임) return; 명조붙임 = true;
+  const l = document.createElement('link');
+  l.rel = 'stylesheet';
+  /* 명조(제목 800) · 고운바탕(본문) · 나눔손글씨 펜(날짜·서명) — 한 줄로 */
+  l.href = 'https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gowun+Batang:wght@400;700&family=Nanum+Pen+Script&display=swap';
+  document.head.appendChild(l);
 }
+const 핀 = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2.5a7 7 0 0 0-7 7c0 5.1 7 12 7 12s7-6.9 7-12a7 7 0 0 0-7-7zm0 9.6a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/></svg>';
+const 연필 = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4.2-1 10.6-10.6a2.1 2.1 0 0 0-3-3L5.2 16 4 20z"/><path d="M14 7l3 3"/></svg>';
+const 내보냄 = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3.5M7.5 8L12 3.5 16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/></svg>';
+/* 공유할 때 쓸 장들(장 번호 → 글) — 그릴 때 채웁니다 */
+let 공유거리 = [];
 
 export async function openDiary(){
+  명조();
   $('profpane')?.classList.add('hide');
   $('diarypane')?.classList.remove('hide');
   coverDeck(true);
@@ -57,7 +69,7 @@ export async function openDiary(){
   const me = ctx.me();
   if (!me) return;
   const r = await sb.from('city_ratings')
-    .select('city_id,stars,comment,journal,journal_photo,updated_at')
+    .select('city_id,journal,journal_photo,updated_at')
     .eq('user_id', me.id).not('journal', 'is', null)
     .order('updated_at', { ascending: false });
 
@@ -96,45 +108,45 @@ export async function openDiary(){
   }
 
   const 이름 = id => (cities || []).find(c => c.id === id);
+  /* ── 장 하나(10-17 다시 그림, 사용자 참고 그림) ──────────────────────────────
+   * 손글씨 날짜(10월 14일, 화요일) · 📍 나라 → 제목(도시) → 테이프 붙인 폴라로이드(아래 손글씨 「도쿄, 2026」)
+   *   → 고운바탕 글 → 손글씨 서명 「— 도쿄에서」 → 「✎ 수정 | ⇪ 공유」.
+   * 10-17 사용자: 「좀 더 감성있게 … 다른 거 카피라도」 → 시안 둘(A 스크랩북 · B 매거진) 중 «A». 모양은 app.css .dgs-a.
+   * ⚠ 한줄평·별점은 넣지 않습니다(사용자 10-17: 「일기장에 굳이 한줄평이랑 별점 넣지 말자」) — 일기는 나만 보는 글이고
+   *   한줄평·별점은 남에게 보이는 평가라 섞지 않습니다. 그래서 제목은 도시 이름, 📍 줄은 나라만(도시를 두 번 안 씀). */
+  공유거리 = 장들.map(x => {
+    const c = 이름(x.city_id);
+    return { 제목: c?.name || x.city_id, 곳: cityCountry(c),
+             날: 적은날(x.updated_at), 조각: 날조각(x.updated_at), 글: x.journal };
+  });
   $('diarybody').innerHTML = `
     <div class="dgbook">
-      <div class="dgrow">${장들.map(x => {
-        const c = 이름(x.city_id);
+      <div class="dgrow">${장들.map((x, i) => {
+        const c = 이름(x.city_id), 거리 = 공유거리[i];
+        const 조 = 거리.조각;
         return `<article class="dgpage" data-dgcity="${esc(x.city_id)}">
-          <!-- 스프링 — 그림이 아니라 배경으로 그립니다(app.css 의 .dgcoil).
-               장이 스물이면 고리도 스무 벌이라, 요소로 만들면 그만큼 늘어납니다. -->
-          <div class="dgcoil" aria-hidden="true"></div>
-          <div class="dgsheet">
-            <header class="dghead">
-              <b>${esc(c?.name || x.city_id)}</b>
-              <span class="dgland">${esc(cityCountry(c))}</span>
-              ${starsRo(x.stars)}
-            </header>
-            <div class="dgdate">${적은날칸(x.updated_at)}</div>
+            ${조 ? `<div class="dghand">${조.한글}</div>` : ''}
+            <div class="dgmeta">
+              ${거리.곳 ? `<span class="dgwhere">${핀}${esc(거리.곳)}</span>` : ''}
+            </div>
+            ${거리.날 ? `<div class="dgwhen">${거리.날}</div>` : ''}
+            <h3 class="dgtitle">${esc(거리.제목)}</h3>
             ${(() => {
-              /* ── 사진 여러 장은 «격자»입니다(b579) ─────────────────────
-               * 사용자 물음: 「4장이면 한 장씩 세로로 쭉 있던데 이게 맞아?」
-               * 아닙니다. 일기 앱들은 대개 **한 장은 크게, 여러 장은 격자**로
-               * 둡니다. 세로로 쭉 쌓으면 사진 넉 장에 글이 저 아래로 밀려서
-               * 「사진첩에 글이 딸린 것」처럼 보입니다 — 일기는 반대라야 합니다.
-               * ⚠ **가로 캐러셀은 안 씁니다.** 이 화면은 이미 좌우로 장을
-               *   넘깁니다. 그 안에 또 가로 제스처를 넣으면 서로 잡아먹습니다.
-               * ⚠ **홀수면 첫 장을 한 줄 통째로** 씁니다. 안 그러면 마지막
-               *   한 장이 반쪽으로 남아 실수처럼 보입니다.
-               *     1장 → 큰 한 장 · 3장 → 큰 것 + 2 · 5장 → 큰 것 + 4 … */
+              /* 사진 — 한 장은 크게, 여러 장은 격자(b579 그대로: 세로로 쌓으면 글이 밀리고, 가로 캐러셀은 장 넘기기와 싸움) */
               const 목록 = 사진들[x.city_id] || (x.journal_photo ? [x.journal_photo] : []);
               if (!목록.length) return '';
               const 꼴 = 목록.length === 1 ? 'one' : (목록.length % 2 ? 'odd' : '');
-              return `<div class="dgshots ${꼴}">${목록.map(u =>
+              const 캡 = [거리.제목, 조?.해].filter(Boolean).join(', ');
+              return `<div class="dgshots ${꼴}">${목록.map((u, j) =>
                 `<div class="dgimg"><img src="${esc(u)}" alt="" loading="lazy"
-                   onerror="this.closest('.dgimg').remove()"></div>`).join('')}</div>`;
+                   onerror="this.closest('.dgimg').remove()">${j === 0 ? `<span class="dgcap">${esc(캡)}</span>` : ''}</div>`).join('')}</div>`;
             })()}
-            ${x.comment ? `<p class="dgone">${esc(x.comment)}</p>` : ''}
             <p class="dgtext">${esc(x.journal)}</p>
-            <footer class="dgfoot">
-              <button class="small" data-dgedit="${esc(x.city_id)}">고치기</button>
-            </footer>
-          </div>
+            <div class="dgsign">— ${esc(거리.제목)}에서</div>
+            <div class="dgacts">
+              <button type="button" data-dgedit="${esc(x.city_id)}">${연필}수정</button><i aria-hidden="true"></i>
+              <button type="button" data-dgshare="${i}">${내보냄}공유</button>
+            </div>
         </article>`;
       }).join('')}</div>
     </div>`;
@@ -170,38 +182,8 @@ export async function openDiary(){
     const p = 줄기.children[몇째() - 1];
     if (p) 줄기.style.height = p.offsetHeight + 'px';
   };
-  /* ── 넘기는 «느낌»(b571) ─────────────────────────────────────────────
-   * ⚠⚠ **스크롤은 여전히 브라우저 것입니다.** 손가락을 우리가 받아 자리를
-   *   옮기는 방식은 b469 에 만들었다가 b470 에 **되돌렸습니다**(관성이 남은
-   *   채 자리를 옮기거나 반쯤 걸친 채 멈춤). 여기서 하는 일은 «이미 굴러간
-   *   자리»를 읽어 **기울기만 칠하는 것**입니다 — 제스처를 안 뺏습니다.
-   * ⚠ 값만 넘기고 꾸미기는 CSS 가 합니다(`--t` 부호, `--a` 절대값).
-   *   `abs()` 는 아직 못 믿을 브라우저가 있어 여기서 미리 냅니다.
-   * ⚠ **양옆 두 장만** 손댑니다. 스무 장짜리에서 매 프레임 전부 만지면
-   *   넘기는 동안 손가락이 걸립니다. 나머지는 값을 지워 평평하게 둡니다.
-   * ⚠ `transform-origin` 은 **넘어가는 쪽 모서리**입니다 — 오른쪽 장은
-   *   왼쪽 모서리를 축으로 열리고, 지나간 장은 오른쪽 모서리로 닫힙니다.
-   *   축을 하나로 두면 한쪽이 «뒤집히는» 것처럼 보입니다. */
-  const 기울이기 = () => {
-    const 폭 = 칸폭(), 현재 = 줄기.scrollLeft / 폭;
-    const 장 = 줄기.children;
-    for (let i = 0; i < 장.length; i++){
-      const p = 장[i], d = i - 현재;
-      /* 보이지도 않는 장은 손대지 않고, 손댔던 흔적은 지웁니다. */
-      if (Math.abs(d) > 1.05){
-        if (p.style.transform){ p.style.transform = ''; p.style.willChange = ''; }
-        continue;
-      }
-      const t = Math.max(-1, Math.min(1, d));
-      /* ⚠ **미리 「이건 움직일 것」이라고 알려 둡니다.** 이게 없으면 브라우저가
-         매 프레임 장을 통째로 다시 그립니다 — 장이 1500px 이 넘습니다. */
-      p.style.willChange = 'transform';
-      p.style.transformOrigin = (t >= 0 ? 'left' : 'right') + ' center';
-      p.style.transform =
-        `rotateY(${(-t * 18).toFixed(2)}deg) scale(${(1 - Math.abs(t) * 0.05).toFixed(4)})`;
-    }
-  };
-
+  /* ⚠ 3D 넘김(기울이기, b571)은 10-17 다시 그리면서 걷었습니다 — 참고 그림은 평평한 종이 한 장입니다.
+       넘기기는 그대로 브라우저 스냅입니다. */
   /* ⚠⚠ **키는 «장이 바뀔 때만» 고칩니다(b573).** ⚠⚠
    *   처음에는 스크롤이 올 때마다 줄기 키를 다시 넣었습니다. 키를 건드리면
    *   **판이 다시 짜이고**(reflow), 게다가 그 값에 0.22초 이음(transition)이
@@ -228,7 +210,6 @@ export async function openDiary(){
     if (대기) return;
     대기 = requestAnimationFrame(() => {
       대기 = 0;
-      기울이기();
       const i = 몇째();
       if (i === 마지막장) return;
       마지막장 = i;
@@ -252,7 +233,6 @@ export async function openDiary(){
   $('diarycount').textContent = `${마지막장} / ${장들.length}`;
   끝단추(마지막장);
   키맞추기();
-  기울이기();
   줄기.addEventListener('scroll', 세기, { passive:true });
 
   /* ⚠ 사진을 누르면 크게 봅니다(b581).
@@ -276,16 +256,19 @@ export async function openDiary(){
   setTimeout(키맞추기, 400);
 }
 
-/* 다이어리 맨 위의 날짜 칸 — 「2026 · 8 · 31」(b571).
-   ⚠ 전에는 장 «맨 아래»에 「…일에 씀」으로 있었습니다. 종이 일기장은
-     날짜가 첫 줄입니다 — 그게 그 장을 여는 말이라서요.
-   ⚠ 날짜가 없으면 **칸 자체를 안 냅니다.** 빈 칸을 두면 밑줄만 뜬
-     자리가 남습니다. */
-function 적은날칸(t){
+/* 날짜 — 「2026.10.14」(10-17, 참고 그림). 쓴 때(updated_at)입니다 — 다녀온 때가 아님(머리말).
+   ⚠ 날짜가 없으면 빈 글자 — 칸 자체를 안 냅니다. */
+/* 날짜 조각 — 손글씨 「10월 14일, 화요일」 · 폴라로이드 아래 해(2026) */
+const 요일한 = ['일','월','화','수','목','금','토'];
+function 날조각(t){
+  const d = t ? new Date(t) : null;
+  if (!d || isNaN(d)) return null;
+  return { 해: d.getFullYear(), 한글: `${d.getMonth() + 1}월 ${d.getDate()}일, ${요일한[d.getDay()]}요일` };
+}
+function 적은날(t){
   const d = t ? new Date(t) : null;
   if (!d || isNaN(d)) return '';
-  return `<b>${d.getFullYear()}</b><i>·</i><b>${d.getMonth() + 1}</b>` +
-         `<i>·</i><b>${d.getDate()}</b>`;
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
 export function closeDiary(fromPop){
@@ -311,7 +294,19 @@ export function closeDiary(fromPop){
 $('diaryback')?.addEventListener('click', () => closeDiary());
 /* 「고치기」는 그 도시로 보냅니다 — 일기는 도시 화면에서 씁니다.
    여기서 또 쓰게 만들면 같은 것을 두 곳에서 고치게 됩니다. */
-$('diarypane')?.addEventListener('click', e => {
+$('diarypane')?.addEventListener('click', async e => {
+  /* 「공유」(10-17) — 그 장의 글을 공유창으로(못 하면 복사). 일기는 나만 보는 글이라 누른 사람이 고른 곳으로만 나갑니다. */
+  const 공 = e.target.closest('[data-dgshare]');
+  if (공){
+    const x = 공유거리[Number(공.dataset.dgshare)]; if (!x) return;
+    const 글 = [x.제목, [x.곳, x.날].filter(Boolean).join(' · '), '', x.글].join('\n');
+    if (navigator.share){
+      try { await navigator.share({ title: x.제목, text: 글 }); return; }
+      catch (err){ if (err?.name === 'AbortError') return; }
+    }
+    toast(await copyText(글) ? '일기를 복사했어요' : '복사하지 못했어요');
+    return;
+  }
   const b = e.target.closest('[data-dgedit]');
   if (!b) return;
   /* b862 — 일기장을 닫지 않고 그 위에 「일기 쓰기 화면」을 엽니다. 뒤로 가면 일기장으로 돌아옵니다(city.js 덱밖판). */

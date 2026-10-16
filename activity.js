@@ -11,12 +11,12 @@
  *   사진은 첫 글자 동그라미로 — 화면이 안 깨지게.
  * ⚠ 읽음 처리는 열고 1.2초 뒤(notify.js 와 같은 규칙 — 어느 것이 새것인지 눈에 한 번 들어와야).
  */
-import { $, esc, avatarImg } from './dom.js?v=b888';
-import { 이름먼저 } from './nameask.js?v=b888';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
-import { sb } from './db.js?v=b888';
-import { netTimeout } from './net.js?v=b888';
-import { cities } from './cities.js?v=b888';
-import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b888';
+import { $, esc, avatarImg } from './dom.js?v=b889';
+import { 이름먼저 } from './nameask.js?v=b889';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
+import { sb } from './db.js?v=b889';
+import { netTimeout } from './net.js?v=b889';
+import { cities } from './cities.js?v=b889';
+import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b889';
 
 let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openGuestbook: () => {}, openCityRev: () => {}, openFoodNote: () => {}, openCity: () => {},
             loadNotifs: () => {}, loadSocialCounts: () => {} };

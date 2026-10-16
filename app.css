@@ -5744,16 +5744,14 @@ body.pvon{ overflow:hidden; }
 .dgshots{ display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:14px 0 4px; }
 .dgshots.one{ grid-template-columns:1fr; }
 .dgshots.odd > .dgimg:first-child{ grid-column:1 / -1; }
-.dgimg{ margin:0; padding:7px 7px 9px; background:var(--canvas);
-        border-radius:4px; box-shadow:0 2px 8px rgba(60,48,30,.16); }
+.dgimg{ margin:0; }
 .dgimg img{ aspect-ratio:1/1; }
 /* ⚠ **기울이는 것은 «한 장일 때»뿐입니다.** 격자에서 기울이면 줄이 어긋나
      보이고 모서리끼리 겹칩니다. 한 장은 붙여 놓은 인화지라 기울어야 삽니다. */
-.dgshots.one .dgimg{ transform:rotate(-1.2deg); }
 .dgshots.one .dgimg img,
 .dgshots.odd > .dgimg:first-child img{ aspect-ratio:4/3; }
 .dgimg img{ width:100%; object-fit:cover; display:block;
-            border-radius:2px; background:var(--dg-rule); cursor:zoom-in; }
+            border-radius:0; background:#E6E0D3; cursor:zoom-in; }
 
 /* ── 여권 도장 (b604, 5단계) ──────────────────────────────────────────
  * 다녀온 도시에만 찍힙니다. 안쪽은 나라 코드 두 자 + 「다녀옴」.
@@ -5910,144 +5908,12 @@ body.pvon{ overflow:hidden; }
 }
 @media (prefers-reduced-motion: reduce){ .dgrow{ transition:none; } }
 .dgrow::-webkit-scrollbar{ display:none; }
-/* ‹ 1 / 2 ›(b805) — 제목 줄 오른쪽. 화살표는 글자 단추(.ghost)라 앱 전체 글자 단추와 같은 진한 색.
-   끝 장에서 꺼진 쪽은 흐리게(버튼 disabled 규칙). 숫자 폭을 못박아 넘길 때 화살표가 안 흔들리게. */
-.dgnav{ display:inline-flex; align-items:center; }
-.dgnav .ghost{ min-height:32px; padding:2px 6px; font-size:var(--f-xl); line-height:1; }
-/* 숫자는 화살표와 같은 17px 층 — 제목(21px)을 물려받으면 글자 「크게」(1.3)·360 폭에서 줄이 넘쳐
-   「내 일기장」이 두 줄로 갈렸습니다(b805 점검). */
-.dgnav .val{ font-variant-numeric:tabular-nums; font-size:var(--f-xl); }
-/* ── 종이·스프링·괘선 (b571) ──────────────────────────────────────────
- * 사용자 요청(사진 첨부): 「레이아웃도 내가 첨부한 일기장 느낌으로」.
- * 크림 종이 · 왼쪽 스프링 · 괘선 · 인화지 사진 · 첫 줄 날짜 칸.
- * ⚠ 색은 **여기서만 쓰는 이름**(--dg-*)으로 둡니다. 앱 토큰(--pearl 등)을
- *   직접 쓰면 나중에 앱 색을 손볼 때 종이만 엉뚱하게 따라 바뀝니다.
- * ⚠ **괘선 간격은 글줄 높이와 «같은 변수»** 라야 합니다. 글자 크기 설정
- *   (--ts)이 바뀌면 줄도 같이 움직여야 하니, 픽셀로 못 박으면 어긋납니다. */
-.dgbook{
-  --dg-paper:#FDFAF2;  --dg-edge:#EADFC2;  --dg-rule:#E9E1CE;
-  --dg-ink:#3B332A;    --dg-dim:#8B8171;   --dg-coil:#BFB49A;
-  /* ⚠ 구멍은 **값이 아니라 그림자**입니다(b572). 종이색과
-     비슷한 불투명색으로 뒀더니 **아예 안 보였습니다**(#EFE7D6 대 종이 #FDFAF2).
-     속비치로 두면 어느 종이색에서도 움푹해 보입니다. */
-  --dg-hole:rgba(72,58,36,.22);   --dg-note:#FBF0D8;
-  --dg-line:calc(var(--f-lg) * 1.85);
-  /* 넘김을 입체로 보이게 하는 것은 이 한 줄입니다 — 깊이가 없으면
-     rotateY 가 그냥 «납작하게 눌린 그림»이 됩니다. */
-  perspective:1500px;
-}
-@media (prefers-color-scheme: dark){
-  .dgbook{
-    --dg-paper:#26221C; --dg-edge:#3B342A; --dg-rule:#38312A;
-    --dg-ink:#EDE6D9;   --dg-dim:#A2988A;  --dg-coil:#6E6553;
-    --dg-hole:rgba(0,0,0,.55);  --dg-note:#332C21;
-  }
-  .dgimg{ background:#3A342B; box-shadow:0 2px 8px rgba(0,0,0,.45); }
-}
-.dgpage{
-  /* ⚠ `center` 가 아니라 `start` 입니다 — 이 저장소에 이미 적힌 규칙인데
-     (b468, `.swcard`) 새로 만들면서 어겼습니다. 몇째 장인지를 `i × 칸폭`
-     으로 세는데 그 셈은 **start 기준**입니다. */
-  flex:0 0 100%; scroll-snap-align:start; min-width:0;
-  position:relative;
-  /* ── 넘어가는 시늉(b571 → b574 에서 값 쓰는 법을 바꿈) ─────────────────
-   * 기울기는 **diary.js 가 `style.transform` 에 직접 씁니다.**
-   * ⚠⚠ **CSS 변수(`--t`)를 거치지 마십시오(b574 에 걷음).** ⚠⚠
-   *   변수를 바꾸면 그 값을 쓸지도 모르는 **아래 것들까지 전부 다시 따집니다**
-   *   (style invalidation). 장 하나가 1500px 이 넘는데 그걸 초당 예순 번
-   *   하니 폰에서 버벅이고 반짝였습니다. `transform` 을 직접 쓰면 그 일이
-   *   아예 안 일어납니다.
-   * ⚠ **transition 을 걸지 마십시오.** 손가락과 같이 움직여야 하는 값입니다.
-   * ⚠ `backface-visibility:hidden` 도 걷었습니다 — 뒷면을 볼 일이 없는데
-   *   장마다 «따로 그리는 겹»만 만듭니다. */
-  /* ⚠⚠ **장은 «제 키»대로 자랍니다(b570).** ⚠⚠
-   *   b538 에는 `height:min(58vh,460px)` + `overflow-y:auto` 였습니다.
-   *   이유는 「제일 긴 일기가 나머지 장을 다 늘린다」였는데, 그 대가로
-   *   **일기가 문장 한가운데서 잘리고 장 안에 또 스크롤막대가 생겼습니다**
-   *   (사용자 지적: 「레이아웃 밑에 내용이 더 있으면 쭉 아래로 길게 해줘」).
-   *   ⚠ 스크롤이 **두 겹**이었던 것이 진짜 문제입니다 — 화면도 굴러가고
-   *     장 안도 굴러가서, 손가락이 어디를 굴리는지 알 수가 없습니다.
-   *   ⚠ 「제일 긴 장이 나머지를 늘린다」는 `align-items:flex-start`(줄기)와
-   *     **줄기 키를 «보고 있는 장»에 맞추는 것**(diary.js)으로 풉니다.
-   *     장마다 키를 못 박는 것이 답이 아니었습니다. */
-  align-self:flex-start;
-  /* ⚠ 왼쪽은 **스프링 자리**라 여백이 넓습니다. 모서리도 왼쪽만 각지게 —
-       묶인 쪽은 안 둥그니까요. */
-  padding:18px 18px 16px 46px;
-  border-radius:4px 16px 16px 4px;
-  background:var(--dg-paper); border:1px solid var(--dg-edge);
-  box-shadow:0 1px 2px rgba(60,48,30,.10), 0 10px 26px rgba(60,48,30,.10);
-  color:var(--dg-ink);
-}
-/* 묶인 쪽으로 갈수록 어둡습니다 — 종이가 안으로 말려 들어가는 자리입니다.
-   ⚠⚠ **투명도를 `--a` 로 흔들지 마십시오(b574 에 걷음).** 넘기는 동안 매
-     프레임 투명도가 바뀌면 **장 전체를 다시 칠합니다** — 1500px 짜리 그림을
-     초당 예순 번입니다. 들리는 느낌은 기울기만으로 충분합니다. */
-.dgpage::after{
-  content:''; position:absolute; inset:0; pointer-events:none;
-  border-radius:inherit;
-  background:linear-gradient(to right, rgba(60,48,30,.13), transparent 22%);
-}
-/* ── 스프링 ── 요소가 아니라 배경입니다(장이 스물이면 고리도 스무 벌). */
-.dgcoil{
-  position:absolute; left:0; top:10px; bottom:10px; width:34px;
-  pointer-events:none; z-index:1;
-  /* 구멍: 26px 마다 한 개 */
-  background-image:radial-gradient(circle at 17px 13px,
-                   var(--dg-hole) 0 4.2px, transparent 4.9px);
-  background-size:100% 26px;
-}
-/* 고리(철사)가 구멍 위를 지나갑니다 — 순서가 반대면 종이에 그린 그림이 됩니다.
-   ⚠ 겹이 둘입니다: 아래가 철사, 위가 **철사 윗면의 빛**. 이 한 겹이 있어야
-     납작한 막대가 아니라 «둥근 철사»로 보입니다. 겹 순서를 바꾸지 마십시오 —
-     background-image 는 **먼저 적은 것이 위**입니다. */
-.dgcoil::before{
-  content:''; position:absolute; left:5px; right:6px; top:0; bottom:0;
-  border-radius:2px;
-  background-image:
-    repeating-linear-gradient(to bottom,
-      transparent 0 9px, rgba(255,255,255,.55) 9px 10.5px, transparent 10.5px 26px),
-    repeating-linear-gradient(to bottom,
-      transparent 0 9px, var(--dg-coil) 9px 13px, transparent 13px 26px);
-}
-.dgsheet{ position:relative; z-index:2; }
-.dghead{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-.dghead b{ font-size:var(--f-2xl); font-weight:700; color:var(--dg-ink); }
-.dgland{ color:var(--dg-dim); font-size:var(--f-sm); }
-.dghead .stars{ margin-left:auto; }
-/* ── 날짜 칸 ── 종이 일기장은 날짜가 첫 줄입니다(b571).
-   ⚠ 숫자는 **너비가 같아야** 합니다(tabular-nums). 안 그러면 1 이 든 날만
-     칸이 좁아져서 줄이 들쭉날쭉합니다. */
-.dgdate{ display:flex; align-items:center; gap:6px; margin:8px 0 2px;
-         padding-bottom:9px; border-bottom:1px dashed var(--dg-edge); }
-.dgdate b{ min-width:2.1em; padding:2px 7px; border-radius:6px;
-           background:var(--dg-note); border:1px solid var(--dg-edge);
-           text-align:center; font-size:var(--f-sm); font-weight:700;
-           color:var(--dg-ink); font-variant-numeric:tabular-nums; }
-.dgdate i{ font-style:normal; color:var(--dg-dim); font-size:var(--f-xs); }
-/* 한줄평은 «붙임쪽지»입니다. 공개된 말과 나만 보는 말을 눈으로 갈라둡니다. */
-.dgone{ margin:14px 0 0; padding:9px 12px; border-radius:12px 12px 12px 3px;
-        background:var(--dg-note); border:1px solid var(--dg-edge);
-        color:var(--dg-ink); font-size:var(--f-md); }
-/* ── 본문 ── 괘선 위에 씁니다.
-   ⚠⚠ **줄 높이와 괘선 간격이 «같은 변수»** 라야 합니다(--dg-line).
-     하나라도 픽셀로 박으면 글자 크기 설정을 바꾼 순간 글이 줄에서 뜹니다.
-   ⚠ 줄은 글자 **아래**에 와야 합니다 — 그래서 마지막 1px 에만 칠합니다. */
-.dgtext{
-  margin:16px 0 0; white-space:pre-wrap; word-break:keep-all;
-  font-size:var(--f-lg); line-height:var(--dg-line); color:var(--dg-ink);
-  background-image:repeating-linear-gradient(to bottom,
-    transparent 0 calc(var(--dg-line) - 1px),
-    var(--dg-rule) calc(var(--dg-line) - 1px) var(--dg-line));
-}
 /* ── 「＋ 새 일기」 고르개(b759) ───────────────────────────────────────
  * 일기장 «위»에 잠깐 펼쳐지는 칸입니다. 카드도 시트도 아닙니다 —
  * 고르면 바로 도시 화면으로 가므로 오래 머무는 자리가 아닙니다.
  * ⚠ 높이를 묶고 안에서 굴립니다. 안 묶으면 마흔 줄이 일기장을 저 아래로
  *   밀어냅니다(이 판은 덮는 판이라 화면 하나가 통째로 굴러갑니다). */
-#dgadd{ flex:none; }
-#dgadd.on{ background:var(--ink); color:var(--canvas); border-color:var(--ink); }
-#dgpick{ margin:2px 0 10px; }
+#dgpick{ margin:2px 0 14px; }
 #dgpick input{ width:100%; }
 #dghits{ max-height:44vh; overflow-y:auto; margin-top:8px;
          scrollbar-width:none; -ms-overflow-style:none; }
@@ -6060,10 +5926,6 @@ body.pvon{ overflow:hidden; }
 .dghit span{ font-size:var(--f-sm); color:var(--ink-48); }
 .dghit:active{ background:var(--primary-06); }
 .dgnone{ padding:14px 2px; }
-
-.dgfoot{ display:flex; align-items:center; gap:10px; margin-top:18px;
-         padding-top:12px; border-top:1px dashed var(--dg-edge); }
-.dgfoot button{ margin-left:auto; }
 
 /* ── 나라 지도 화면(b682 · b685) ────────────────────────────────────
  * 지구본에서 나라를 누르면 그 나라만 크게 펴고, 도시를 «영역»으로 나눠
@@ -7435,3 +7297,84 @@ body.sharedon{ overflow:hidden; }
 .aufold > summary em{ margin-left:auto; font-style:normal; font-variant-numeric:tabular-nums; }
 .aufold > .aulrows{ margin-top:8px; }
 @media (prefers-reduced-motion: reduce){ .aufold > summary::before{ transition:none; } }
+
+/* 일정 책(2026-10-17) — 카드 시트에서 여러 장을 옆으로 넘겨 봄(card.js 시트그리기) */
+.cspreview.pages{ width:100%; border:0; background:none; overflow:visible; }
+.cspages{ display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; overscroll-behavior-x:contain;
+  padding:0 calc(50% - min(37vw, 150px)); scrollbar-width:none; }   /* 폭은 vw 로 — %는 안쪽 여백을 뺀 폭이라 작아졌음 */
+.cspages::-webkit-scrollbar{ display:none; }
+.cspages img{ flex:0 0 min(74vw, 300px); width:min(74vw, 300px); scroll-snap-align:center; display:block;
+  border:1px solid var(--line); border-radius:var(--r-sm); box-shadow:0 6px 18px rgba(0,0,0,.08); }
+.cspgn{ margin-top:10px; text-align:center; font-size:var(--f-sm); color:var(--ink-48); font-variant-numeric:tabular-nums; }
+
+/* ── 일기장(2026-10-17 다시 그림) — 참고 그림(사용자): 종이 한 장 · 명조 큰 제목 · 녹슨 주황 ───────────────────
+ * 머리: 「‹ 내 일기장」 · 「＋ 새 일기」 · 장: 📍 나라 / 날짜 → 명조 제목(도시) → 사진 → 글 (한줄평·별점은 안 넣음 — 사용자)
+ *   → 「✎ 수정 | ⇪ 공유」 · 아래 「‹ 이전 일기  1 / 2  다음 일기 ›」.
+ * ⚠ 스프링·괘선·3D 넘김은 걷었습니다(diary.js). 옆으로 넘기기(스냅)는 그대로.
+ * ⚠ 명조(Nanum Myeongjo)는 일기장을 열 때 diary.js 가 붙입니다 — 못 오면 기기 명조. */
+.dghdr{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px 6px 4px; }
+.dgback{ display:inline-flex; align-items:center; gap:4px; padding:6px 4px; font-size:var(--f-xl); font-weight:500; color:var(--ink); }
+.dgaddbtn{ display:inline-flex; align-items:center; gap:4px; padding:6px 6px; font-size:var(--f-lg); font-weight:600; color:var(--brand-dark); }
+.dgaddbtn.on{ color:var(--ink); }
+.dgcard{ padding-top:4px; }
+.dgpage{ flex:0 0 100%; scroll-snap-align:start; min-width:0; align-self:flex-start;
+  background:#FAF7F1; border:1px solid #E7E1D5; padding:20px 20px 6px;
+  box-shadow:0 1px 2px rgba(60,48,30,.06), 0 10px 26px -14px rgba(60,48,30,.22); color:var(--ink); }
+.dgmeta{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.dgwhere{ display:inline-flex; align-items:center; gap:5px; color:var(--brand-dark); font-size:var(--f-md); font-weight:600; }
+.dgwhere svg{ flex:none; }
+.dgwhen{ margin-top:4px; color:var(--ink-48); font-size:var(--f-md); font-family:"Nanum Myeongjo", "AppleMyungjo", serif;
+  font-variant-numeric:tabular-nums; letter-spacing:.02em; }
+.dgtitle{ margin:16px 0 0; font-family:"Nanum Myeongjo", "AppleMyungjo", "Batang", serif; font-weight:800;
+  font-size:calc(28px * var(--ts)); line-height:1.32; letter-spacing:-.01em; color:var(--ink);
+  text-wrap:balance; word-break:keep-all; overflow-wrap:anywhere; }
+.dgpage .dgshots{ margin:18px 0 0; gap:6px; }
+.dgtext{ margin:20px 0 0; white-space:pre-wrap; word-break:keep-all; overflow-wrap:anywhere;
+  font-size:calc(16px * var(--ts)); line-height:1.95; color:var(--ink); }
+.dgacts{ display:flex; align-items:stretch; margin-top:26px; border-top:1px solid #E7E1D5; }
+.dgacts button{ flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding:14px 4px; border:0; background:none; color:var(--brand-dark); font-size:var(--f-lg); font-weight:600; cursor:pointer; }
+.dgacts i{ width:1px; margin:12px 0; background:#E7E1D5; }
+.dgacts button:active{ background:rgba(217,78,27,.06); }
+.dgnav{ display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px;
+  border-top:1px solid #E7E1D5; }
+.dgnav .ghost{ display:inline-flex; align-items:center; gap:3px; min-height:36px; padding:4px 2px;
+  font-size:var(--f-lg); font-weight:600; color:var(--brand-dark); }
+.dgnav .ghost:disabled{ color:var(--ink-48); opacity:.55; }
+.dgnav .val{ font-family:"Nanum Myeongjo", "AppleMyungjo", serif; font-size:var(--f-lg); color:var(--ink-48);
+  font-variant-numeric:tabular-nums; }
+
+/* ── 일기장 감성 A «스크랩북»(10-17, 사용자: 「좀 더 감성있게 … 다른 거 카피라도 해 봐」 → 시안 둘 중 A) ──
+ * 하루콩·다꾸 느낌: 손글씨 날짜 · 테이프 붙인 폴라로이드(아래 손글씨) · 고운바탕 본문 · 손글씨 서명 · 옅은 종이 결.
+ * (반려된 B 매거진: 큰 날짜 숫자 · 가장자리까지 사진 · ✦ 끝맺음.) #diarybody 에 .dgs-a(index.html).
+ * 글꼴 셋(명조·고운바탕·나눔손글씨 펜)은 diary.js 가 일기장을 열 때 붙입니다 — 못 오면 기기 글꼴. */
+.dghand, .dgcap, .dgsign{ display:none; }
+/* 종이 결 — 아주 옅은 알갱이(SVG 노이즈) */
+.dgs-a .dgpage{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .36 0 0 0 0 .28 0 0 0 0 .2 0 0 0 .08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.dgs-a .dgtext{ font-family:"Gowun Batang", "Nanum Myeongjo", serif; font-size:calc(16px * var(--ts)); line-height:2.05; color:#3A2E25; }
+
+/* A 스크랩북 */
+.dgs-a .dgpage{ background-color:#F8F2E6; border-color:#EADFCB; padding:22px 22px 6px; }
+.dgs-a .dghand{ display:block; font-family:"Nanum Pen Script", cursive; font-size:calc(31px * var(--ts)); line-height:1.05; color:#5B4636; }
+.dgs-a .dgmeta{ margin-top:6px; }
+.dgs-a .dgwhen{ display:none; }
+.dgs-a .dgtitle{ font-family:"Gowun Batang", "Nanum Myeongjo", serif; font-weight:700; font-size:calc(26px * var(--ts)); margin-top:12px; }
+.dgs-a .dgshots{ margin:26px 6px 4px; gap:14px; }
+.dgs-a .dgimg{ position:relative; background:#FFFDF8; padding:9px 9px 34px;
+  box-shadow:0 1px 2px rgba(60,40,20,.12), 0 10px 18px -10px rgba(60,40,20,.45); }
+.dgs-a .dgshots.one .dgimg{ transform:rotate(-1.8deg); }
+.dgs-a .dgshots:not(.one) .dgimg:nth-child(odd){ transform:rotate(-1.4deg); }
+.dgs-a .dgshots:not(.one) .dgimg:nth-child(even){ transform:rotate(1.2deg); }
+/* 마스킹 테이프 */
+.dgs-a .dgimg::before{ content:''; position:absolute; top:-11px; left:50%; width:86px; height:24px;
+  transform:translateX(-50%) rotate(-4deg); background:rgba(214,170,132,.55);
+  box-shadow:0 1px 1px rgba(0,0,0,.05); }
+.dgs-a .dgshots:not(.one) .dgimg::before{ width:58px; height:18px; top:-8px; }
+.dgs-a .dgcap{ display:block; position:absolute; left:12px; bottom:4px; font-family:"Nanum Pen Script", cursive;
+  font-size:calc(21px * var(--ts)); color:#5B4636; }
+.dgs-a .dgtext{ margin-top:24px; }
+.dgs-a .dgsign{ display:block; margin-top:16px; text-align:right; font-family:"Nanum Pen Script", cursive;
+  font-size:calc(25px * var(--ts)); color:#8A6A52; }
+.dgs-a .dgacts{ border-top:1px dashed #DCCDB4; }
+

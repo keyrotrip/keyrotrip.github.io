@@ -138,27 +138,27 @@ addEventListener('beforeinstallprompt', function(e){
        그냥 흰 화면을 냅니다 — 비슷한 것으로 늘려주지 않습니다.
        새 아이폰이 나오면 여기 한 줄과 그림 한 장이 더 필요합니다.
        기기당 한 장(15~33KB)만 받습니다. -->
-<link rel="apple-touch-startup-image" href="splash/440x956@3x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/440x956@3x.png?v=b889"
       media="(device-width:440px) and (device-height:956px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 16 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/430x932@3x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/430x932@3x.png?v=b889"
       media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 15/14 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/428x926@3x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/428x926@3x.png?v=b889"
       media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 12~14 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/402x874@3x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/402x874@3x.png?v=b889"
       media="(device-width:402px) and (device-height:874px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 16 Pro -->
-<link rel="apple-touch-startup-image" href="splash/393x852@3x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/393x852@3x.png?v=b889"
       media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 15/14 Pro -->
-<link rel="apple-touch-startup-image" href="splash/390x844@3x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/390x844@3x.png?v=b889"
       media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 12~14 · 16e -->
-<link rel="apple-touch-startup-image" href="splash/375x812@3x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/375x812@3x.png?v=b889"
       media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- X/XS/11 Pro · 13 mini -->
-<link rel="apple-touch-startup-image" href="splash/414x896@3x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/414x896@3x.png?v=b889"
       media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- XS Max/11 Pro Max -->
-<link rel="apple-touch-startup-image" href="splash/414x896@2x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/414x896@2x.png?v=b889"
       media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">  <!-- XR/11 -->
-<link rel="apple-touch-startup-image" href="splash/375x667@2x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/375x667@2x.png?v=b889"
       media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)">  <!-- SE 2·3 · 8 -->
-<link rel="apple-touch-startup-image" href="splash/414x736@3x.png?v=b888"
+<link rel="apple-touch-startup-image" href="splash/414x736@3x.png?v=b889"
       media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)">  <!-- 8 Plus -->
 
 <!-- ── 링크를 보냈을 때 상대가 보는 것 ──────────────────────────────
@@ -227,103 +227,103 @@ document.fonts?.load('700 1em Dongle').then(() => {
      스크립트와 모듈은 문서 순서대로 실행되므로 unpkg 가 매달리면 뒤에 있는
      app.js 가 **아예 실행되지 않았습니다** — 앱이 통째로 안 켜지고 부팅 실패
      상자만 남았습니다. 지도 하나 때문에 그럴 이유가 없습니다. -->
-<link rel="stylesheet" href="app.css?v=b888">
+<link rel="stylesheet" href="app.css?v=b889">
 <!-- app.js 가 아래 모듈들을 정적 import 합니다(?v= 로 버전 고정). 여기서도 참조를
      남겨야 checkBuild(app.js)·서비스워커(sw.js)의 "새 파일 다 받아진 뒤에만
      새로고침" 스캔이 index.html 글자만 훑어도 이것들을 놓치지 않습니다.
      **모듈을 새로 만들 때마다 여기 한 줄을 같이 더하세요.** -->
-<link rel="modulepreload" href="supabase.js?v=b888">
-<link rel="modulepreload" href="dom.js?v=b888">
-<link rel="modulepreload" href="db.js?v=b888">
-<link rel="modulepreload" href="calc.js?v=b888">
-<link rel="modulepreload" href="rec.js?v=b888">
-<link rel="modulepreload" href="persona.js?v=b888">
-<link rel="modulepreload" href="pmore.js?v=b888">
-<link rel="modulepreload" href="map.js?v=b888">
-<link rel="modulepreload" href="shelf.js?v=b888">
-<link rel="modulepreload" href="city.js?v=b888">
-<link rel="modulepreload" href="aierr.js?v=b888">
-<link rel="modulepreload" href="aiui.js?v=b888">
-<link rel="modulepreload" href="report.js?v=b888">
-<link rel="modulepreload" href="cards.js?v=b888">
-<link rel="modulepreload" href="expense.js?v=b888">
-<link rel="modulepreload" href="prep.js?v=b888">
-<link rel="modulepreload" href="member.js?v=b888">
-<link rel="modulepreload" href="planmap.js?v=b888">
-<link rel="modulepreload" href="citysearch.js?v=b888">
-<link rel="modulepreload" href="profile.js?v=b888">
-<link rel="modulepreload" href="review.js?v=b888">
-<link rel="modulepreload" href="rating.js?v=b888">
-<link rel="modulepreload" href="notify.js?v=b888">
-<link rel="modulepreload" href="newtrip.js?v=b888">
-<link rel="modulepreload" href="home.js?v=b888">
-<link rel="modulepreload" href="install.js?v=b888">
-<link rel="modulepreload" href="cands.js?v=b888">
-<link rel="modulepreload" href="selfcheck.js?v=b888">
-<link rel="modulepreload" href="bring.js?v=b888">
-<link rel="modulepreload" href="sheetimp.js?v=b888">
-<link rel="modulepreload" href="trash.js?v=b888">
-<link rel="modulepreload" href="plancheck.js?v=b888">
-<link rel="modulepreload" href="aiscreen.js?v=b888">
-<link rel="modulepreload" href="account.js?v=b888">
-<link rel="modulepreload" href="myrecord.js?v=b888">
-<link rel="modulepreload" href="draft.js?v=b888">
-<link rel="modulepreload" href="triplist.js?v=b888">
-<link rel="modulepreload" href="tabs.js?v=b888">
-<link rel="modulepreload" href="planline.js?v=b888">
-<link rel="modulepreload" href="planview.js?v=b888">
-<link rel="modulepreload" href="geocode.js?v=b888">
-<link rel="modulepreload" href="legs.js?v=b888">
-<link rel="modulepreload" href="tripview.js?v=b888">
-<link rel="modulepreload" href="today.js?v=b888">
-<link rel="modulepreload" href="opentrip.js?v=b888">
-<link rel="modulepreload" href="flags.js?v=b888">
-<link rel="modulepreload" href="swreg.js?v=b888">
-<link rel="modulepreload" href="stars.js?v=b888">
-<link rel="modulepreload" href="net.js?v=b888">
-<link rel="modulepreload" href="admin.js?v=b888">
-<link rel="modulepreload" href="adminuse.js?v=b888">
-<link rel="modulepreload" href="dayseen.js?v=b888">
-<link rel="modulepreload" href="glogin.js?v=b888">
-<link rel="modulepreload" href="ui.js?v=b888">
-<link rel="modulepreload" href="personacalc.js?v=b888">
-<link rel="modulepreload" href="personadata.js?v=b888">
-<link rel="modulepreload" href="tripdata.js?v=b888">
-<link rel="modulepreload" href="guestdata.js?v=b888">
-<link rel="modulepreload" href="guestbook.js?v=b888">
-<link rel="modulepreload" href="nameask.js?v=b888">
-<link rel="modulepreload" href="card.js?v=b888">
-  <link rel="modulepreload" href="share.js?v=b888">
-  <link rel="modulepreload" href="shared.js?v=b888">
-<link rel="modulepreload" href="trip.js?v=b888">
-<link rel="modulepreload" href="citymap.js?v=b888">
-<link rel="modulepreload" href="rate.js?v=b888">
-<link rel="modulepreload" href="cities.js?v=b888">
-<link rel="modulepreload" href="ai.js?v=b888">
-<link rel="modulepreload" href="un.js?v=b888">
-<link rel="modulepreload" href="world.js?v=b888">
-<link rel="modulepreload" href="rateui.js?v=b888">
-<link rel="modulepreload" href="globe.js?v=b888">
-<link rel="modulepreload" href="anal.js?v=b888">
-<link rel="modulepreload" href="diary.js?v=b888">
-<link rel="modulepreload" href="mate.js?v=b888">
-<link rel="modulepreload" href="photoview.js?v=b888">
-<link rel="modulepreload" href="crop.js?v=b888">
-<link rel="modulepreload" href="cityrev.js?v=b888">
-<link rel="modulepreload" href="ratecc.js?v=b888">
-<link rel="modulepreload" href="live.js?v=b888">
-<link rel="modulepreload" href="cmtask.js?v=b888">
-<link rel="modulepreload" href="activity.js?v=b888">
-<link rel="modulepreload" href="p16.js?v=b888">
-<link rel="modulepreload" href="pshift.js?v=b888">
-<link rel="modulepreload" href="visits.js?v=b888">
-<link rel="modulepreload" href="mycity.js?v=b888">
-<link rel="modulepreload" href="spree.js?v=b888">
-<link rel="modulepreload" href="try.js?v=b888">
-<link rel="modulepreload" href="people.js?v=b888">
-<link rel="modulepreload" href="friends.js?v=b888">
-<link rel="modulepreload" href="setnav.js?v=b888">
-<link rel="modulepreload" href="app.js?v=b888">
+<link rel="modulepreload" href="supabase.js?v=b889">
+<link rel="modulepreload" href="dom.js?v=b889">
+<link rel="modulepreload" href="db.js?v=b889">
+<link rel="modulepreload" href="calc.js?v=b889">
+<link rel="modulepreload" href="rec.js?v=b889">
+<link rel="modulepreload" href="persona.js?v=b889">
+<link rel="modulepreload" href="pmore.js?v=b889">
+<link rel="modulepreload" href="map.js?v=b889">
+<link rel="modulepreload" href="shelf.js?v=b889">
+<link rel="modulepreload" href="city.js?v=b889">
+<link rel="modulepreload" href="aierr.js?v=b889">
+<link rel="modulepreload" href="aiui.js?v=b889">
+<link rel="modulepreload" href="report.js?v=b889">
+<link rel="modulepreload" href="cards.js?v=b889">
+<link rel="modulepreload" href="expense.js?v=b889">
+<link rel="modulepreload" href="prep.js?v=b889">
+<link rel="modulepreload" href="member.js?v=b889">
+<link rel="modulepreload" href="planmap.js?v=b889">
+<link rel="modulepreload" href="citysearch.js?v=b889">
+<link rel="modulepreload" href="profile.js?v=b889">
+<link rel="modulepreload" href="review.js?v=b889">
+<link rel="modulepreload" href="rating.js?v=b889">
+<link rel="modulepreload" href="notify.js?v=b889">
+<link rel="modulepreload" href="newtrip.js?v=b889">
+<link rel="modulepreload" href="home.js?v=b889">
+<link rel="modulepreload" href="install.js?v=b889">
+<link rel="modulepreload" href="cands.js?v=b889">
+<link rel="modulepreload" href="selfcheck.js?v=b889">
+<link rel="modulepreload" href="bring.js?v=b889">
+<link rel="modulepreload" href="sheetimp.js?v=b889">
+<link rel="modulepreload" href="trash.js?v=b889">
+<link rel="modulepreload" href="plancheck.js?v=b889">
+<link rel="modulepreload" href="aiscreen.js?v=b889">
+<link rel="modulepreload" href="account.js?v=b889">
+<link rel="modulepreload" href="myrecord.js?v=b889">
+<link rel="modulepreload" href="draft.js?v=b889">
+<link rel="modulepreload" href="triplist.js?v=b889">
+<link rel="modulepreload" href="tabs.js?v=b889">
+<link rel="modulepreload" href="planline.js?v=b889">
+<link rel="modulepreload" href="planview.js?v=b889">
+<link rel="modulepreload" href="geocode.js?v=b889">
+<link rel="modulepreload" href="legs.js?v=b889">
+<link rel="modulepreload" href="tripview.js?v=b889">
+<link rel="modulepreload" href="today.js?v=b889">
+<link rel="modulepreload" href="opentrip.js?v=b889">
+<link rel="modulepreload" href="flags.js?v=b889">
+<link rel="modulepreload" href="swreg.js?v=b889">
+<link rel="modulepreload" href="stars.js?v=b889">
+<link rel="modulepreload" href="net.js?v=b889">
+<link rel="modulepreload" href="admin.js?v=b889">
+<link rel="modulepreload" href="adminuse.js?v=b889">
+<link rel="modulepreload" href="dayseen.js?v=b889">
+<link rel="modulepreload" href="glogin.js?v=b889">
+<link rel="modulepreload" href="ui.js?v=b889">
+<link rel="modulepreload" href="personacalc.js?v=b889">
+<link rel="modulepreload" href="personadata.js?v=b889">
+<link rel="modulepreload" href="tripdata.js?v=b889">
+<link rel="modulepreload" href="guestdata.js?v=b889">
+<link rel="modulepreload" href="guestbook.js?v=b889">
+<link rel="modulepreload" href="nameask.js?v=b889">
+<link rel="modulepreload" href="card.js?v=b889">
+  <link rel="modulepreload" href="share.js?v=b889">
+  <link rel="modulepreload" href="shared.js?v=b889">
+<link rel="modulepreload" href="trip.js?v=b889">
+<link rel="modulepreload" href="citymap.js?v=b889">
+<link rel="modulepreload" href="rate.js?v=b889">
+<link rel="modulepreload" href="cities.js?v=b889">
+<link rel="modulepreload" href="ai.js?v=b889">
+<link rel="modulepreload" href="un.js?v=b889">
+<link rel="modulepreload" href="world.js?v=b889">
+<link rel="modulepreload" href="rateui.js?v=b889">
+<link rel="modulepreload" href="globe.js?v=b889">
+<link rel="modulepreload" href="anal.js?v=b889">
+<link rel="modulepreload" href="diary.js?v=b889">
+<link rel="modulepreload" href="mate.js?v=b889">
+<link rel="modulepreload" href="photoview.js?v=b889">
+<link rel="modulepreload" href="crop.js?v=b889">
+<link rel="modulepreload" href="cityrev.js?v=b889">
+<link rel="modulepreload" href="ratecc.js?v=b889">
+<link rel="modulepreload" href="live.js?v=b889">
+<link rel="modulepreload" href="cmtask.js?v=b889">
+<link rel="modulepreload" href="activity.js?v=b889">
+<link rel="modulepreload" href="p16.js?v=b889">
+<link rel="modulepreload" href="pshift.js?v=b889">
+<link rel="modulepreload" href="visits.js?v=b889">
+<link rel="modulepreload" href="mycity.js?v=b889">
+<link rel="modulepreload" href="spree.js?v=b889">
+<link rel="modulepreload" href="try.js?v=b889">
+<link rel="modulepreload" href="people.js?v=b889">
+<link rel="modulepreload" href="friends.js?v=b889">
+<link rel="modulepreload" href="setnav.js?v=b889">
+<link rel="modulepreload" href="app.js?v=b889">
 </head>
 <body>
 <!-- ── 스플래시(런치 스크린) ────────────────────────────────────────
@@ -1745,38 +1745,39 @@ document.fonts?.load('700 1em Dongle').then(() => {
       <div id="p16pane" class="hide"><div id="p16body"></div></div>
 
       <div id="diarypane" class="hide">
-        <div class="card" style="padding:10px 12px">
-          <button class="ghost" id="diaryback" style="padding-left:0">← 프로필</button>
+        <!-- 일기장 다시 그림(2026-10-17, 사용자: 「일기도 이런 느낌으로 다시 가자 지금 너무 구려」 + 참고 그림).
+             머리 한 줄: 「‹ 내 일기장」(뒤로) · 「＋ 새 일기」. 넘기기 단추는 장 아래 「‹ 이전 일기 · 1 / 2 · 다음 일기 ›」.
+             ⚠⚠ 「＋ 새 일기」는 여기서 «고르기»만 합니다(b759) — 일기는 city_ratings.journal 에 도시마다 한 장이고
+               쓰는 칸은 도시 화면에 있습니다(사진·한줄평·쓰던 글 붙잡기가 다 거기). 여기에 또 만들면 저장이 두 벌. -->
+        <div class="card dghdr">
+          <button class="ghost dgback" id="diaryback" type="button" aria-label="뒤로">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+            <span>내 일기장</span></button>
+          <button class="ghost dgaddbtn" id="dgadd" type="button">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>새 일기</button>
         </div>
-        <div class="card" style="padding-bottom:10px">
-          <!-- ⚠⚠ **「＋ 새 일기」는 여기서 «고르기»만 합니다(b759, 사용자
-               요청: 「일기 탭에서 직접 일기를 추가하는 기능도 있어야할 것
-               같아」).** ⚠⚠
-               일기는 `city_ratings.journal` 에 **도시마다 한 장**으로 삽니다.
-               쓰는 칸은 도시 화면에 이미 있고 사진 붙이기·한줄평·쓰던 글
-               붙잡기가 전부 거기 붙어 있습니다 — 여기에 또 만들면 저장
-               절차가 두 벌이 되어 언젠가 갈라집니다(b544 와 같은 이유).
-             ⚠ 그래서 이 칸은 **도시를 고르면 그 도시의 일기 칸으로 보냅니다.**
-               「고치기」가 하던 것과 같은 길입니다. -->
-          <h2><span class="grow">내 일기장</span>
-            <button class="small" id="dgadd" type="button">＋ 새 일기</button>
-            <!-- ‹ 1 / 2 › — 옆으로 넘긴다는 표시이자 단추(b805, 사용자 결정 — 밖에서 받은 리포트 P2-6).
-                 「1 / 2」만 있으면 아래로 굴리는지 옆으로 넘기는지 몰랐습니다. 넘기기 자체는 그대로
-                 브라우저 스냅입니다(diary.js) — 단추는 자리만 정해 줍니다. 한 장뿐이면 숨깁니다. -->
-            <span class="dgnav hide" id="dgnav"><button class="ghost" id="dgprev" type="button"
-                    aria-label="이전 일기">‹</button><span class="val" id="diarycount"></span><button
-                    class="ghost" id="dgnext" type="button" aria-label="다음 일기">›</button></span></h2>
+        <div class="card dgcard">
           <div id="dgpick" class="hide">
             <input id="dgq" placeholder="어디 이야기인가요? (로마 / ㄹㅁ)"
                    autocomplete="off" maxlength="30">
-            <!-- 아무것도 안 쳤을 때는 **다녀왔는데 아직 일기가 없는 곳**을
-                 보여줍니다. 쓸 사람은 대개 그중에서 고릅니다. -->
+            <!-- 아무것도 안 쳤을 때는 **다녀왔는데 아직 일기가 없는 곳**을 보여줍니다. -->
             <div id="dghits"></div>
           </div>
-          <div id="diarybody"></div>
+          <div id="diarybody" class="dgs-a"><!-- 감성 시안 A(스크랩북, 10-17 사용자 고름) — app.css .dgs-a --></div>
+          <!-- 넘기기(b805 → 10-17 아래로 옮김). 넘기기 자체는 브라우저 스냅(diary.js) — 단추는 자리만 정해 줌. 한 장뿐이면 숨김. -->
+          <nav class="dgnav hide" id="dgnav" aria-label="일기 넘기기">
+            <button class="ghost" id="dgprev" type="button">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>이전 일기</button>
+            <span class="val" id="diarycount"></span>
+            <button class="ghost" id="dgnext" type="button">다음 일기<svg viewBox="0 0 24 24" width="16" height="16"
+                   fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+          </nav>
         </div>
       </div>
-
       <div id="shelfpane" class="hide">
         <div class="card" style="padding:10px 12px">
           <button class="ghost" id="shelfback" style="padding-left:0">← 프로필</button>
@@ -2465,7 +2466,7 @@ document.fonts?.load('700 1em Dongle').then(() => {
            **여기 프로필 맨 아래에만 둡니다.** 전에는 </main> 바로 앞에 있어서,
            보고 있는 탭이 무엇이든 그 아래에 곧장 붙어 목록 한가운데 떠 있는
            것처럼 보였습니다. 관리자가 일부러 찾아봐야 하는 자리로 옮깁니다. -->
-      <p class="foot hide" id="foot">화면 <code id="build">b888</code> · <span id="ms">—</span></p>
+      <p class="foot hide" id="foot">화면 <code id="build">b889</code> · <span id="ms">—</span></p>
     </div><!-- /setview -->
 
     <!-- ── 친구(b789, friends.js) · 남의 프로필(b789, people.js) ──────────────
@@ -3464,7 +3465,7 @@ document.fonts?.load('700 1em Dongle').then(() => {
   </div>
 </div>
 
-<script type="module" src="app.js?v=b888"></script>
+<script type="module" src="app.js?v=b889"></script>
 </body>
 </html>
 

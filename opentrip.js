@@ -17,23 +17,23 @@
  * `channel`·`bumpTimer`·`bumpPending` 은 실시간의 상태라 같이 왔습니다.
  *
  * 층: 아래층과 이미 떼어낸 조각 여럿을 씁니다. 그쪽은 이 파일을 안 부릅니다. */
-import { $, esc } from './dom.js?v=b888';
-import { sb } from './db.js?v=b888';
+import { $, esc } from './dom.js?v=b889';
+import { sb } from './db.js?v=b889';
 /* 서버 질의는 tripdata.js 에(2026-10-16) — 여행·일정 기능의 표·칸을 한 곳에서 봅니다. */
-import { 여행읽기 } from './tripdata.js?v=b888';
-import { fail, netTimeout, netIsDown, drawOffbar, cacheGet, cacheSet } from './net.js?v=b888';
-import { D1, asDate, dateRange, localTime, todayYmd } from './calc.js?v=b888';
+import { 여행읽기 } from './tripdata.js?v=b889';
+import { fail, netTimeout, netIsDown, drawOffbar, cacheGet, cacheSet } from './net.js?v=b889';
+import { D1, asDate, dateRange, localTime, todayYmd } from './calc.js?v=b889';
 import { trip, plans, legs, members, expenses, bookings,
-         setTrip, setPickedDay } from './trip.js?v=b888';
-import { loadCities } from './citysearch.js?v=b888';
-import { clearCityOpen } from './city.js?v=b888';
-import { loadReview } from './review.js?v=b888';
-import { loadMembers } from './member.js?v=b888';
-import { loadExpenses } from './expense.js?v=b888';
-import { loadBookings, loadPacking, loadLinks } from './prep.js?v=b888';
-import { inTrip, showTab } from './tabs.js?v=b888';
-import { loadLegs, fillCityList } from './legs.js?v=b888';
-import { loadPlans, backToList, openedOnToday } from './tripview.js?v=b888';
+         setTrip, setPickedDay } from './trip.js?v=b889';
+import { loadCities } from './citysearch.js?v=b889';
+import { clearCityOpen } from './city.js?v=b889';
+import { loadReview } from './review.js?v=b889';
+import { loadMembers } from './member.js?v=b889';
+import { loadExpenses } from './expense.js?v=b889';
+import { loadBookings, loadPacking, loadLinks } from './prep.js?v=b889';
+import { inTrip, showTab } from './tabs.js?v=b889';
+import { loadLegs, fillCityList } from './legs.js?v=b889';
+import { loadPlans, backToList, openedOnToday } from './tripview.js?v=b889';
 
 let ctx = { me: () => null, appTab: () => '' };
 export function setOpenTripCtx(o){ ctx = { ...ctx, ...o }; }

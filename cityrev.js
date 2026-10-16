@@ -12,13 +12,13 @@
  *   bottom:0 은 아이폰 홈 화면 앱에서 키보드 뒤로 갑니다([[ios-keyboard-sheet]]).
  * ⚠ 좋아요·답글 단추는 도시 화면 줄에도 있습니다 — 누르기는 document 에 한 번 답니다(아래).
  */
-import { $, esc, toast, avatarImg } from './dom.js?v=b888';
-import { 이름먼저 } from './nameask.js?v=b888';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
-import { sb } from './db.js?v=b888';
-import { netTimeout } from './net.js?v=b888';
-import { cities, cityCountry } from './cities.js?v=b888';
-import { arm } from './ui.js?v=b888';
-import { openPhotos } from './photoview.js?v=b888';
+import { $, esc, toast, avatarImg } from './dom.js?v=b889';
+import { 이름먼저 } from './nameask.js?v=b889';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
+import { sb } from './db.js?v=b889';
+import { netTimeout } from './net.js?v=b889';
+import { cities, cityCountry } from './cities.js?v=b889';
+import { arm } from './ui.js?v=b889';
+import { openPhotos } from './photoview.js?v=b889';
 
 let ctx = { me: () => null, openPerson: () => {}, openCity: () => {}, cityNow: () => null, redrawCity: () => {}, redrawFoods: () => {} };
 export function setCityRevCtx(o){ ctx = { ...ctx, ...o }; }

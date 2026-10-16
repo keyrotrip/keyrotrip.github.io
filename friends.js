@@ -25,15 +25,15 @@
  * ⚠ 줄 전체를 단추 하나로 만들지 않습니다 — 오른쪽 사진·단추가 따로 눌려야 해서 «사람 단추 + 옆 단추»
  *   형제로 둡니다(단추 안에 단추는 안 됩니다). 그래서 누르기 처리는 도시·단추를 사람보다 «먼저» 봅니다.
  */
-import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b888';
-import { 이름먼저 } from './nameask.js?v=b888';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
-import { sb } from './db.js?v=b888';
-import { netTimeout } from './net.js?v=b888';
-import { cities, countryName } from './cities.js?v=b888';
+import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b889';
+import { 이름먼저 } from './nameask.js?v=b889';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
+import { sb } from './db.js?v=b889';
+import { netTimeout } from './net.js?v=b889';
+import { cities, countryName } from './cities.js?v=b889';
 /* 소식의 도시 사진을 누르면 여는 화면(b789). city.js 는 이 파일을 안 읽으므로 고리가 없습니다. */
-import { openCity } from './city.js?v=b888';
+import { openCity } from './city.js?v=b889';
 /* 「팔로잉」·「삭제」를 한 번 더 눌러 정하는 장치(b800). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b888';
+import { arm } from './ui.js?v=b889';
 
 let ctx = { me: () => null, openPerson: () => {} };
 export function setFriendsCtx(o){ ctx = { ...ctx, ...o }; }

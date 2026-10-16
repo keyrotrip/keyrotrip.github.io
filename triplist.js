@@ -15,17 +15,17 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · cities.js · trip.js 와 이미
  *     떼어낸 rating.js · home.js · member.js 를 씁니다. */
-import { $, esc, putHtml, dropHtml, emptyDo } from './dom.js?v=b888';
-import { sb } from './db.js?v=b888';
+import { $, esc, putHtml, dropHtml, emptyDo } from './dom.js?v=b889';
+import { sb } from './db.js?v=b889';
 /* 서버 질의는 tripdata.js 에(2026-10-16) — 여행·일정 기능의 표·칸을 한 곳에서 봅니다. */
-import { 여행목록읽기 } from './tripdata.js?v=b888';
-import { fail, netTimeout, drawOffbar, cacheGet, cacheSet } from './net.js?v=b888';
-import { todayYmd } from './calc.js?v=b888';
-import { cities } from './cities.js?v=b888';
-import { trip } from './trip.js?v=b888';
-import { tripSub } from './rating.js?v=b888';
-import { heroTint, openTripReport, reviewBar, heroHtml } from './home.js?v=b888';
-import { ROLE_KO } from './member.js?v=b888';
+import { 여행목록읽기 } from './tripdata.js?v=b889';
+import { fail, netTimeout, drawOffbar, cacheGet, cacheSet } from './net.js?v=b889';
+import { todayYmd } from './calc.js?v=b889';
+import { cities } from './cities.js?v=b889';
+import { trip } from './trip.js?v=b889';
+import { tripSub } from './rating.js?v=b889';
+import { heroTint, openTripReport, reviewBar, heroHtml } from './home.js?v=b889';
+import { ROLE_KO } from './member.js?v=b889';
 
 let ctx = { me: () => null, openTrip: async () => {}, logError: () => {} };
 export function setTripListCtx(o){ ctx = { ...ctx, ...o }; }

@@ -18,21 +18,24 @@
  *
  * 층: dom.js · net.js · calc.js · trip.js 와 이미 떼어낸
  *     planline.js · planmap.js · plancheck.js 를 씁니다. */
-import { $, esc, emptyDo } from './dom.js?v=b888';
-import { featOn, flags } from './flags.js?v=b888';
-import { fail, write } from './net.js?v=b888';
-import { dayLabel, hm, hop, money, legNear, dateRange, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b888';
-import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b888';
-import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b888';
-import { drawPlanMap, mapLinks } from './planmap.js?v=b888';
-import { STAY_MIN, mins } from './plancheck.js?v=b888';
+import { $, esc, emptyDo } from './dom.js?v=b889';
+import { featOn, flags } from './flags.js?v=b889';
+import { fail, write } from './net.js?v=b889';
+import { dayLabel, hm, hop, money, legNear, dateRange, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b889';
+import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b889';
+import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b889';
+import { drawPlanMap, mapLinks } from './planmap.js?v=b889';
+import { STAY_MIN, mins } from './plancheck.js?v=b889';
 /* 좌표 없는 줄에서 그 한 곳만 찾습니다. **cands.js 는 이 파일을 안 부르므로
    고리가 안 생깁니다**(b375 에 확인). */
-import { fillOnePlan } from './cands.js?v=b888';
+import { fillOnePlan } from './cands.js?v=b889';
 /* 일정을 그림 카드로 보냅니다(b879) — 아래 `일정카드`. */
-import { shareCard } from './card.js?v=b888';
+import { shareCard } from './card.js?v=b889';
 /* 보내는 길이 셋이 되어(그림·링크·글) 고르는 판이 생겼습니다(b880). */
-import { openShareSheet } from './share.js?v=b888';
+import { openShareSheet } from './share.js?v=b889';
+/* 일정 책(2026-10-17) — 날마다 그 지역 도시 사진·사진 출처 */
+import { cities } from './cities.js?v=b889';
+import { sb } from './db.js?v=b889';
 
 let ctx = { loadPlans: async () => {} };
 export function setPlanViewCtx(o){ ctx = { ...ctx, ...o }; }
@@ -357,13 +360,96 @@ function 일정카드(){
   };
 }
 
+/* ── 일정 책(2026-10-17) — 표지 + 하루 한 장(card.js drawPlanbook) ──────────────────
+ * 사용자가 고른 것: 하루 제목은 «지역 이름만»(그 날에 걸린 구간들의 도시 — 옮겨 가는 날은 「도쿄 → 하코네」),
+ * 꾸밈은 «그 날 도시 사진 작게»(그 날 마지막 구간의 도시 사진). 표지는 첫 도시의 큰 사진.
+ * ⚠ 위키미디어 사진은 찍은 사람·라이선스를 적어야 합니다(photos.html 과 같은 가르기) — 출처 칸은 도시 목록에
+ *   안 실려 있어 그 도시들만 따로 물어 옵니다. 못 받으면(끊김) 출처 줄 없이 그립니다 — 그때 위키 사진은 빼고 그립니다.
+ * ⚠ 메모·지출·일행 이름은 안 넣습니다(옛 일정카드와 같은 규칙). */
+const 요일글 = ['일', '월', '화', '수', '목', '금', '토'];
+const 사진출처이름 = s => String(s || '').replace(/^Photo:\s*/i, '').replace(/\s*\/\s*(Pexels|Wikimedia Commons)\b.*$/i, '').trim();
+const 위키사진 = c => /wikimedia|wikipedia/i.test(c?.image_page || '') || /wikimedia/i.test(c?.image_credit || '')
+  || !!(c?.image_license && !/^pexels$/i.test(c.image_license));
+async function 일정책(){
+  if (!cities?.length){ try { await (await import('./citysearch.js?v=b889')).loadCities(); } catch {} }
+  const 도시 = id => (cities || []).find(c => c.id === id) || null;
+  const 날 = [...new Set(plans.map(p => p.date).filter(Boolean))].sort();
+  const 줄 = p => ({ t: hm(p.start_time), n: nice(p.title || '').trim() });
+  const 때순 = (a, b) => String(a.start_time || '99').localeCompare(String(b.start_time || '99'));
+  const 첫날 = new Date(trip.start_date + 'T00:00:00Z');
+  const 그날구간 = d => (legs || []).filter(l => d >= l.start_date && d <= l.end_date)
+    .sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)));
+  const 구간이름 = l => 도시(l.city_id)?.name || l.destination || '';
+
+  /* 쓸 도시들의 사진 출처를 한 번에(위키 사진 표기) — 3초 안에 못 받으면 출처 없이 */
+  const 쓸도시 = [...new Set(날.flatMap(d => 그날구간(d).map(l => l.city_id)).filter(Boolean))];
+  let 출처 = null;
+  if (쓸도시.length){
+    try {
+      const r = await Promise.race([sb.from('cities').select('id,image_credit,image_page,image_license').in('id', 쓸도시),
+                                    new Promise(ok => setTimeout(() => ok(null), 3000))]);
+      if (r && !r.error) 출처 = new Map((r.data || []).map(c => [c.id, c]));
+    } catch {}
+  }
+  /* 사진 + 출처 줄. 위키 사진인데 출처를 모르면 그 사진은 안 씁니다(표기 조건을 못 지키므로) */
+  const 사진과출처 = (id, 큰것) => {
+    const c = 도시(id); if (!c) return {};
+    const url = (큰것 && c.image_lg) || c.image_url; if (!url) return {};
+    const m = 출처?.get(id);
+    if (!m) return 출처 ? { photo: url } : {};
+    if (!위키사진(m)) return { photo: url };
+    const 이름 = 사진출처이름(m.image_credit);
+    return { photo: url, credit: `${c.name} 사진 · ${이름 || 'Wikimedia Commons'}${m.image_license ? ' · ' + m.image_license : ''} · Wikimedia Commons` };
+  };
+
+  const days = 날.map(d => {
+    const 때 = new Date(d + 'T00:00:00Z');
+    const n = Math.round((때 - 첫날) / 86400000) + 1;
+    const 요 = 요일글[때.getUTCDay()];
+    const 구간 = 그날구간(d);
+    const 이름들 = [...new Set(구간.map(구간이름).filter(Boolean))];
+    const 끝 = 구간[구간.length - 1];
+    return {
+      n: n >= 1 ? n : null,
+      date: `${때.getUTCMonth() + 1}월 ${때.getUTCDate()}일 ${요}요일`,
+      short: `${때.getUTCMonth() + 1}.${때.getUTCDate()} (${요})`,
+      region: 이름들.join(' → ') || trip.destination || '',
+      ...(끝 ? 사진과출처(끝.city_id, false) : {}),
+      items: plans.filter(x => x.date === d).sort(때순).map(줄),
+    };
+  });
+  const 미정 = plans.filter(x => !x.date);
+  if (미정.length) days.push({ n: null, date: '날짜 미정', region: '날짜를 정하지 않은 일정', items: 미정.map(줄) });
+
+  /* 지나는 곳 — 날 순서대로 이어서, 같은 곳이 이어지면 한 번 */
+  const route = [];
+  for (const d of days) for (const r of String(d.region || '').split(' → ')) if (r && route[route.length - 1] !== r && d.n) route.push(r);
+  const 첫구간 = (legs || []).slice().sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)))[0];
+
+  return {
+    kind: 'planbook',
+    title: trip.title || '내 여행',
+    nights: 밤글(),
+    range: dateRange(trip.start_date, trip.end_date),
+    start: trip.start_date,              /* 표지 계절 도장(AUTUMN 2026) */
+    count: plans.length,
+    route,
+    cover: 첫구간 ? 사진과출처(첫구간.city_id, true) : {},
+    days,
+    sheetTitle: '일정 보내기',
+    goText: '보내기',
+    shareLine: `${trip.title} 일정이에요. 기로에서 짰어요.`,
+    shareText: 일정글(),
+  };
+}
+
 /* ⚠ **이 단추는 이제 «고르는 판»을 엽니다(b880).** 전에는 바로 그림 카드였습니다.
    그림·링크·글 셋 중에 고릅니다 — 만드는 법은 여기가 알고, 고르게 하는 것은
    share.js 가 합니다(서로 안 부르게 함수를 넘깁니다). */
 $('sendplanbtn')?.addEventListener('click', () => {
   if (!trip || !plans.length) return;
   openShareSheet({
-    그림: () => shareCard(일정카드(),
+    그림: async () => shareCard(await 일정책(),
       `기로-${String(trip.destination || trip.title || '일정').replace(/\s+/g, '')}-일정`),
     글: () => 일정글(),
   });

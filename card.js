@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b888';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b889';
 /* 성향 «셈»은 personacalc.js 로 옮겼습니다(2026-10-16). 이 파일은 그림·HTML 만 맡습니다.
    예전처럼 card.js 에서 가져가는 곳(14파일)이 그대로 돌도록 같은 이름으로 다시 내보냅니다. */
-import { personaStats, 흔들림폭, 별가운데, PERSONA_VER, personaAxes, AXIS_WORD, AXIS_NAME, personaSaved, personaShiftWhy, PERSONA16, personaRank, personaMatch, personaMateLine, personaMates, personaMrz } from './personacalc.js?v=b888';
+import { personaStats, 흔들림폭, 별가운데, PERSONA_VER, personaAxes, AXIS_WORD, AXIS_NAME, personaSaved, personaShiftWhy, PERSONA16, personaRank, personaMatch, personaMateLine, personaMates, personaMrz } from './personacalc.js?v=b889';
 export { personaStats, 흔들림폭, 별가운데, PERSONA_VER, personaAxes, AXIS_WORD, AXIS_NAME, personaSaved, personaShiftWhy, PERSONA16, personaRank, personaMatch, personaMateLine, personaMates, personaMrz };
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
@@ -179,6 +179,7 @@ async function ensureFont(){
       await Promise.all([
         document.fonts.load('400 52px "Nanum Myeongjo"', '가나다'),
         document.fonts.load('400 26px "Nanum Myeongjo"', '가나다'),
+        document.fonts.load('700 78px "Nanum Myeongjo"', '가나다 0123'),   /* 일정 책 제목·숫자(drawPlanbook) */
         document.fonts.load('700 40px Dongle', '기로'),
       ].map(p => p.catch(() => null)));
       await document.fonts.ready;
@@ -294,7 +295,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b888`;
+    img.src = `./persona/${code}.webp?v=b889`;
   });
 }
 
@@ -565,7 +566,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b888`;
+    img.src = `./persona/m/${code}.jpg?v=b889`;
   });
 }
 
@@ -1401,6 +1402,281 @@ async function drawPlan(s, W, _H, F){
   return new Promise(r => cv.toBlob(r, 'image/png'));
 }
 
+/* ── 일정 책(2026-10-17) — 표지 한 장 + 하루 한 장(1080×1350) ─────────────────────────
+ * 사용자: 「이거 디자인도 너무 구린데? … 십며칠 되면 어떻게 뽑으려고?」 → 참고 그림(잡지 같은 일정 노트) → 「이렇게 못 만드냐?」.
+ * 고른 것(사용자): 하루 제목은 «지역 이름만» · 꾸밈은 «그 날 도시 사진 작게».
+ * 짜임 — 종이색 바탕 · 명조 제목(Nanum Myeongjo) · 녹슨 주황 숫자 · 아침/오후/저녁 묶음.
+ *   ① 표지: 첫 도시 사진 크게 · 여행 제목 · 「3박 4일 · 일정 24개」 · 지나는 곳(도쿄 → 하코네) · 날마다 한 줄
+ *   ② 하루: DAY 숫자 · 날짜 · 지역 이름(명조) · 오른쪽 위 도시 사진 작게 · 시간 묶음별 일정
+ *   일정이 많아 한 장에 안 들어가면 «다음 장으로 이어서»(지역 이름 · 이어서) — 글씨를 줄이지 않습니다.
+ * ⚠ 높이가 정해져 있어(4:5) 옛 일정 카드(drawPlan)의 「캔버스 넓이 한계」 걱정이 없습니다 — 장 수가 늘 뿐.
+ * ⚠ 사진은 우리 저장통(Supabase)에서 crossOrigin 으로 받습니다(photoImage). 못 받으면 사진 자리 없이 그립니다.
+ * ⚠ 위키미디어 사진은 찍은 사람·라이선스 표기가 조건입니다(photos.html) — 그 장 아래에 한 줄(credit).
+ * ⚠ 메모·지출·일행 이름은 안 그립니다(옛 카드와 같은 규칙 — 거르는 곳은 planview.js 일정책).
+ * 10-17 둘째 판(사용자): 이어지는 장도 같은 자리에 「도쿄 · 계속」 + 앞 장 아래 「다음 장에 계속 →」 · 본문 크게·행간 넓게(모든 장 같은 크기,
+ *   기준은 «폰에서 확대 없이 읽히나») · 표지 제목 뜻 단위 줄바꿈 · 감성: 따뜻한 종이 결 · 붙여 둔 사진(흰 테두리·기울임·필름 빛) ·
+ *   시간을 잇는 점선 · 표지 계절 도장(AUTUMN 2026).
+ * 단위: 폭 360 기준 «자»(u = 3 → 1080px). */
+/* 색 — 화면 종이(P16N.종이)보다 한 톤 따뜻하게(사용자: 「좀 더 감성있게」) · 녹슨 주황은 작은 글씨도 읽히는 짙기 */
+const PB = { 종이: '#F5F0E6', 잉크: P16N.잉크, 흐림: P16N.흐림, 선: '#DDD5C7', 녹: '#B5451B', 흐린녹: '#D7A88F' };
+async function drawPlanbook(s, F){
+  const u = 3, W = 360 * u, H = 450 * u, px = v => v * u;
+  const 좌 = px(28), 우 = W - px(28), 폭 = 우 - 좌;
+  const 명조 = (w, v) => `${w} ${px(v)}px "Nanum Myeongjo", "AppleMyungjo", "Batang", serif`;
+  const 고딕 = (w, v) => F(w, px(v));
+  /* 본문 글자(사용자 10-17: 「폰에서 확대 없이 읽히는지가 기준」 → 모든 장 같은 크기로 키우고 행간 넓힘) */
+  const 글크기 = 15, 시크기 = 13.5, 행간 = 22, 줄틈 = 10;
+  const 시칸 = px(50), 점x = 좌 + px(56), 글x = 좌 + px(68), 글폭 = 우 - 글x;
+  const 본문시작 = px(180);
+  const 발위 = px(450 - 60);              /* 본문이 내려갈 수 있는 끝(「다음 장에 계속」·사진 출처 줄 위) */
+
+  /* 사진은 한 번만 받습니다(같은 도시가 여러 날이면 같은 그림) */
+  const 사진들 = new Map();
+  const 사진 = url => { if (!url) return Promise.resolve(null);
+    if (!사진들.has(url)) 사진들.set(url, photoImage(url)); return 사진들.get(url); };
+
+  /* 재기용 캔버스 — 줄 나누기를 미리 셉니다(그리기 전에 몇 장인지 알아야 「1 / N」을 적음) */
+  const 잼 = document.createElement('canvas').getContext('2d');
+  const 줄들 = (글, 글꼴, 최대) => { 잼.font = 글꼴; return wrapText(잼, 글, 최대); };
+  /* 제목은 «뜻 단위»로 두 줄(사용자: 「가을 / 여행」 말고 「도쿄·하코네·교토 / 가을 여행」) —
+     띄어쓰기 자리 중에서 두 줄 폭이 가장 고르게 되는 곳에서 끊습니다. 안 되면 글자 단위로. */
+  const 뜻줄 = (글, 글꼴, 최대) => {
+    잼.font = 글꼴; 글 = String(글 || '');
+    if (잼.measureText(글).width <= 최대) return [글];
+    let 좋은 = null;
+    for (const m of 글.matchAll(/ /g)){
+      const a = 글.slice(0, m.index), b = 글.slice(m.index + 1);
+      const wa = 잼.measureText(a).width, wb = 잼.measureText(b).width;
+      if (wa <= 최대 && wb <= 최대 && (!좋은 || Math.max(wa, wb) < 좋은.w)) 좋은 = { w: Math.max(wa, wb), 줄: [a, b] };
+    }
+    return 좋은 ? 좋은.줄 : wrapText(잼, 글, 최대).slice(0, 2);
+  };
+
+  /* ── 하루를 장으로 나눕니다 ───────────────────────────────────── */
+  const 때묶음 = t => !t ? '' : t < '12' ? '아침' : t < '17' ? '오후' : '저녁';
+  const 장들 = [{ 종류: '표지' }];
+  for (const d of s.days || []){
+    const 시간있음 = d.items.some(x => x.t);
+    const 블록 = [];
+    let 앞묶음 = null;
+    const 순 = [...d.items].sort((a, b) => (a.t ? 0 : 1) - (b.t ? 0 : 1));   /* 시간 없는 것은 맨 뒤 */
+    for (const it of 순){
+      const 묶 = 시간있음 ? (때묶음(it.t) || '시간 미정') : '';
+      if (묶 && 묶 !== 앞묶음){ 블록.push({ 종류: '묶음', 글: 묶, h: px(블록.length ? 32 : 20) }); 앞묶음 = 묶; }
+      const 줄 = 줄들(it.n || '', 고딕(400, 글크기), 글폭).slice(0, 3);
+      블록.push({ 종류: '일정', t: it.t, 줄, h: px(줄.length * 행간 + 줄틈) });
+    }
+    if (!블록.length){ 장들.push({ 종류: '하루', d, 블록: [], 이어서: false, k: 1 }); continue; }
+    let 남은 = 블록, 이어서 = false;
+    while (남은.length){
+      const 칸 = 발위 - 본문시작;
+      /* 조금만 넘치면(줄 사이를 80%로 좁혀 다 들어가면) 이 장에 다 담습니다 — 한두 줄짜리 장이 생기지 않게.
+         글씨 크기는 그대로, 줄 사이만(k). */
+      const 합 = 남은.reduce((a, b) => a + b.h, 0);
+      if (합 > 칸 && 합 * .8 <= 칸){ 장들.push({ 종류: '하루', d, 블록: 남은, 이어서, k: 칸 / 합 }); break; }
+      let y = 본문시작, i = 0;
+      while (i < 남은.length && y + 남은[i].h <= 발위){ y += 남은[i].h; i++; }
+      if (!i) i = 1;                                          /* 한 줄도 안 들어가면 하나는 억지로 */
+      if (i < 남은.length && 남은[i - 1].종류 === '묶음' && i > 1) i--;   /* 묶음 이름이 장 끝에 홀로 남지 않게 */
+      장들.push({ 종류: '하루', d, 블록: 남은.slice(0, i), 이어서, k: 1 });
+      남은 = 남은.slice(i); 이어서 = true;
+    }
+  }
+  /* 다음 장이 같은 날이면 그 장 아래에 「다음 장에 계속 →」 */
+  장들.forEach((장, i) => { 장.계속 = 장.종류 === '하루' && 장들[i + 1]?.d === 장.d; });
+  const N = 장들.length;
+
+  /* ── 공통 ─────────────────────────────────────────────────────── */
+  const 가는줄 = (g, y, x = 좌, w = 폭) => { g.fillStyle = PB.선; g.fillRect(x, y, w, Math.max(2, px(.7))); };
+  const 발그리기 = (g, n, 사진글, 계속) => {
+    const y = px(450 - 47);
+    if (계속){
+      g.fillStyle = PB.녹; g.font = 고딕(600, 10.5); g.textAlign = 'right';
+      g.fillText('다음 장에 계속 →', 우, y); g.textAlign = 'left';
+    }
+    if (사진글){
+      g.fillStyle = PB.흐림; g.font = 고딕(400, 7.5);
+      g.fillText(줄여쓰기(g, 사진글, 폭 - (계속 ? px(92) : 0)), 좌, y);
+    }
+    가는줄(g, px(450 - 36));
+    g.fillStyle = PB.흐림; g.font = 고딕(400, 9);
+    g.fillText(`기로에서 짠 일정 · ${appUrlText()}`, 좌, px(450 - 19));
+    g.textAlign = 'right'; g.font = 명조(400, 10.5);
+    g.fillText(`${n} / ${N}`, 우, px(450 - 19));
+    g.textAlign = 'left';
+  };
+  const 새장 = () => {
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    g.fillStyle = PB.종이; g.fillRect(0, 0, W, H);       /* 바탕은 꼭 칠함(투명이면 인스타가 검게 메움) */
+    g.textBaseline = 'alphabetic';
+    return [cv, g];
+  };
+  const 덮어 = (g, img, x, y, w, h) => {                   /* 가운데를 잘라 채움 */
+    const r = Math.max(w / img.width, h / img.height), sw = w / r, sh = h / r;
+    g.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, x, y, w, h);
+  };
+  /* «붙여 둔 사진» — 흰 테두리 · 살짝 기울임 · 그림자 · 따뜻한 필름 빛(사용자: 「좀 더 감성있게」).
+     (cx, cy) 가운데, 사진 w×h, 테두리 b(아래는 조금 더 두껍게), 기울기 deg. */
+  const 붙인사진 = (g, img, cx, cy, w, h, b, deg) => {
+    const 아래 = b * 1.9, fw = w + b * 2, fh = h + b + 아래;
+    g.save();
+    g.translate(cx, cy); g.rotate(deg * Math.PI / 180);
+    g.shadowColor = 'rgba(60,40,20,.22)'; g.shadowBlur = px(6); g.shadowOffsetY = px(2);
+    g.fillStyle = '#FFFDF8'; g.fillRect(-fw / 2, -fh / 2, fw, fh);
+    g.shadowColor = 'transparent';
+    const x = -fw / 2 + b, y = -fh / 2 + b;
+    덮어(g, img, x, y, w, h);
+    /* 필름 빛 — 따뜻한 막 한 겹 + 가장자리 살짝 어둡게 */
+    g.fillStyle = 'rgba(255,214,170,.10)'; g.fillRect(x, y, w, h);
+    const v = g.createRadialGradient(x + w / 2, y + h / 2, Math.min(w, h) * .35, x + w / 2, y + h / 2, Math.max(w, h) * .75);
+    v.addColorStop(0, 'rgba(40,20,0,0)'); v.addColorStop(1, 'rgba(40,20,0,.22)');
+    g.fillStyle = v; g.fillRect(x, y, w, h);
+    g.restore();
+  };
+  /* 종이 결 — 아주 옅은 알갱이(성향 카드와 같은 수법, 작은 조각을 깔아 반복) */
+  const 결 = (() => { try {
+    const gs = 180, gc = document.createElement('canvas'); gc.width = gc.height = gs;
+    const gg = gc.getContext('2d'), im = gg.createImageData(gs, gs);
+    for (let i = 0; i < im.data.length; i += 4){ const v = 128 + (Math.random() * 2 - 1) * 90; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
+    gg.putImageData(im, 0, 0); return gc;
+  } catch { return null; } })();
+  const 결깔기 = g => { if (!결) return; try {
+    g.save(); g.globalAlpha = .05; g.globalCompositeOperation = 'multiply';
+    g.fillStyle = g.createPattern(결, 'repeat'); g.fillRect(0, 0, W, H); g.restore();
+  } catch {} };
+  const 내보내기 = cv => new Promise(r => cv.toBlob(r, 'image/jpeg', .9));
+  const 철 = m => m >= 3 && m <= 5 ? 'SPRING' : m >= 6 && m <= 8 ? 'SUMMER' : m >= 9 && m <= 11 ? 'AUTUMN' : 'WINTER';
+
+  const 결과 = [];
+  for (let n = 0; n < N; n++){
+    const 장 = 장들[n], [cv, g] = 새장();
+    if (장.종류 === '표지'){
+      g.fillStyle = PB.녹; g.font = 고딕(700, 9);
+      자간쓰기(g, 'KEYRO · TRAVEL NOTE', 좌, px(42), px(2));
+      g.fillStyle = PB.흐림; g.font = 고딕(400, 10); g.textAlign = 'right';
+      g.fillText(s.range || '', 우, px(42)); g.textAlign = 'left';
+      가는줄(g, px(54));
+      let y = px(72);
+      const 표지사진 = await 사진(s.cover?.photo);
+      if (표지사진){
+        const pw = 폭 - px(14), ph = px(184), b = px(7);
+        붙인사진(g, 표지사진, W / 2, y + (ph + b * 2.9) / 2, pw, ph, b, -1.2);
+        y += ph + b * 2.9;
+        /* 계절 도장 — 사진 오른쪽 아래 귀퉁이에 걸쳐서 */
+        const 달 = Number(String(s.start || '').slice(5, 7)), 해 = String(s.start || '').slice(0, 4);
+        if (달 && 해){
+          const cx = 우 - px(30), cy = y - px(14), r = px(30);
+          g.save(); g.translate(cx, cy); g.rotate(-12 * Math.PI / 180);
+          g.fillStyle = 'rgba(245,240,230,.92)'; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill();
+          g.strokeStyle = PB.녹; g.lineWidth = px(1.2);
+          g.beginPath(); g.arc(0, 0, r - px(2), 0, Math.PI * 2); g.stroke();
+          g.lineWidth = px(.6); g.beginPath(); g.arc(0, 0, r - px(5), 0, Math.PI * 2); g.stroke();
+          g.fillStyle = PB.녹; g.textAlign = 'left';
+          g.font = 고딕(700, 7.5);
+          const 철글 = 철(달), 철폭 = g.measureText(철글).width + px(1.2) * (철글.length - 1);
+          자간쓰기(g, 철글, -철폭 / 2, -px(2), px(1.2));
+          g.textAlign = 'center'; g.font = 명조(700, 13); g.fillText(해, 0, px(13));
+          g.textAlign = 'left'; g.restore();
+        }
+        y += px(40);
+      } else y += px(60);
+      /* 제목(명조, 뜻 단위 두 줄) */
+      g.fillStyle = PB.잉크;
+      const 제목줄 = 뜻줄(s.title || '내 여행', 명조(700, 29), 폭);
+      g.font = 명조(700, 29);
+      제목줄.forEach((t, i) => g.fillText(t, 좌, y + px(i * 38)));
+      y += px((제목줄.length - 1) * 38 + 26);
+      const 토막 = [s.nights, s.count ? `일정 ${s.count}개` : ''].filter(Boolean);
+      let x = 좌;
+      토막.forEach((t, i) => {
+        g.fillStyle = i ? PB.흐림 : PB.녹; g.font = 고딕(i ? 400 : 700, 12);
+        g.fillText(t, x, y); x += g.measureText(t).width;
+        if (i < 토막.length - 1){ g.fillStyle = PB.흐림; g.font = 고딕(400, 12); g.fillText('  ·  ', x, y); x += g.measureText('  ·  ').width; }
+      });
+      if ((s.route || []).length > 1){
+        y += px(24);
+        g.fillStyle = PB.잉크;
+        const 길 = 줄들(s.route.join('  →  '), 명조(400, 13.5), 폭).slice(0, 2);
+        g.font = 명조(400, 13.5);
+        길.forEach((t, i) => g.fillText(t, 좌, y + px(i * 20)));
+      }
+      결깔기(g);
+      발그리기(g, n + 1, 표지사진 ? s.cover?.credit : '', false);
+    } else {
+      const d = 장.d;
+      const 작은사진 = 장.이어서 ? null : await 사진(d.photo);
+      /* DAY 숫자 · 날짜 · 지역 — 이어지는 장도 같은 자리(사용자: 「앞 장과 똑같이 날짜 아래에 도쿄 · 계속」) */
+      g.fillStyle = PB.녹; g.font = 고딕(700, 10);
+      자간쓰기(g, d.n ? 'DAY' : 'NOTE', 좌, px(46), px(2.4));
+      g.font = 명조(700, 46);
+      g.fillText(d.n ? String(d.n).padStart(2, '0') : '—', 좌 - px(1.5), px(93));
+      g.fillStyle = PB.흐림; g.font = 고딕(400, 12);
+      g.fillText(d.date || '날짜 미정', 좌, px(114));
+      const 제목폭 = 작은사진 ? 폭 - px(118) : 폭;
+      if (장.이어서){
+        g.fillStyle = PB.잉크; g.font = 명조(700, 26);
+        const 이름 = 줄여쓰기(g, d.region || '', 제목폭 - px(70));
+        g.fillText(이름, 좌, px(150));
+        const w = g.measureText(이름).width;
+        g.fillStyle = PB.흐림; g.font = 명조(400, 18);
+        g.fillText('  · 계속', 좌 + w, px(150));
+      } else {
+        g.fillStyle = PB.잉크;
+        const 이름줄 = 뜻줄(d.region || '', 명조(700, 26), 제목폭);
+        g.font = 명조(700, 26);
+        이름줄.forEach((t, i) => g.fillText(t, 좌, px(150 + i * 30)));
+      }
+      if (작은사진) 붙인사진(g, 작은사진, 우 - px(50), px(36 + 52), px(86), px(86), px(5), 3);
+
+      /* 본문 — 시간 · 점선 · 일정. 점선은 하루를 잇는 줄(여행 수첩 느낌) */
+      let y = 본문시작;
+      가는줄(g, y - px(18));
+      const k = 장.k || 1, 점들 = [];
+      for (const b of 장.블록){
+        if (b.종류 === '묶음'){
+          g.fillStyle = PB.녹; g.font = 고딕(700, 11);
+          자간쓰기(g, b.글, 좌, y + b.h * k - px(9), px(1.8));
+          y += b.h * k; continue;
+        }
+        const 기준 = y + px(15);
+        g.fillStyle = b.t ? PB.잉크 : PB.흐림; g.font = 명조(700, 시크기);
+        g.fillText(b.t || '—', 좌, 기준);
+        점들.push({ y: 기준 - px(5), 찬: !!b.t });
+        g.fillStyle = PB.잉크; g.font = 고딕(400, 글크기);
+        b.줄.forEach((t, i) => g.fillText(t, 글x, 기준 + px(i * 행간 * Math.max(k, .9))));
+        y += b.h * k;
+      }
+      if (점들.length > 1){
+        g.save(); g.strokeStyle = PB.흐린녹; g.lineWidth = px(.8); g.setLineDash([px(1.2), px(3)]);
+        g.beginPath(); g.moveTo(점x, 점들[0].y); g.lineTo(점x, 점들[점들.length - 1].y); g.stroke(); g.restore();
+      }
+      for (const p of 점들){
+        g.beginPath(); g.arc(점x, p.y, px(2.6), 0, Math.PI * 2);
+        g.fillStyle = p.찬 ? PB.녹 : PB.종이; g.fill();
+        g.strokeStyle = PB.녹; g.lineWidth = px(.9); g.stroke();
+      }
+      if (!장.블록.length){
+        g.fillStyle = PB.흐림; g.font = 고딕(400, 13);
+        g.fillText('이 날은 아직 비어 있어요', 좌, y + px(14));
+      }
+      결깔기(g);
+      발그리기(g, n + 1, 작은사진 ? d.credit : '', 장.계속);
+    }
+    결과.push(await 내보내기(cv));
+  }
+  return 결과;
+}
+
+/* 여러 장 카드(일정 책) — 시트가 부릅니다. */
+export async function cardPages(spec){
+  const ok = await ensureFont();
+  const fam = ok ? `"Pretendard Variable", Pretendard, -apple-system, sans-serif`
+                 : '-apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+  const F = (weight, px) => `${weight} ${px}px ${fam}`;
+  return { blobs: await drawPlanbook(spec, F), fontOk: ok };
+}
+
 /* 카드 하나를 그림 파일로. 화면 카드와 같은 내용, 같은 색, 같은 아이콘입니다. */
 /* 내보내는 이유는 하나입니다 — **자가검사가 실제로 그려봐야 하기 때문입니다.**
    화면 없이 blob 이 나오는지, 그림이 깨져도 카드가 나오는지를 봅니다. */
@@ -1788,6 +2064,31 @@ async function sendCardBlob(blob, spec, name, fontOk = true){
   toast(fontOk ? '이미지를 저장했어요' : '저장했어요. (글꼴을 못 받아 기본 글꼴로 그렸어요)');
 }
 
+/* 여러 장을 한 번에 보냅니다(일정 책, 2026-10-17). 규칙은 sendCardBlob 과 같습니다 — 공유창 → 안 되면 글 → 마지막에 내려받기.
+   ⚠ 파일이 많으면 공유창이 거절하는 기기가 있습니다(canShare 가 false) — 그때도 글로 떨어집니다. */
+async function sendCardBlobs(blobs, spec, name){
+  const files = blobs.map((b, i) => new File([b], `${name}-${String(i + 1).padStart(2, '0')}.jpg`, { type: b.type || 'image/jpeg' }));
+  if (navigator.canShare?.({ files })){
+    const share = { files, title: spec.title, text: spec.shareLine || `${spec.title} · 기로`, url: appUrl() };
+    const payload = navigator.canShare(share) ? share : { files, title: spec.title };
+    try { await navigator.share(payload); return; }
+    catch (e){ if (e?.name === 'AbortError') return; }
+  }
+  if (spec.shareText && navigator.share){
+    try { await navigator.share({ title: spec.title, text: spec.shareText, url: appUrl() }); return; }
+    catch (e){ if (e?.name === 'AbortError') return; }
+  }
+  /* 컴퓨터 — 장마다 내려받기(한꺼번에 누르면 막는 브라우저가 있어 조금씩 띄움) */
+  for (const [i, f] of files.entries()){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(f); a.download = f.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+    if (i < files.length - 1) await new Promise(r => setTimeout(r, 250));
+  }
+  toast(`${files.length}장을 저장했어요`);
+}
+
 /* 어느 크기로 뽑을지 묻습니다. 피드와 스토리는 비율이 아주 달라서
    하나로 뽑아두면 한쪽은 잘리거나 여백이 크게 남습니다. */
 /* ── 카드를 공유합니다 ────────────────────────────────────────────────
@@ -1824,6 +2125,27 @@ async function 시트그리기(){
   const 판 = $('cs_view');
   판.innerHTML = `<div class="empty"><span class="load">그리는 중…</span></div>`;
   if (s.url){ URL.revokeObjectURL(s.url); s.url = null; }
+  판.classList.remove('pages');
+  /* 일정 책(2026-10-17) — 여러 장. 옆으로 넘겨 보고, 보낼 때는 장을 다 같이 보냅니다. */
+  if (s.spec?.kind === 'planbook'){
+    try {
+      const { blobs } = await cardPages(s.spec);
+      if (시트 !== s) return;
+      s.blobs = blobs; s.urls = blobs.map(b => URL.createObjectURL(b));
+      판.classList.add('pages');
+      판.innerHTML = `<div class="cspages">${s.urls.map((u, i) =>
+          `<img src="${u}" alt="${esc(s.spec.title || '일정')} ${i + 1}쪽">`).join('')}</div>
+        <div class="cspgn" aria-live="polite">1 / ${blobs.length}</div>`;
+      const 줄 = 판.querySelector('.cspages'), 쪽 = 판.querySelector('.cspgn');
+      줄.addEventListener('scroll', () => {
+        const i = Math.round(줄.scrollLeft / Math.max(1, 줄.firstElementChild?.offsetWidth + 10));
+        쪽.textContent = `${Math.min(blobs.length, i + 1)} / ${blobs.length}`;
+      }, { passive: true });
+    } catch {
+      판.innerHTML = `<div class="empty">그림을 못 만들었어요.</div>`;
+    }
+    return;
+  }
   try {
     const { blob } = await cardImage(s.spec, 'story');
     if (시트 !== s) { return; }               /* 그 사이에 닫혔거나 다시 눌렸습니다 */
@@ -1852,6 +2174,7 @@ function 시트닫기(fromPop){
   if (!fromPop && history.state?.t2 === 'cs'){ history.back(); return; }
   const s = 시트; 시트 = null;
   if (s?.url) URL.revokeObjectURL(s.url);
+  (s?.urls || []).forEach(u => URL.revokeObjectURL(u));
   $('cardsheet')?.classList.add('hide');
 }
 
@@ -1895,11 +2218,12 @@ if (typeof document !== 'undefined' && $('cardsheet')){
     if (e.target === $('cardsheet')) 시트닫기();
   });
   $('cs_go').addEventListener('click', async () => {
-    const s = 시트; if (!s?.blob) return;
+    const s = 시트; if (!s?.blob && !s?.blobs?.length) return;
     /* ⚠ **이미 그려둔 blob 을 보냅니다.** 여기서 다시 그리면 미리보기와
        보내는 것이 갈릴 수 있고, 1초를 또 기다립니다. */
     시트닫기();
-    await sendCardBlob(s.blob, s.spec, s.name);
+    if (s.blobs?.length) await sendCardBlobs(s.blobs, s.spec, s.name);
+    else await sendCardBlob(s.blob, s.spec, s.name);
   });
   /* ⚠⚠ **뒤로가기는 여기서 안 듣습니다(b880, 사용자: 「카드 뜨고 뒤로가기 하면 다시
      여행탭 초기로 가는데 진입한 화면으로 다시 돌아와야지」).** ⚠⚠

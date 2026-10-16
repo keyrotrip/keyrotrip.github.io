@@ -10,9 +10,9 @@
  *   달면 사슬이 아래 화면까지 같이 닫습니다).
  * ⚠ 저장 규칙은 프로필 변경(profile.js 「확인」)과 같습니다 — 겹치면 23505 · 못 쓰는 이름 23514 · 30자 넘으면 22001(db/100).
  * 층: dom · db · net 만 읽습니다. 지금 이름은 profile.js 가 알려 주고(이름상태), 저장 뒤 화면 맞추기는 ctx.onSaved(app.js). */
-import { esc, toast, josa } from './dom.js?v=b888';
-import { sb } from './db.js?v=b888';
-import { netTimeout } from './net.js?v=b888';
+import { esc, toast, josa } from './dom.js?v=b889';
+import { sb } from './db.js?v=b889';
+import { netTimeout } from './net.js?v=b889';
 
 let ctx = { me: () => null, onSaved: () => {} };
 export function setNameAskCtx(o){ ctx = { ...ctx, ...o }; }
