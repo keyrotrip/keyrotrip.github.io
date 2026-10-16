@@ -234,6 +234,21 @@ Deno.test('동시에 온 두 요청은 각자 읽은 모델을 쓴다', async ()
   } finally { 끝(); }
 });
 
+Deno.test('지난 대화 읽기가 웹 검색과 겹친다(차례로 더해지지 않음)', async () => {
+  /* 2026-10-16 실측: 검색+대화 읽기 3.4초가 차례로 더해졌음. 둘 다 300ms 걸리게 해서 합이 ~600 이 아니라 ~300 인지. */
+  기본길([
+    [/api\.tavily\.com/, async () => { await 늦게(300); return J({ results: [{ title: '가게', content: '설명', url: 'https://a.example/', score: 0.8 }] }); }],
+    [/\/rest\/v1\/chats$/, async () => { await 늦게(300); return J([]); }],
+  ]);
+  try {
+    const t = Date.now();
+    assertEquals((await 처리(요청({ message: '근처 맛집 추천해줘' }))).status, 200);
+    const 걸림 = Date.now() - t;
+    assert(불림.some((c) => c.url.includes('tavily')), '검색을 했어야 함');
+    assert(걸림 < 520, `겹쳤으면 300ms 남짓이어야 함 — ${걸림}ms`);
+  } finally { 끝(); }
+});
+
 /* ── 5. 바깥 호출의 시간 상한 ──────────────────────────────────────── */
 Deno.test('callGemini: 마감이 지났으면 부르지 않고 599', async () => {
   기본길();

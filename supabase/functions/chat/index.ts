@@ -1154,6 +1154,18 @@ export async function 처리(req: Request): Promise<Response> {
     // 같이 돌게 하려는 것입니다. 예전에는 자료를 다 받은 뒤에야 시작해서
     // 그 둘이 순서대로 더해졌습니다. 결과는 쓸 자리에서 기다립니다.
     const linksP = readLinks(String(message ?? ''));
+    /* 지난 대화도 **여기서 미리 출발시킵니다**(2026-10-16). 예전엔 웹 검색이 끝난 뒤에야
+       읽기 시작해 그 시간이 그대로 더해졌습니다. 여행 id 만 있으면 되는 일이라 여행 자료·검색과
+       같이 돌아도 됩니다. 결과는 아래 「여태 나눈 이야기」에서 기다립니다.
+       (`.then` 을 붙여야 실제로 출발합니다 — supabase 질의는 기다리기 전엔 안 나갑니다.) */
+    const 기록P = (!imp && !draft)
+      ? (trip_id
+          ? asUser.from('chats').select('role,content').order('created_at', { ascending: false })
+              .limit(12).eq('trip_id', trip_id)
+          : asUser.from('chats').select('role,content').order('created_at', { ascending: false })
+              .limit(12).is('trip_id', null)
+        ).then((r) => r, (e) => ({ data: null, error: { code: '', message: String(e) } }))   /* 일찍 끝나는 길(404·503)에선 아무도 안 기다리므로 던지지 않게 */
+      : null;
 
     // ── 근거 이름은 여기 한 곳에서만 정합니다 ──────────────────────────
     // 2026-08-11 에 이것 때문에 세 번 헛짚었습니다. 새 자료 다섯(일행 · 예약 ·
@@ -1531,6 +1543,7 @@ export async function 처리(req: Request): Promise<Response> {
         searchQuery(String(message), dest), 5,
         searchDomains(String(message), tripRow?.country ?? ''), 마감);
     }
+    mark('search');   /* 검색만 따로 잽니다(2026-10-16) — 전엔 「history」 숫자에 검색이 섞여 있었습니다 */
     const searchBlock = hits?.length
       ? '\n[방금 검색한 결과] — 아래 내용을 근거로 답한다\n' +
         hits.map((h, i) => `${i + 1}. ${h.title}\n   ${h.snippet}\n   ${h.link}`).join('\n') +
@@ -1689,14 +1702,9 @@ export async function 처리(req: Request): Promise<Response> {
      * 초안·불러오기는 대화가 아니라 한 번 하는 일이라 안 붙입니다. */
     // deno-lint-ignore no-explicit-any
     let history: any[] = [];
-    if (!imp && !draft) {
-      const q = asUser.from('chats')
-        .select('role,content')
-        .order('created_at', { ascending: false })
-        .limit(12);
-      const { data: past, error: pastErr } = trip_id
-        ? await q.eq('trip_id', trip_id)
-        : await q.is('trip_id', null);
+    if (기록P) {
+      /* 위에서 미리 출발시킨 것을 여기서 받습니다(여행마다 · 최신 12개 — 예전과 같은 질의). */
+      const { data: past, error: pastErr } = await 기록P;
       /* 못 읽었으면 «처음 하는 대화»로 꾸미지 않습니다(2026-10-16) — 「1번 넣어줘」를
          엉뚱하게 알아듣는 대신 되묻게 합니다. 까닭은 로그에만. */
       if (pastErr) {
@@ -1769,6 +1777,9 @@ export async function 처리(req: Request): Promise<Response> {
       ? splitText(impBody, IMP_CHUNK, IMP_PARTS) : null;
 
     let raw = '';
+    /* 대화(chat) 답이 어디서 시간을 먹는지 재려고 남깁니다(2026-10-16 — 17.9초 중 13.8초가 Gemini 였음).
+       Gemini 가 답과 같이 주는 글자(토큰) 수: 읽은 것 · 쓴 것 · 속으로 생각한 것. 동작은 안 바꿉니다. */
+    let 재기 = '';
 
     if (chunks && chunks.length > 1) {
       const got = await Promise.all(chunks.map((c, i) => askGemini(key, [
@@ -1810,6 +1821,7 @@ export async function 처리(req: Request): Promise<Response> {
       if (!t) return json({ error: 'AI가 답을 안 줬어요. 잠시 뒤 다시 물어봐주세요.' }, 502);
       raw = t;
     } else {
+      let 쓴모델 = 모델, 번 = 1;
       let r = await callGemini(모델, key, contents, 0.7, {}, 0, 마감);
       /* **429 만 다시 물어보고 있었습니다.** 그런데 무료 등급에서 훨씬 흔한 것은
          503 "The model is overloaded" 입니다 — 그건 재시도 없이 곧장
@@ -1825,12 +1837,13 @@ export async function 처리(req: Request): Promise<Response> {
            답의 품질을 잃습니다. */
         if (r.code >= 500){
           await new Promise((s) => setTimeout(s, 1200));
-          r = await callGemini(모델, key, contents, 0.7, {}, 0, 마감);
+          r = await callGemini(모델, key, contents, 0.7, {}, 0, 마감); 번++;
         }
         /* 그래도 안 되면(또는 한도 429 라면) 가벼운 모델로 넘깁니다. */
         if (r.code !== 200){
           console.error('gemini 재시도', r.code, String(r.body).slice(0, 300));
-          r = await callGemini(MODEL_FALLBACK, key, contents, 0.7, {}, 0, 마감);
+          r = await callGemini(MODEL_FALLBACK, key, contents, 0.7, {}, 0, 마감); 번++;
+          쓴모델 = MODEL_FALLBACK;
         }
       }
       if (r.code !== 200){
@@ -1842,6 +1855,13 @@ export async function 처리(req: Request): Promise<Response> {
       const parsed = JSON.parse(r.body);
       const parts = parsed?.candidates?.[0]?.content?.parts ?? [];
       raw = parts.map((p: { text?: string }) => p.text ?? '').join('').trim();
+      {
+        const u = parsed?.usageMetadata ?? {};
+        재기 = ` | 모델 ${쓴모델}${번 > 1 ? ` (${번}번째)` : ''}` +
+               ` | 토큰 읽음 ${u.promptTokenCount ?? '?'} · 씀 ${u.candidatesTokenCount ?? '?'}` +
+               ` · 생각 ${u.thoughtsTokenCount ?? 0}` +
+               ` | 답 ${raw.length}자 · 끝난까닭 ${parsed?.candidates?.[0]?.finishReason ?? '?'}`;
+      }
       if (!raw) {
         const why = parsed?.promptFeedback?.blockReason ??
                     parsed?.candidates?.[0]?.finishReason ?? '알 수 없음';
@@ -1856,7 +1876,7 @@ export async function 처리(req: Request): Promise<Response> {
     console.log('TIMING ' + (imp ? 'import' : draft ? 'draft' : 'chat') +
       ' | ' + lap.join(' | ') + ' | 총 ' + (Date.now() - T0) + 'ms' +
       ' | 글자 ' + (blogBlock.length + String(message ?? '').length) +
-      ' | 조각 ' + (chunks?.length ?? 1));
+      ' | 조각 ' + (chunks?.length ?? 1) + 재기);
 
     // JSON 을 못 받아도 말은 전합니다. 형식이 깨졌다고 답까지 버릴 이유는 없습니다.
     let out: { reply?: string; places?: unknown[]; actions?: unknown[];
