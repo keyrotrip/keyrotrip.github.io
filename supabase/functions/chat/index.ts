@@ -102,17 +102,52 @@ export async function callGemini(model: string, key: string, contents: unknown, 
 
 /* ── AI 가 «속으로 생각하는» 정도(2026-10-16) ─────────────────────────────────────
  * 실측: 대화 답 하나에 Gemini 가 쓴 글자(토큰)의 70~77% 가 «생각»이었습니다(답 442 · 생각 1,506).
- * 생각을 줄이면 빨라지지만 답 품질이 떨어질 수 있어, **비밀값으로만** 켭니다 — 다시 배포 없이 켜고 끕니다.
- *   GEMINI_THINKING_ADMIN = low  → 관리자 계정(is_admin)에게만. 먼저 이걸로 견줘 봅니다.
- *   GEMINI_THINKING       = low  → 모두에게(관리자가 견줘 보고 괜찮을 때).
- *   값: minimal · low · medium · high(생각 정도) 또는 숫자(생각에 쓸 토큰 상한). 그 밖의 값·빈 값이면 안 씁니다.
+ * 관리자 계정에만 «낮음»을 켜 견줘 봤더니(10-16) 생각 0 · AI 2~3초(전엔 7~18초) · 답 품질 괜찮음(사용자 확인)
+ *   → **기본을 «낮음»으로** 했습니다(`기본생각`). 비밀값으로 다시 배포 없이 바꿉니다:
+ *   GEMINI_THINKING       = (없음) → low(기본) · none → 설정 안 보냄(예전처럼 모델 마음대로) · high 등 → 그 값
+ *   GEMINI_THINKING_ADMIN = 값      → GEMINI_THINKING 이 none 일 때만, 관리자 계정(is_admin)에게만 그 값(견줘 볼 때)
+ *   값: minimal · low · medium · high(생각 정도) 또는 숫자(생각에 쓸 토큰 상한). 그 밖의 값이면 안 씁니다.
  * 대화(묻고 답하기)에만 씁니다 — 일정 초안·불러오기·장소·주소는 그대로.
  * 모델이 이 설정을 거절하면(400) 설정 없이 같은 모델로 한 번 더 묻습니다(아래 대화 부분). */
+export const 기본생각 = 'low';
 export function 생각설정(v: string | undefined | null) {
   const s = String(v ?? '').trim().toLowerCase();
   if (/^(minimal|low|medium|high)$/.test(s)) return { 이름: s, cfg: { thinkingConfig: { thinkingLevel: s } } };
   if (/^\d{1,5}$/.test(s)) return { 이름: s + '토큰', cfg: { thinkingConfig: { thinkingBudget: Number(s) } } };
   return null;
+}
+
+/* ── Gemini 오류 한 줄로(2026-10-16) ──────────────────────────────────────────────
+ * 예전엔 오류 글을 300자에서 잘라 찍어 «어느 한도가 찼는지»가 잘려 나갔습니다(429 실측).
+ * 구글이 같이 주는 상세(QuotaFailure · RetryInfo)를 풀어 이렇게 줄입니다:
+ *   «RESOURCE_EXHAUSTED · 하루·무료 요청 한도 20번(gemini-3.6-flash) · 41s 뒤 다시»
+ * 꼴이 다르면(JSON 이 아니거나 상세가 없으면) 예전처럼 앞 300자. 열쇠는 오류 글에 안 들어 있습니다. */
+export function 오류요약(body: unknown) {
+  const 원문 = String(body ?? '');
+  try {
+    // deno-lint-ignore no-explicit-any
+    const e: any = JSON.parse(원문)?.error;
+    if (!e) return 원문.slice(0, 300);
+    // deno-lint-ignore no-explicit-any
+    const 상세: any[] = Array.isArray(e.details) ? e.details : [];
+    const 한도 = 상세.flatMap((d) => Array.isArray(d?.violations) ? d.violations : [])
+      // deno-lint-ignore no-explicit-any
+      .map((v: any) => {
+        const id = String(v?.quotaId ?? v?.quotaMetric ?? '');
+        const 때 = /PerDay/i.test(id) ? '하루' : /PerMinute/i.test(id) ? '분당' : /PerHour/i.test(id) ? '시간당' : '';
+        const 무엇 = /Token/i.test(id) ? '토큰' : '요청';
+        const 등급 = /FreeTier/i.test(id) ? '·무료' : '';
+        const 값 = v?.quotaValue ? ` ${v.quotaValue}${무엇 === '요청' ? '번' : ''}` : '';
+        const 모델 = v?.quotaDimensions?.model ? `(${v.quotaDimensions.model})` : '';
+        return 때 ? `${때}${등급} ${무엇} 한도${값}${모델}` : (id || '한도');
+      });
+    const 대기 = 상세.find((d) => d?.retryDelay)?.retryDelay;
+    return [e.status || e.code,
+            한도.length ? 한도.join(', ') : String(e.message ?? '').replace(/\s+/g, ' ').slice(0, 160),
+            대기 ? `${대기} 뒤 다시` : ''].filter(Boolean).join(' · ');
+  } catch {
+    return 원문.slice(0, 300);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -765,10 +800,10 @@ async function askGemini(key: string, contents: any[], fast: boolean,
   /* 실패하면 **왜** 실패했는지 남깁니다. 성공 경로에만 로그를 두었더니
      TIMING 이 통째로 사라졌고, 그러면 "안 찍힌다"만 알고 이유를 모릅니다. */
   if (r.code !== 200){
-    console.log(`ASK ${first} -> ${r.code} ${String(r.body).slice(0, 300)}`);
+    console.log(`ASK ${first} -> ${r.code} ${오류요약(r.body)}`);
     r = await callGemini(second, key, contents, fast ? 0 : 0.7, {}, 0, 마감);
     if (r.code !== 200)
-      console.log(`ASK ${second} -> ${r.code} ${String(r.body).slice(0, 300)}`);
+      console.log(`ASK ${second} -> ${r.code} ${오류요약(r.body)}`);
   }
   if (r.code !== 200) return null;
   try {
@@ -941,7 +976,7 @@ export async function 처리(req: Request): Promise<Response> {
     /* 생각 정도(위 「AI 가 속으로 생각하는 정도」) — 대화일 때만. 관리자 전용 값이 있으면 관리자인지도
        **같이** 묻습니다(따로 물으면 왕복이 하나 더 붙습니다). 못 물으면 관리자가 아닌 것으로 — 지금과 같게. */
     const 대화 = !draft && !imp && !geo && !addrMode;
-    const 생각모두 = 대화 ? 생각설정(Deno.env.get('GEMINI_THINKING')) : null;
+    const 생각모두 = 대화 ? 생각설정(Deno.env.get('GEMINI_THINKING') ?? 기본생각) : null;
     const 생각관리자 = 대화 && !생각모두 ? 생각설정(Deno.env.get('GEMINI_THINKING_ADMIN')) : null;
     const [{ data: take, error: takeErr }, { data: cfgRows, error: cfgErr }, 관리자답] = await Promise.all([
       admin.rpc('ai_take', { p_user: user.id,
@@ -1046,7 +1081,7 @@ export async function 처리(req: Request): Promise<Response> {
       for (const m of [MODEL_FALLBACK, 모델]) {
         const r = await callGemini(m, key, 물음, 0, { maxOutputTokens: 상한 }, 45000, 마감);
         if (r.code !== 200) {
-          console.log(`PLACES ${m} -> ${r.code} ${String(r.body).slice(0, 300)} | ${Date.now() - T0}ms`);
+          console.log(`PLACES ${m} -> ${r.code} ${오류요약(r.body)} | ${Date.now() - T0}ms`);
           continue;
         }
         try {
@@ -1142,7 +1177,7 @@ export async function 처리(req: Request): Promise<Response> {
           { role: 'user',  parts: [{ text: 목록 }] },
         ], 0, { maxOutputTokens: 1500 }, 30000, 마감);
         if (r.code !== 200) {
-          console.log(`ADDR ${m} -> ${r.code} ${String(r.body).slice(0, 200)} | ${Date.now() - T0}ms`);
+          console.log(`ADDR ${m} -> ${r.code} ${오류요약(r.body)} | ${Date.now() - T0}ms`);
           continue;
         }
         try {
@@ -1849,11 +1884,11 @@ export async function 처리(req: Request): Promise<Response> {
       /* 생각 정도 설정(있을 때만). 모델이 거절하면(400) 설정 없이 같은 모델로 바로 한 번 더 —
          설정 하나 때문에 답이 안 나오거나 가벼운 모델로 떨어지면 안 됩니다. */
       let 생각덧 = 생각?.cfg ?? {};
-      let 생각말 = 생각 ? 생각.이름 + (생각모두 ? '' : '(관리자)') : '기본';
+      let 생각말 = 생각 ? 생각.이름 + (생각모두 ? '' : '(관리자)') : '없음';
       let r = await callGemini(모델, key, contents, 0.7, 생각덧, 0, 마감);
       if (r.code === 400 && 생각){
-        console.error(`[${요청번호}] 생각 설정 거절`, String(r.body).slice(0, 300));
-        생각덧 = {}; 생각말 = 생각.이름 + ' 거절됨→기본'; 번++;
+        console.error(`[${요청번호}] 생각 설정 거절`, 오류요약(r.body));
+        생각덧 = {}; 생각말 = 생각.이름 + ' 거절됨→없음'; 번++;
         r = await callGemini(모델, key, contents, 0.7, {}, 0, 마감);
       }
       /* **429 만 다시 물어보고 있었습니다.** 그런데 무료 등급에서 훨씬 흔한 것은
@@ -1864,7 +1899,7 @@ export async function 처리(req: Request): Promise<Response> {
          불러오기 쪽(askGemini)은 이미 코드를 안 가리고 한 번 더 물어봅니다.
          여기만 안 하고 있었습니다. */
       if (r.code !== 200){
-        console.error('gemini', r.code, String(r.body).slice(0, 300));
+        console.error('gemini', r.code, 오류요약(r.body));
         /* 5xx 는 그 모델이 잠깐 붐비는 것입니다. 조금 쉬었다 **같은 모델**로
            한 번 더 — 여기서 바로 가벼운 모델로 넘기면 붐빔을 피하려다
            답의 품질을 잃습니다. */
@@ -1874,14 +1909,14 @@ export async function 처리(req: Request): Promise<Response> {
         }
         /* 그래도 안 되면(또는 한도 429 라면) 가벼운 모델로 넘깁니다. */
         if (r.code !== 200){
-          console.error('gemini 재시도', r.code, String(r.body).slice(0, 300));
+          console.error('gemini 재시도(→가벼운 모델)', r.code, 오류요약(r.body));
           r = await callGemini(MODEL_FALLBACK, key, contents, 0.7, {}, 0, 마감); 번++;
           쓴모델 = MODEL_FALLBACK;
         }
       }
       if (r.code !== 200){
         // HTTP 코드를 사용자에게 보여줄 이유가 없습니다. 로그에는 남습니다.
-        console.error('gemini 최종실패', r.code, String(r.body).slice(0, 300));
+        console.error('gemini 최종실패', r.code, 오류요약(r.body));
         return json({ error: 'AI가 답을 안 줬어요. 잠시 뒤 다시 물어봐주세요.' }, 502);
       }
 
@@ -1890,7 +1925,7 @@ export async function 처리(req: Request): Promise<Response> {
       raw = parts.map((p: { text?: string }) => p.text ?? '').join('').trim();
       {
         const u = parsed?.usageMetadata ?? {};
-        재기 = ` | 모델 ${쓴모델}${번 > 1 ? ` (${번}번째)` : ''}` + ` · 생각설정 ${쓴모델 === MODEL_FALLBACK ? '기본' : 생각말}` +
+        재기 = ` | 모델 ${쓴모델}${번 > 1 ? ` (${번}번째)` : ''}` + ` · 생각설정 ${쓴모델 === MODEL_FALLBACK ? '없음' : 생각말}` +
                ` | 토큰 읽음 ${u.promptTokenCount ?? '?'} · 씀 ${u.candidatesTokenCount ?? '?'}` +
                ` · 생각 ${u.thoughtsTokenCount ?? 0}` +
                ` | 답 ${raw.length}자 · 끝난까닭 ${parsed?.candidates?.[0]?.finishReason ?? '?'}`;

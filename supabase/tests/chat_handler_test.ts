@@ -262,8 +262,8 @@ Deno.test('생각설정: 정도 낱말·숫자만 받고 나머지는 안 씀', 
   for (const v of ['', undefined, null, 'off', 'low; drop', '-1', '1.5']) assertEquals(chat.생각설정(v), null, String(v));
 });
 
-Deno.test('관리자 전용 값: 관리자면 생각 «낮음»으로 묻는다', async () => {
-  Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
+Deno.test('모두 none + 관리자 전용 값: 관리자면 그 값으로 묻는다', async () => {
+  Deno.env.set('GEMINI_THINKING', 'none'); Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
   기본길([관리자길(true)]);
   try {
     assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
@@ -271,8 +271,8 @@ Deno.test('관리자 전용 값: 관리자면 생각 «낮음»으로 묻는다'
   } finally { 끝(); 비밀값지우기(); }
 });
 
-Deno.test('관리자 전용 값: 관리자가 아니면 지금과 똑같이(설정 없음)', async () => {
-  Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
+Deno.test('모두 none + 관리자 전용 값: 관리자가 아니면 설정 없음', async () => {
+  Deno.env.set('GEMINI_THINKING', 'none'); Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
   기본길([관리자길(false)]);
   try {
     assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
@@ -281,7 +281,7 @@ Deno.test('관리자 전용 값: 관리자가 아니면 지금과 똑같이(설�
 });
 
 Deno.test('관리자인지 못 물으면 관리자가 아닌 것으로(지금과 같게)', async () => {
-  Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
+  Deno.env.set('GEMINI_THINKING', 'none'); Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
   기본길([[/\/rest\/v1\/rpc\/is_admin$/, () => J({ message: 'boom' }, 500)]]);
   try {
     assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
@@ -289,13 +289,45 @@ Deno.test('관리자인지 못 물으면 관리자가 아닌 것으로(지금과
   } finally { 끝(); 비밀값지우기(); }
 });
 
-Deno.test('값이 없으면 관리자인지 묻지도 않는다', async () => {
-  기본길([관리자길(true)]);
+Deno.test('비밀값이 없으면 모두 기본 «낮음»(10-16 견줘 보고 정함) · 관리자인지 안 묻는다', async () => {
+  기본길([관리자길(false)]);
   try {
     assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
     assert(!불림.some((c) => c.url.includes('is_admin')), 'is_admin 을 부르면 안 됨');
-    assertEquals(생각부름(), [null]);
+    assertEquals(생각부름(), [{ thinkingLevel: chat.기본생각 }]);
+    assertEquals(chat.기본생각, 'low');
   } finally { 끝(); }
+});
+
+Deno.test('GEMINI_THINKING=none 이면 예전처럼 설정을 안 보낸다(되돌리기)', async () => {
+  Deno.env.set('GEMINI_THINKING', 'none');
+  기본길([관리자길(true)]);
+  try {
+    assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
+    assert(!불림.some((c) => c.url.includes('is_admin')), '관리자 값이 없으면 안 물음');
+    assertEquals(생각부름(), [null]);
+  } finally { 끝(); 비밀값지우기(); }
+});
+
+Deno.test('오류요약: 429 상세를 한 줄로 · 꼴이 다르면 앞 300자', () => {
+  const 본문 = JSON.stringify({ error: { code: 429, status: 'RESOURCE_EXHAUSTED',
+    message: 'You exceeded your current quota, please check your plan and billing details. '.repeat(5),
+    details: [
+      { '@type': 'type.googleapis.com/google.rpc.QuotaFailure', violations: [{
+        quotaMetric: 'generativelanguage.googleapis.com/generate_content_free_tier_requests',
+        quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier',
+        quotaDimensions: { location: 'global', model: 'gemini-3.6-flash' }, quotaValue: '20' }] },
+      { '@type': 'type.googleapis.com/google.rpc.Help', links: [] },
+      { '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '41s' },
+    ] } });
+  assertEquals(chat.오류요약(본문), 'RESOURCE_EXHAUSTED · 하루·무료 요청 한도 20번(gemini-3.6-flash) · 41s 뒤 다시');
+  const 분 = JSON.stringify({ error: { code: 429, status: 'RESOURCE_EXHAUSTED', details: [
+    { violations: [{ quotaId: 'GenerateContentInputTokensPerModelPerMinute-FreeTier', quotaValue: '250000' }] }] } });
+  assertEquals(chat.오류요약(분), 'RESOURCE_EXHAUSTED · 분당·무료 토큰 한도 250000');
+  assertEquals(chat.오류요약(JSON.stringify({ error: { code: 503, status: 'UNAVAILABLE', message: 'The model is overloaded.' } })),
+    'UNAVAILABLE · The model is overloaded.');
+  assertEquals(chat.오류요약('<html>' + 'x'.repeat(500)).length, 300);
+  assertEquals(chat.오류요약(undefined), '');
 });
 
 Deno.test('모두에게 값: 관리자가 아니어도 쓰고, 관리자인지 안 묻는다', async () => {
