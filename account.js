@@ -16,11 +16,11 @@
  * 층: dom.js · db.js · net.js · trip.js 만 씁니다. 프로필 화면의 '보관함·지도
  *     열기' 손잡이는 **두고 왔습니다** — 바로 아랫줄에 있었지만 그건 화면
  *     넘기기지 내 계정이 아닙니다. */
-import { $, esc, toast } from './dom.js?v=b881';
-import { sb } from './db.js?v=b881';
-import { fail, netTimeout, forgetLocal } from './net.js?v=b881';
-import { plans, expenses, bookings } from './trip.js?v=b881';
-import { closeSetSub } from './setnav.js?v=b881';
+import { $, esc, toast } from './dom.js?v=b882';
+import { sb } from './db.js?v=b882';
+import { fail, netTimeout, forgetLocal } from './net.js?v=b882';
+import { plans, expenses, bookings } from './trip.js?v=b882';
+import { closeSetSub } from './setnav.js?v=b882';
 
 
 let ctx = { me: () => null, logError: () => {} };
@@ -249,11 +249,11 @@ async function 받기(단추, 종류){
     /* 쓸 때 불러옵니다 — 받기 단추를 누르는 사람은 드뭅니다.
        ⚠ 도시 이름은 앱이 불러 둔 도시 목록에서 찾습니다. 아직 안 불러졌으면 파일에 «도시 번호»가 찍히므로
          한 번 불러 둡니다(이미 있으면 바로 돌아옵니다). 못 불러도 파일은 내립니다. */
-    try { await (await import('./citysearch.js?v=b881')).loadCities(); } catch {}
+    try { await (await import('./citysearch.js?v=b882')).loadCities(); } catch {}
     /* ⚠ `[{ 보기파일 }, 지도, { cities }]` 처럼 겹쳐 꺼내면 tools/check-refs.mjs 가 cities 를 못 읽어
          「import 없이 씀」으로 잡습니다(재 봄) — 모듈째 받고 점으로 씁니다. */
     const [기록, 지도, 도시모듈] = await Promise.all([
-      import('./myrecord.js?v=b881'), import('./map.js?v=b881'), import('./cities.js?v=b881')]);
+      import('./myrecord.js?v=b882'), import('./map.js?v=b882'), import('./cities.js?v=b882')]);
     /* 세계지도·나라 수는 **앱 지도·탑승권과 같은 길**(b837) — 서버 my_visited 로 간 도시를 받고 map.js `발자국스펙` 으로
        셉니다(map.js openMap 과 같음). 따로 세면 탑승권은 12개국인데 파일은 11개국이라고 말합니다.
        못 받으면 지도 칸만 빠지고(숫자는 별점에서 셈) 파일은 그대로 내립니다. */
@@ -298,4 +298,4 @@ $('dumpbtn').addEventListener('click', () => 받기('dumpbtn', 'json'));
 /* 보기 파일(myrecord.js)은 누를 때 불러오므로 CI 의 자가검사 훑기(window.__*Check)가 못 봅니다.
    그래서 여기 — 처음부터 불리는 파일 — 에 걸어 둡니다. 서버도 로그인도 안 씁니다. */
 if (typeof window !== 'undefined')
-  window.__myrecordCheck = async () => (await import('./myrecord.js?v=b881')).검사();
+  window.__myrecordCheck = async () => (await import('./myrecord.js?v=b882')).검사();

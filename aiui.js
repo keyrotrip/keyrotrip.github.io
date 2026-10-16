@@ -11,9 +11,9 @@
  * 큰 덩어리는 작은 조각부터 떼어내면 남은 것이 저절로 작아집니다.
  *
  * 층: dom.js 만 씁니다. 여행도 로그인한 사람도 모릅니다. */
-import { $, esc, toast } from './dom.js?v=b881';
-import { sb } from './db.js?v=b881';
-import { fail } from './net.js?v=b881';
+import { $, esc, toast } from './dom.js?v=b882';
+import { sb } from './db.js?v=b882';
+import { fail } from './net.js?v=b882';
 
 /* 대화를 저장할 때 로그인한 사람이 필요합니다. app.js 만 아는 값이라 받습니다 —
    로그인할 때마다 바뀌므로 값이 아니라 **함수**로 받습니다. */
@@ -217,7 +217,7 @@ $('ai_send').addEventListener('click', async () => {
   if (error){
     /* 함수가 오류를 내면 본문에 이유가 들어 있습니다. 그대로 보여줍니다. */
     let why = error.message;
-    try { why = (await error.context?.json())?.error || why; } catch {}
+    try { const 몸 = await error.context?.json(); if (몸?.error) why = 몸.error + (몸.ref ? ` (문의 번호 ${몸.ref})` : ''); } catch {}   /* 문의 번호: 함수 로그의 [번호] 와 같음(10-16) */
     /* 예전에는 'Failed to send'(요청이 도중에 끊김)까지 "함수가 안 올라갔다"로
        묶어놨습니다. 둘은 전혀 다릅니다 — 하나는 배포 문제고 하나는 서버가
        일하다 죽은 것입니다. 같은 문구를 내놓으니 엉뚱한 데를 보게 됩니다. */
@@ -254,9 +254,9 @@ async function 좌표채우기답(tripId){
     await ctx.loadChats(tripId);
     ctx.aiToBottom();
   };
-  const { trip } = await import('./trip.js?v=b881');
+  const { trip } = await import('./trip.js?v=b882');
   if (!tripId || trip?.id !== tripId) return 말('좌표를 채우려면 그 여행을 열어 둔 채로 다시 말해 주세요.');
-  const { 일정좌표채우기 } = await import('./cands.js?v=b881');
+  const { 일정좌표채우기 } = await import('./cands.js?v=b882');
   showTyping();
   let r;
   try { r = await 일정좌표채우기(); }

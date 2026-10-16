@@ -45,15 +45,15 @@ import { 벗기기, 바깥쉼표, 이름아님, 빠진이름 } from './refs-core
    남는 일이 생깁니다 — 지출을 뗄 때 drawExpenses 를 부르는 자리가 남았으면
    그대로 죽었을 것입니다. app.js 는 자기가 선언한 것이 대부분이라
    여기 들어가도 조용합니다. 말할 때는 진짜입니다. */
-const 모듈 = ['persona.js', 'map.js', 'shelf.js', 'city.js', 'aiui.js',
-              'report.js', 'cards.js', 'expense.js', 'prep.js', 'member.js', 'planmap.js', 'citysearch.js', 'profile.js', 'review.js', 'rating.js', 'notify.js', 'newtrip.js', 'home.js', 'cands.js', 'selfcheck.js', 'bring.js', 'trash.js', 'plancheck.js', 'aiscreen.js', 'account.js', 'draft.js', 'triplist.js', 'tabs.js', 'planline.js', 'planview.js', 'geocode.js', 'legs.js', 'tripview.js', 'today.js', 'opentrip.js', 'flags.js', 'swreg.js', 'people.js', 'friends.js', 'pshift.js', 'setnav.js', 'myrecord.js', 'pmore.js', 'install.js', 'crop.js', 'cityrev.js', 'cmtask.js', 'activity.js', 'card.js', 'personacalc.js', 'personadata.js', 'app.js'];
-/* 2026-10-16: card.js(전엔 빠져 있었음)·personacalc.js·personadata.js 를 더함. 나머지 34개(net.js·share.js·globe.js 등)는 아직
-   안 봅니다 — 전부 넣어 보니 4건이 나왔고 넷 다 이 검사의 오탐이었습니다(그리스 글자 이름 φt0 · 정규식 안의 $) ·
-   주석 속 역따옴표 · 함수 매개변수 guessCat). 오탐을 먼저 고쳐야 넣을 수 있습니다. */
+/* ⚠ 2026-10-16: 정해 둔 목록(49개) 대신 **폴더의 .js 전부**를 봅니다(아래 `검사할`). 목록을 손으로 늘리면
+   새 파일을 더하는 것을 잊고, 그 파일은 아무도 안 봤습니다(card.js 가 그랬습니다). 전부 넣자 나온 4건은 넷 다
+   이 검사의 오탐이었고 refs-core.mjs 에서 고쳤습니다(return 뒤 정규식 · 한글 이름 함수의 매개변수 · φt0 처럼
+   다른 글자에 붙은 영문 조각). app.js 는 맨 뒤에 봅니다. */
 
 /* 이름을 내보낼 수 있는 파일 전부. 여기 없는 파일이 내보내는 이름은
    후보에 안 들어가므로 검사가 그냥 조용합니다 — 틀린 말은 안 합니다. */
 const 전부 = readdirSync('.').filter(f => f.endsWith('.js') && f !== 'sw.js' && f !== 'supabase.js');
+const 검사할 = [...전부.filter(f => f !== 'app.js').sort(), 'app.js'];
 
 /* (`벗기기` — 주석과 글자열 지우기 — 는 refs-core.mjs 로 옮겼습니다.) */
 
@@ -141,7 +141,7 @@ for (const m of app.matchAll(/\bimport\s*\{([^}]*)\}/g))
 /* (`있는이름` — 한 파일 안에서 이름이 생기는 자리 — 은 refs-core.mjs 로 옮겼습니다.) */
 
 let 틀림 = 0;
-for (const f of 모듈){
+for (const f of 검사할){
   const 코드 = 소스[f];
   /* 선언·import 로 생긴 이름은 빼고, 남이 가진 이름을 맨몸으로 쓰는 것만 봅니다.
      ⚠ import 문 자체는 «쓰임»에서 뺍니다(refs-core.mjs 의 import지우기 — 별칭 오탐). */
@@ -170,7 +170,7 @@ for (const f of 모듈){
  * ⚠ 클래스나 함수 이름을 적고 싶으면 **백틱 없이 그냥** 쓰십시오.
  *   주석의 멋보다 화면이 뜨는 것이 먼저입니다. */
 let 백틱 = 0;
-for (const f of 모듈){
+for (const f of 검사할){
   /* ⚠ **`소스[f]` 를 쓰면 안 됩니다.** 그건 `벗기기()` 를 거친 것이라
      템플릿 문자열 **내용이 통째로 버려져** 있습니다 — 주석이 거기 있으니
      아무것도 안 잡힙니다. 원본을 다시 읽습니다.
@@ -188,6 +188,6 @@ for (const f of 모듈){
 }
 틀림 += 백틱;
 
-console.log('\n' + 모듈.length + '개 모듈, 빠진 이름 ' + (틀림 - 백틱) + '개' +
+console.log('\n' + 검사할.length + '개 모듈, 빠진 이름 ' + (틀림 - 백틱) + '개' +
             ', 주석 속 백틱 ' + 백틱 + '개');
 process.exit(틀림 ? 1 : 0);

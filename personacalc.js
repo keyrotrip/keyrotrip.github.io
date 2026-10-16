@@ -19,7 +19,7 @@
  */
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b881';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b882';
 
 /* ── 성향이 «확정»되는 문턱 — 해외 도시 10곳 ────────────────────────────────────────
  * 2026-10-03 사용자 「문턱 10곳으로 하자」. 5곳이면 한 곳 더 매길 때 유형이 바뀌는 사람이 61%,
@@ -28,8 +28,9 @@ import { distKm, distN, fameN, SEOUL } from './calc.js?v=b881';
  * **화면 쪽은 이 값 하나뿐입니다(2026-10-16).** 전에는 persona.js · pshift.js · people.js · rating.js 에
  * 같은 10 이 넷 적혀 있어, 하나만 고치면 「확정」 순간·서버에 올리는 것·남의 화면 궁합이 서로 다른 날에
  * 섰습니다. 이제 넷 다 여기서 가져갑니다.
- * ⚠ **서버에는 한 벌 더 있습니다** — 관리자 숫자 「성향 확정」(db/115_persona10.sql). SQL 은 이 값을 못 읽으므로
- *   바꿀 때 그 파일도 같이 고치고 실행해야 합니다.
+ * ⚠ **서버에는 한 벌 더 있습니다** — 관리자 숫자 「성향 확정」(admin_usage_core 의 `where k = N`, 마지막 판 db/133).
+ *   SQL 은 이 값을 못 읽으므로 바꿀 때 새 SQL 파일로 같이 고치고 실행해야 합니다.
+ *   둘이 같은지는 tools/persona-threshold.pl 이 봅니다(check-all · CI — 다르면 빨간불).
  * ⚠ personaAxes 안의 `해외문턱`(3곳)은 다른 것입니다 — 나라 몰림·거리를 «잴 수 있는» 최소치. */
 export const 성향문턱 = 10;
 

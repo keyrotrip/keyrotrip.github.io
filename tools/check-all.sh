@@ -64,6 +64,7 @@ if has "$PERL"; then
   run_gate "겹친 import(dupimp)"      "$PERL" tools/dupimp.pl
   run_gate "부정 덫(optneg)"          "$PERL" tools/optneg.pl
   run_gate "modulepreload(preload)"   "$PERL" tools/preload.pl
+  run_gate "성향 문턱 화면=서버"    "$PERL" tools/persona-threshold.pl
   run_note "옛 이름표(stale)"       "$PERL" tools/stale.pl
 else
   skip "perl 검사" "perl 없음"

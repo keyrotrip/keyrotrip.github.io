@@ -20,14 +20,14 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · trip.js 와 이미 떼어낸
  *     citysearch.js · newtrip.js · plancheck.js 를 씁니다. */
-import { $, esc } from './dom.js?v=b881';
-import { sb } from './db.js?v=b881';
-import { fail } from './net.js?v=b881';
-import { D1, asDate, todayYmd, dayLabel } from './calc.js?v=b881';
-import { plans, legs } from './trip.js?v=b881';
-import { loadCities } from './citysearch.js?v=b881';
-import { openNew, movePrefs } from './newtrip.js?v=b881';
-import { review } from './plancheck.js?v=b881';
+import { $, esc } from './dom.js?v=b882';
+import { sb } from './db.js?v=b882';
+import { fail } from './net.js?v=b882';
+import { D1, asDate, todayYmd, dayLabel } from './calc.js?v=b882';
+import { plans, legs } from './trip.js?v=b882';
+import { loadCities } from './citysearch.js?v=b882';
+import { openNew, movePrefs } from './newtrip.js?v=b882';
+import { review } from './plancheck.js?v=b882';
 
 let ctx = { me: () => null, fillCityList: () => {},
             showApp: () => {}, openTrip: async () => {} };
@@ -186,7 +186,7 @@ $('d_go').addEventListener('click', async () => {
 
   if (error){
     let why = error.message;
-    try { why = (await error.context?.json())?.error || why; } catch {}
+    try { const 몸 = await error.context?.json(); if (몸?.error) why = 몸.error + (몸.ref ? ` (문의 번호 ${몸.ref})` : ''); } catch {}   /* 문의 번호: 함수 로그의 [번호] 와 같음(10-16) */
     return fail(/not found|Failed to send/i.test(why)
       ? 'AI 기능이 아직 준비되지 않았어요. 만든 사람에게 알려주세요.'
       : why, 'draft');

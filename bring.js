@@ -21,14 +21,14 @@
  *
  * 층: dom.js · db.js · net.js · trip.js · ui.js · card.js 와
  *     이미 떼어낸 aiui.js · cards.js · sheetimp.js 를 씁니다. */
-import { $, esc, toast } from './dom.js?v=b881';
-import { sb } from './db.js?v=b881';
-import { fail } from './net.js?v=b881';
-import { trip } from './trip.js?v=b881';
-import { syncSheets } from './ui.js?v=b881';
-import { fitJpeg, drawSources, SHOT_MAX } from './aiui.js?v=b881';
-import { drawCards } from './cards.js?v=b881';
-import { 표에서일정, 글표, 일정넣기, 좌표찾기, 넣은것되돌리기, 지도로찍기 } from './sheetimp.js?v=b881';
+import { $, esc, toast } from './dom.js?v=b882';
+import { sb } from './db.js?v=b882';
+import { fail } from './net.js?v=b882';
+import { trip } from './trip.js?v=b882';
+import { syncSheets } from './ui.js?v=b882';
+import { fitJpeg, drawSources, SHOT_MAX } from './aiui.js?v=b882';
+import { drawCards } from './cards.js?v=b882';
+import { 표에서일정, 글표, 일정넣기, 좌표찾기, 넣은것되돌리기, 지도로찍기 } from './sheetimp.js?v=b882';
 
 let ctx = { openAi: () => {}, loadChats: async () => {}, loadPlans: async () => {} };
 export function setBringCtx(o){ ctx = { ...ctx, ...o }; }
@@ -389,7 +389,7 @@ $('imp_go').addEventListener('click', async () => {
 
   if (error || data?.error){
     let why = data?.error || error?.message || '';
-    try { why = (await error?.context?.json())?.error || why; } catch {}
+    try { const 몸 = await error?.context?.json(); if (몸?.error) why = 몸.error + (몸.ref ? ` (문의 번호 ${몸.ref})` : ''); } catch {}   /* 문의 번호: 함수 로그의 [번호] 와 같음(10-16) */
     return fail(why, 'imp');
   }
   /* **후보(places)만 나올 수 있습니다.** 구글 지도 링크처럼 날짜가 없는 것은

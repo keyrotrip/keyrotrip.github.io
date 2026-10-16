@@ -27,7 +27,12 @@ export function 벗기기(src){
     for (let k = out.length - 1; k >= 0; k--){
       const c = out[k];
       if (c === ' ' || c === '\n' || c === '\t') continue;
-      return '(,=:[!&|?{};+-*%~^<>'.includes(c);
+      if ('(,=:[!&|?{};+-*%~^<>'.includes(c)) return true;
+      /* ⚠ `return /^(…)$/i.test(t)` — 앞이 낱말이어도 **이런 낱말 뒤면 정규식**입니다(2026-10-16).
+         전엔 마지막 글자 'n' 만 보고 나눗셈으로 읽어, 정규식 안의 `$` 를 이름으로 셌습니다(sheetimp.js). */
+      let j = k; while (j > 0 && /[\w$]/.test(out[j - 1])) j--;
+      return /^(?:return|typeof|case|do|else|in|of|instanceof|new|delete|void|throw|yield|await)$/
+        .test(out.slice(j, k + 1).join(''));
     }
     return true;
   };
@@ -112,7 +117,9 @@ export function 있는이름(코드){
      (2026-10-16 — 지금 저장소에는 없지만, 쓰는 순간 헛짚지 않게). */
   for (const m of 코드.matchAll(/(?<![\w$.])import\s+([A-Za-z_$][\w$]*)\s*(?:,|\bfrom\b)/g)) s.add(m[1]);
   for (const m of 코드.matchAll(/(?<![\w$.])import\s*\*\s*as\s+([A-Za-z_$][\w$]*)/g)) s.add(m[1]);
-  for (const m of 코드.matchAll(/(?:function\s*[A-Za-z_$][\w$]*\s*|function\s*|catch\s*)\(([^()]*)\)/g)) 담기(m[1], s);
+  /* ⚠ 함수 이름이 한글이어도 매개변수를 셉니다(2026-10-16) — `function 일정넣기(items, guessCat)` 의
+     guessCat, `function 검산(CONT)` 의 CONT 를 «import 없이 쓴 남의 이름»으로 헛짚었습니다. */
+  for (const m of 코드.matchAll(/(?:function\s*\*?\s*[\p{L}\p{Nl}_$][\p{L}\p{N}_$]*\s*|function\s*\*?\s*|catch\s*)\(([^()]*)\)/gu)) 담기(m[1], s);
   for (const m of 코드.matchAll(/\(([^()]*)\)\s*=>/g)) 담기(m[1], s);
   for (const m of 코드.matchAll(/([A-Za-z_$][\w$]*)\s*=>/g)) s.add(m[1]);
   for (const m of 코드.matchAll(/\b(?:const|let|var)\s*[{[]([^}\]]*)[}\]]/g)) 담기(m[1], s);
@@ -156,7 +163,9 @@ export function 빠진이름(코드, 어디){
   const 빠짐 = new Map();
   /* ⚠ 여기에 `\b` 를 쓰면 **`$` 로 시작하는 이름이 통째로 안 보입니다**(b362).
      경계 대신 **앞뒤에 이름글자가 없음**을 봅니다. `$` 도 이름글자로 셉니다. */
-  for (const m of 평평.matchAll(/(?<![\w$])([A-Za-z_$][\w$]*)(?![\w$])/g))
+  /* ⚠ 앞뒤 «이름글자»에 한글·그리스 글자 등도 넣습니다(2026-10-16). 전엔 `φt0` 의 t0, `osm한글` 의 osm 처럼
+     영문 조각만 떼어 남의 이름으로 헛짚었습니다(globe.js · 메모 missing-import-trap 의 «영어+한글 섞인 이름»). */
+  for (const m of 평평.matchAll(/(?<![\p{L}\p{N}_$])([A-Za-z_$][\w$]*)(?![\p{L}\p{N}_$])/gu))
     if (어디.has(m[1]) && !있음.has(m[1])) 빠짐.set(m[1], 어디.get(m[1]));
   return 빠짐;
 }

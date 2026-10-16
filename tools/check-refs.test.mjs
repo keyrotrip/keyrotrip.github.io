@@ -46,6 +46,21 @@ const 경우 = [
    `const o = {}; o.draw(); o.openCity;`, []],
   ['매개변수로 받은 같은 이름은 조용함',
    `function f(draw){ return draw(); }`, []],
+  /* ── 2026-10-16: 나머지 34개 파일을 검사에 넣으려고 고친 오탐 넷 ── */
+  ['return 뒤의 정규식 속 $ 는 이름이 아님 (sheetimp.js) — 조용해야 함',
+   `function 빈칸(t){ return /^(-|x|없음|null)$/i.test(t) ? '' : t; }`, []],
+  ['return 뒤 정규식 다음의 진짜 쓰임은 잡아야 함',
+   `function g(t){ return /^a$/.test(t) && draw(t); }`, ['draw']],
+  ['나눗셈은 여전히 나눗셈 — 그 뒤 쓰임을 먹지 않음',
+   `const r = total / count; draw(r / 2);`, ['draw']],
+  ['한글 이름 함수의 매개변수 (sheetimp 일정넣기·un 검산) — 조용해야 함',
+   `export async function 일정넣기(items, draw){ return draw(items); }`, []],
+  ['한글 이름 함수라도 매개변수가 아닌 이름은 잡아야 함',
+   `function 검산(CONT){ return CONT.length + openCity(1); }`, ['openCity']],
+  ['그리스·한글 글자에 붙은 영문 조각은 이름이 아님 (globe.js φt0) — 조용해야 함',
+   `const φdraw = 1, 한글esc = 2, draw한글 = 3; φdraw + 한글esc + draw한글;`, []],
+  ['한글 옆이라도 띄어 쓴 진짜 쓰임은 잡아야 함',
+   `const 값 = draw(1) + 한글;`, ['draw']],
 ];
 
 let 틀림 = 0;

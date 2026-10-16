@@ -13,11 +13,11 @@
  * 억지로 줄이려고 저쪽 코드를 여기로 끌고 오면 다시 커집니다.
  *
  * 층: dom.js · db.js · calc.js · card.js · trip.js · net.js 만 씁니다. */
-import { $, esc, toast, copyText, md } from './dom.js?v=b881';
-import { sb } from './db.js?v=b881';
-import { fail, netTimeout } from './net.js?v=b881';
-import { money, distKm, D1, asDate } from './calc.js?v=b881';
-import { REPORT_ICON, REPORT_BG, shareCard, PERSONA_ICON } from './card.js?v=b881';
+import { $, esc, toast, copyText, md } from './dom.js?v=b882';
+import { sb } from './db.js?v=b882';
+import { fail, netTimeout } from './net.js?v=b882';
+import { money, distKm, D1, asDate } from './calc.js?v=b882';
+import { REPORT_ICON, REPORT_BG, shareCard, PERSONA_ICON } from './card.js?v=b882';
 
 /* app.js 만 아는 것들. 로그인한 사람과, 이 화면 끝에서 이어지는 화면 넷.
    `me` 는 로그인할 때마다 바뀌므로 값이 아니라 **함수**로 받습니다. */
@@ -394,7 +394,7 @@ async function askReportAi(id, f){
   b.disabled = false; b.textContent = 'AI 한마디 다시 듣기';
   if (error || data?.error){
     let why = data?.error || error.message;
-    try { why = (await error?.context?.json())?.error || why; } catch {}
+    try { const 몸 = await error?.context?.json(); if (몸?.error) why = 몸.error + (몸.ref ? ` (문의 번호 ${몸.ref})` : ''); } catch {}   /* 문의 번호: 함수 로그의 [번호] 와 같음(10-16) */
     return toast(why);
   }
   $('rv_ai').classList.remove('hide');
