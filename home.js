@@ -77,6 +77,36 @@ import { 안내할까, 기기알기, 설치안내열기, 폰그림 } from './ins
 /* ⚠ `ctrymap.js`(나라 페이지)는 b707 에 없앴습니다 — 지구본이 직접 도시까지
    보여줍니다. 파일도 지웠습니다. */
 
+/* ── 하단 카드 떨림 원인 가르기 스위치(2026-10-16, 진단용) ─────────────────────────────
+ * 안드로이드 크롬 제보(카드를 좌우로 넘기면 덜덜). b880 에 «보정» 쪽을 고쳤지만 데스크톱에서만 확인했습니다.
+ * 실제 기기에서 둘을 하나씩 꺼 보고 원인을 가르려고 둡니다 — 주소 끝에 붙입니다:
+ *   ?jit=nofix    멎은 뒤 자리 보정(`멎으면` 의 맞추기)을 끔 — 끝→처음으로 도는 넘김은 그대로
+ *   ?jit=noglobe  카드가 바뀔 때 지구본을 그 대륙으로 굴리는 것(`지도맞추기`)을 끔
+ *   ?jit=nofix,noglobe  둘 다
+ * 켜져 있으면 화면 왼쪽 위에 작게 «떨림 시험: …» 이 뜹니다. 그 탭을 닫으면 풀립니다(sessionStorage).
+ * ⚠ 원인이 가려지면 이 스위치는 걷습니다 — 기능이 아니라 재는 도구입니다.
+ * ⚠ 앱이 시작하며 주소의 ?… 를 지우는 수가 있어, 모듈을 읽는 순간(맨 먼저) 받아 둡니다. */
+const 떨림시험 = (() => {
+  let v = '';
+  try { v = new URLSearchParams(location.search).get('jit') || sessionStorage.getItem('t2:jit') || ''; } catch { /* 없음 */ }
+  try { if (v) sessionStorage.setItem('t2:jit', v); } catch { /* 못 적어도 이번 판은 됨 */ }
+  const 낱 = new Set(v.split(',').map((s) => s.trim()).filter(Boolean));
+  return { 보정끔: 낱.has('nofix'), 지구끔: 낱.has('noglobe'), 글: v };
+})();
+if (떨림시험.글 && typeof document !== 'undefined') {
+  const 붙이기 = () => {
+    if (document.getElementById('jitlabel')) return;
+    const d = document.createElement('div');
+    d.id = 'jitlabel';
+    d.textContent = '떨림 시험: ' + [떨림시험.보정끔 && '보정 끔', 떨림시험.지구끔 && '지구본 굴림 끔']
+      .filter(Boolean).join(' · ');
+    d.style.cssText = 'position:fixed;left:6px;top:calc(env(safe-area-inset-top) + 4px);z-index:99999;' +
+      'font:12px/1.4 sans-serif;padding:2px 6px;border-radius:6px;background:#1a1a1a;color:#fff;opacity:.75;pointer-events:none';
+    document.body.appendChild(d);
+  };
+  if (document.body) 붙이기(); else addEventListener('DOMContentLoaded', 붙이기, { once: true });
+}
+
 /* 지금 붙어 있는 지구본과 그 「다녀온 나라」 뭉치(b560). 나라 카드에서
    별점을 매기면 여기를 통해 그 자리에서 칠합니다. */
 let 지구 = null, 지구갔다 = null;
@@ -1459,7 +1489,7 @@ async function renderFoot(통){
            (아이폰은 폭이 390·393·430 처럼 정수라 안 걸렸을 것으로 짐작합니다.)
          ⚠ 여유 1px 은 크롬이 `scrollLeft` 를 정수로 돌려주는 몫입니다
            (1168.27 → 1168). 진짜 폭으로 재면 칸 번호가 커져도 어긋남이 안 쌓입니다. */
-      else {
+      else if (!떨림시험.보정끔) {   /* ?jit=nofix 이면 이 보정만 건너뜀(맨 위 「떨림 원인 가르기」) */
         const 자리 = i * 줄기.getBoundingClientRect().width;
         if (Math.abs(줄기.scrollLeft - 자리) > 1) 옮기기(자리);
       }
@@ -1489,8 +1519,9 @@ async function renderFoot(통){
       지난칸 = 실제;
       점찍기(실제);
       /* 지도도 같이 옮깁니다(b500). 점과 **같은 자리**에서 정합니다 —
-         따로 세면 점은 아시아인데 지도는 유럽인 순간이 생깁니다. */
-      지도맞추기(장[실제]?.[0]);
+         따로 세면 점은 아시아인데 지도는 유럽인 순간이 생깁니다.
+         ?jit=noglobe 이면 건너뜀(맨 위 「떨림 원인 가르기」). */
+      if (!떨림시험.지구끔) 지도맞추기(장[실제]?.[0]);
     }, { passive:true });
 
     if (있음) 줄기.addEventListener('scrollend', 멎으면, { passive:true });
