@@ -100,6 +100,21 @@ export async function callGemini(model: string, key: string, contents: unknown, 
   }
 }
 
+/* ── AI 가 «속으로 생각하는» 정도(2026-10-16) ─────────────────────────────────────
+ * 실측: 대화 답 하나에 Gemini 가 쓴 글자(토큰)의 70~77% 가 «생각»이었습니다(답 442 · 생각 1,506).
+ * 생각을 줄이면 빨라지지만 답 품질이 떨어질 수 있어, **비밀값으로만** 켭니다 — 다시 배포 없이 켜고 끕니다.
+ *   GEMINI_THINKING_ADMIN = low  → 관리자 계정(is_admin)에게만. 먼저 이걸로 견줘 봅니다.
+ *   GEMINI_THINKING       = low  → 모두에게(관리자가 견줘 보고 괜찮을 때).
+ *   값: minimal · low · medium · high(생각 정도) 또는 숫자(생각에 쓸 토큰 상한). 그 밖의 값·빈 값이면 안 씁니다.
+ * 대화(묻고 답하기)에만 씁니다 — 일정 초안·불러오기·장소·주소는 그대로.
+ * 모델이 이 설정을 거절하면(400) 설정 없이 같은 모델로 한 번 더 묻습니다(아래 대화 부분). */
+export function 생각설정(v: string | undefined | null) {
+  const s = String(v ?? '').trim().toLowerCase();
+  if (/^(minimal|low|medium|high)$/.test(s)) return { 이름: s, cfg: { thinkingConfig: { thinkingLevel: s } } };
+  if (/^\d{1,5}$/.test(s)) return { 이름: s + '토큰', cfg: { thinkingConfig: { thinkingBudget: Number(s) } } };
+  return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // 웹 검색 (Tavily) — 도쿄 앱에서 옮겨왔습니다.
 //
@@ -923,11 +938,20 @@ export async function 처리(req: Request): Promise<Response> {
     // 관리자가 화면에서 바꾸는 값들입니다(db/047). 표가 비었거나 못 읽으면
     // 아래 기본값으로 갑니다 — 설정을 못 읽었다고 답을 안 해주면 안 됩니다.
     const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: 서버용인증 });
-    const [{ data: take, error: takeErr }, { data: cfgRows, error: cfgErr }] = await Promise.all([
+    /* 생각 정도(위 「AI 가 속으로 생각하는 정도」) — 대화일 때만. 관리자 전용 값이 있으면 관리자인지도
+       **같이** 묻습니다(따로 물으면 왕복이 하나 더 붙습니다). 못 물으면 관리자가 아닌 것으로 — 지금과 같게. */
+    const 대화 = !draft && !imp && !geo && !addrMode;
+    const 생각모두 = 대화 ? 생각설정(Deno.env.get('GEMINI_THINKING')) : null;
+    const 생각관리자 = 대화 && !생각모두 ? 생각설정(Deno.env.get('GEMINI_THINKING_ADMIN')) : null;
+    const [{ data: take, error: takeErr }, { data: cfgRows, error: cfgErr }, 관리자답] = await Promise.all([
       admin.rpc('ai_take', { p_user: user.id,
                              p_kind: draft ? 'draft' : (imp || geo || addrMode) ? 'import' : 'chat' }),
       admin.from('app_settings').select('key,value'),
+      생각관리자
+        ? asUser.rpc('is_admin').then((r) => r, () => ({ data: false }))
+        : Promise.resolve({ data: false }),
     ]);
+    const 생각 = 생각모두 ?? (관리자답?.data === true ? 생각관리자 : null);
     /* 사용량을 못 셌으면 **멈춥니다** — 한도를 모른 채 AI 를 부르면 돈이 샙니다.
        DB 오류 글(표·함수 이름이 들어 있음)은 로그에만, 사용자에겐 쉬운 말만(2026-10-16). */
     if (takeErr) return 내부오류('ai_take', takeErr);
@@ -1822,7 +1846,16 @@ export async function 처리(req: Request): Promise<Response> {
       raw = t;
     } else {
       let 쓴모델 = 모델, 번 = 1;
-      let r = await callGemini(모델, key, contents, 0.7, {}, 0, 마감);
+      /* 생각 정도 설정(있을 때만). 모델이 거절하면(400) 설정 없이 같은 모델로 바로 한 번 더 —
+         설정 하나 때문에 답이 안 나오거나 가벼운 모델로 떨어지면 안 됩니다. */
+      let 생각덧 = 생각?.cfg ?? {};
+      let 생각말 = 생각 ? 생각.이름 + (생각모두 ? '' : '(관리자)') : '기본';
+      let r = await callGemini(모델, key, contents, 0.7, 생각덧, 0, 마감);
+      if (r.code === 400 && 생각){
+        console.error(`[${요청번호}] 생각 설정 거절`, String(r.body).slice(0, 300));
+        생각덧 = {}; 생각말 = 생각.이름 + ' 거절됨→기본'; 번++;
+        r = await callGemini(모델, key, contents, 0.7, {}, 0, 마감);
+      }
       /* **429 만 다시 물어보고 있었습니다.** 그런데 무료 등급에서 훨씬 흔한 것은
          503 "The model is overloaded" 입니다 — 그건 재시도 없이 곧장
          "AI가 답을 안 줬어요"로 나갔습니다. 사용자가 실제로 그 화면을 만났고,
@@ -1837,7 +1870,7 @@ export async function 처리(req: Request): Promise<Response> {
            답의 품질을 잃습니다. */
         if (r.code >= 500){
           await new Promise((s) => setTimeout(s, 1200));
-          r = await callGemini(모델, key, contents, 0.7, {}, 0, 마감); 번++;
+          r = await callGemini(모델, key, contents, 0.7, 생각덧, 0, 마감); 번++;
         }
         /* 그래도 안 되면(또는 한도 429 라면) 가벼운 모델로 넘깁니다. */
         if (r.code !== 200){
@@ -1857,7 +1890,7 @@ export async function 처리(req: Request): Promise<Response> {
       raw = parts.map((p: { text?: string }) => p.text ?? '').join('').trim();
       {
         const u = parsed?.usageMetadata ?? {};
-        재기 = ` | 모델 ${쓴모델}${번 > 1 ? ` (${번}번째)` : ''}` +
+        재기 = ` | 모델 ${쓴모델}${번 > 1 ? ` (${번}번째)` : ''}` + ` · 생각설정 ${쓴모델 === MODEL_FALLBACK ? '기본' : 생각말}` +
                ` | 토큰 읽음 ${u.promptTokenCount ?? '?'} · 씀 ${u.candidatesTokenCount ?? '?'}` +
                ` · 생각 ${u.thoughtsTokenCount ?? 0}` +
                ` | 답 ${raw.length}자 · 끝난까닭 ${parsed?.candidates?.[0]?.finishReason ?? '?'}`;

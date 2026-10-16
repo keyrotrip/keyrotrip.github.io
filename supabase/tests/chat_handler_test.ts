@@ -249,6 +249,90 @@ Deno.test('지난 대화 읽기가 웹 검색과 겹친다(차례로 더해지�
   } finally { 끝(); }
 });
 
+/* ── 4-2. 생각 정도(GEMINI_THINKING_ADMIN · GEMINI_THINKING) ─────────── */
+const 생각부름 = () => 불림.filter((c) => c.url.includes('generativelanguage'))
+  .map((c) => JSON.parse(c.body).generationConfig?.thinkingConfig ?? null);
+const 관리자길 = (참: boolean): [RegExp, 길] => [/\/rest\/v1\/rpc\/is_admin$/, () => J(참)];
+const 비밀값지우기 = () => { Deno.env.delete('GEMINI_THINKING'); Deno.env.delete('GEMINI_THINKING_ADMIN'); };
+
+Deno.test('생각설정: 정도 낱말·숫자만 받고 나머지는 안 씀', () => {
+  assertEquals(chat.생각설정('low')?.cfg, { thinkingConfig: { thinkingLevel: 'low' } });
+  assertEquals(chat.생각설정(' Minimal ')?.cfg, { thinkingConfig: { thinkingLevel: 'minimal' } });
+  assertEquals(chat.생각설정('512')?.cfg, { thinkingConfig: { thinkingBudget: 512 } });
+  for (const v of ['', undefined, null, 'off', 'low; drop', '-1', '1.5']) assertEquals(chat.생각설정(v), null, String(v));
+});
+
+Deno.test('관리자 전용 값: 관리자면 생각 «낮음»으로 묻는다', async () => {
+  Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
+  기본길([관리자길(true)]);
+  try {
+    assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
+    assertEquals(생각부름(), [{ thinkingLevel: 'low' }]);
+  } finally { 끝(); 비밀값지우기(); }
+});
+
+Deno.test('관리자 전용 값: 관리자가 아니면 지금과 똑같이(설정 없음)', async () => {
+  Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
+  기본길([관리자길(false)]);
+  try {
+    assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
+    assertEquals(생각부름(), [null]);
+  } finally { 끝(); 비밀값지우기(); }
+});
+
+Deno.test('관리자인지 못 물으면 관리자가 아닌 것으로(지금과 같게)', async () => {
+  Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
+  기본길([[/\/rest\/v1\/rpc\/is_admin$/, () => J({ message: 'boom' }, 500)]]);
+  try {
+    assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
+    assertEquals(생각부름(), [null]);
+  } finally { 끝(); 비밀값지우기(); }
+});
+
+Deno.test('값이 없으면 관리자인지 묻지도 않는다', async () => {
+  기본길([관리자길(true)]);
+  try {
+    assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
+    assert(!불림.some((c) => c.url.includes('is_admin')), 'is_admin 을 부르면 안 됨');
+    assertEquals(생각부름(), [null]);
+  } finally { 끝(); }
+});
+
+Deno.test('모두에게 값: 관리자가 아니어도 쓰고, 관리자인지 안 묻는다', async () => {
+  Deno.env.set('GEMINI_THINKING', 'low');
+  기본길([관리자길(false)]);
+  try {
+    assertEquals((await 처리(요청({ message: '안녕' }))).status, 200);
+    assert(!불림.some((c) => c.url.includes('is_admin')));
+    assertEquals(생각부름(), [{ thinkingLevel: 'low' }]);
+  } finally { 끝(); 비밀값지우기(); }
+});
+
+Deno.test('일정 초안에는 생각 설정을 안 건다(대화에만)', async () => {
+  Deno.env.set('GEMINI_THINKING', 'low');
+  기본길([[/generativelanguage\.googleapis\.com/, () => 제미니답(JSON.stringify({ reply: '초안', actions: [] }))]]);
+  try {
+    assertEquals((await 처리(요청({ mode: 'draft', trip_id: TRIP }))).status, 200);
+    assertEquals(생각부름(), [null]);
+  } finally { 끝(); 비밀값지우기(); }
+});
+
+Deno.test('모델이 생각 설정을 거절하면(400) 설정 없이 같은 모델로 다시 묻는다', async () => {
+  Deno.env.set('GEMINI_THINKING_ADMIN', 'low');
+  let n = 0;
+  기본길([관리자길(true), [/generativelanguage\.googleapis\.com/, () =>
+    n++ === 0 ? J({ error: { message: 'Unknown name "thinkingLevel"' } }, 400)
+              : 제미니답(JSON.stringify({ reply: '답이에요' }))]]);
+  try {
+    const r = await 답(await 처리(요청({ message: '안녕' })));
+    assertEquals(r.status, 200);
+    assertEquals(r.body.reply, '답이에요');
+    assertEquals(생각부름(), [{ thinkingLevel: 'low' }, null]);
+    const 모델들 = 불림.filter((c) => c.url.includes('generativelanguage')).map((c) => c.url.match(/models\/([^:]+):/)?.[1]);
+    assertEquals(모델들, ['model-설정', 'model-설정'], '가벼운 모델로 떨어지면 안 됨');
+  } finally { 끝(); 비밀값지우기(); }
+});
+
 /* ── 5. 바깥 호출의 시간 상한 ──────────────────────────────────────── */
 Deno.test('callGemini: 마감이 지났으면 부르지 않고 599', async () => {
   기본길();
