@@ -19,7 +19,7 @@
 //   그 경우를 숨기지 않고 그대로 알려줍니다 — 다시 누르면 이어서 됩니다.
 // =====================================================================
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.118.0';   // 판을 못박음(2026-10-16) — 시험한 판 = 배포하는 판
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

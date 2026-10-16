@@ -1,0 +1,27 @@
+# Supabase 명령줄 도구(CLI)가 함수를 배포할 때 읽는 설정 (2026-10-16)
+#
+# 왜 생겼나: 함수를 대시보드에 붙여 넣는 대신, 검사를 통과한 «그 커밋»의 코드를 GitHub 이 배포하게 하려고
+#   (.github/workflows/check.yml 의 deploy-functions 일 — 저장소 변수 FUNCTIONS_FROM_ACTIONS 가 true 일 때만 돎).
+#
+# ⚠ verify_jwt(입구에서 로그인 표를 검사)는 넷 다 끕니다. CLI 는 이 값이 없으면 «켬»으로 배포하는데,
+#   push 함수는 예약(pg_cron)이 로그인 표 없이 알림 전용 열쇠(x-cron-secret)만 들고 부르므로 켜지면 401 로 막힙니다.
+#   네 함수 모두 «스스로» 인증합니다(2026-10-16 확인):
+#     chat · delete-me — Authorization 으로 사용자를 확인(getUser), 없으면 401
+#     city-photos      — is_admin() 이 아니면 403
+#     push             — PUSH_CRON_SECRET(또는 서비스 키)과 글자까지 같아야(allowed)
+#   그래서 입구 검사를 꺼도 막히는 사람은 같습니다. 새 함수를 더할 때는 «스스로 인증하는지» 먼저 보고 여기 적으십시오.
+#
+# 이 파일은 함수 배포에만 씁니다. 로컬 Supabase(데이터베이스 띄우기)는 안 씁니다.
+project_id = "travel-v2"
+
+[functions.chat]
+verify_jwt = false
+
+[functions.city-photos]
+verify_jwt = false
+
+[functions.delete-me]
+verify_jwt = false
+
+[functions.push]
+verify_jwt = false

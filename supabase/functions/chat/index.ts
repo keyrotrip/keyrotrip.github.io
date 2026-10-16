@@ -17,7 +17,7 @@
 //   - 사용량은 서비스 키로만 셉니다. 화면에서 건너뛸 수 없습니다.
 // =====================================================================
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.118.0';   // 판을 못박음(2026-10-16) — 시험한 판 = 배포하는 판
 
 const MODEL = 'gemini-3.6-flash';              // 도쿄 앱에서 쓰던 것과 같은 모델
 const MODEL_FALLBACK = 'gemini-3.5-flash-lite'; // 한도(429)에 걸리면 가벼운 쪽으로

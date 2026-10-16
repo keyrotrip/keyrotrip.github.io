@@ -14,7 +14,7 @@
  * 조용히 틀리면 알 방법이 없습니다. 검증된 것을 씁니다.
  */
 import webpush from 'npm:web-push@3.6.7';
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient } from 'jsr:@supabase/supabase-js@2.118.0';   // 판을 못박음(2026-10-16) — 시험한 판 = 배포하는 판
 
 const URL_  = Deno.env.get('SUPABASE_URL')!;
 const SRV   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

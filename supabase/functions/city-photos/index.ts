@@ -12,7 +12,7 @@
  *
  * 키는 서버에만 둡니다(PEXELS_KEY). 화면에 두면 누구나 긁어갑니다.
  */
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.118.0';   // 판을 못박음(2026-10-16) — 시험한 판 = 배포하는 판
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
