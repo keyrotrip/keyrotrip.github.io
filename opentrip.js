@@ -19,6 +19,8 @@
  * 층: 아래층과 이미 떼어낸 조각 여럿을 씁니다. 그쪽은 이 파일을 안 부릅니다. */
 import { $, esc } from './dom.js?v=b882';
 import { sb } from './db.js?v=b882';
+/* 서버 질의는 tripdata.js 에(2026-10-16) — 여행·일정 기능의 표·칸을 한 곳에서 봅니다. */
+import { 여행읽기 } from './tripdata.js?v=b882';
 import { fail, netTimeout, netIsDown, drawOffbar, cacheGet, cacheSet } from './net.js?v=b882';
 import { D1, asDate, dateRange, localTime, todayYmd } from './calc.js?v=b882';
 import { trip, plans, legs, members, expenses, bookings,
@@ -60,8 +62,7 @@ let channel = null, bumpTimer = null, bumpPending = null;
 /* dateRange/dayLabel 은 calc.js 로 옮겼습니다 (맨 위 import). */
 
 export async function fetchTrip(id){
-  const { data, error } = await netTimeout(sb.from('trips')
-    .select('*, trip_members(user_id,role)').eq('id', id).maybeSingle());
+  const { data, error } = await netTimeout(여행읽기(id));
   /* 여행 한 줄을 못 받으면 그 안으로 아예 못 들어갑니다 — 일정도 지출도 그 뒤입니다.
      캐시는 그 여행을 **한 번 열었을 때** 생깁니다. 비행기모드에서 목록에는 셋이 보이는데
      열어본 적 없는 것을 누르면 "여행을 열지 못했습니다"가 났습니다.

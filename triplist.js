@@ -17,6 +17,8 @@
  *     떼어낸 rating.js · home.js · member.js 를 씁니다. */
 import { $, esc, putHtml, dropHtml, emptyDo } from './dom.js?v=b882';
 import { sb } from './db.js?v=b882';
+/* 서버 질의는 tripdata.js 에(2026-10-16) — 여행·일정 기능의 표·칸을 한 곳에서 봅니다. */
+import { 여행목록읽기 } from './tripdata.js?v=b882';
 import { fail, netTimeout, drawOffbar, cacheGet, cacheSet } from './net.js?v=b882';
 import { todayYmd } from './calc.js?v=b882';
 import { cities } from './cities.js?v=b882';
@@ -118,19 +120,8 @@ export async function loadTrips(){
   /* RLS 가 참여 중인 것만 내려줍니다. 만든 사람이 owner 로 자동 등록되지
      않으면 방금 만든 여행조차 여기 안 나옵니다. */
   const today = todayYmd();
-  let q = sb.from('trips')
-    .select('id,title,destination,start_date,end_date,currency,timezone,' +
-            /* `country` 는 사진 대체에 씁니다(아래 fillTripPhotos). */
-    'transit_factor,city_id,country,cities(image_url,image_lg),' +
-            'trip_members(user_id,role),trip_reviews(user_id,stars)');
-  /* 날짜가 지나면 저절로 "다녀온"으로 넘어갑니다 — 손으로 옮길 일이 없습니다. */
-  if (갈래 === 'past')
-    q = q.lt('end_date', today)
-         .order('start_date', { ascending:false });
-  else
-    q = q.gte('end_date', today)
-         .order('start_date', { ascending:true });
-  let { data, error } = await netTimeout(q);
+  /* 질의는 tripdata.js(같은 칸·거르기·순서 — 다녀온 갈래는 최근 것부터). */
+  let { data, error } = await netTimeout(여행목록읽기(갈래, today));
   if (이번 !== 목록차례) return;          /* 그사이 다른 갈래(나 같은 갈래)를 또 불렀습니다 */
 
   /* 못 받아왔으면 지난번 목록을 씁니다. 여행 목록이 안 나오면 여행 중에

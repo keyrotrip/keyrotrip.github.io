@@ -21,6 +21,8 @@ import { $, esc, toast, coverDeck } from './dom.js?v=b882';
 import { photosOpen, closePhotos } from './photoview.js?v=b882';
 import { cropOpen, closeCrop } from './crop.js?v=b882';
 import { sb } from './db.js?v=b882';
+/* 서버 질의는 tripdata.js 에(2026-10-16) — 여행·일정 기능의 표·칸을 한 곳에서 봅니다. */
+import { 일정읽기 } from './tripdata.js?v=b882';
 import { fail, netTimeout, drawOffbar, NOROW } from './net.js?v=b882';
 import { D1, asDate, ymd, dayLabel, todayYmd } from './calc.js?v=b882';
 import { trip, plans, legs, pickedDay, catFilter,
@@ -295,11 +297,7 @@ export async function loadPlans(){
      담겼습니다. 묻기 전에 여행을 잡아 두고, 답이 오면 아직 그 여행인지 봅니다.
      (지출·일행·예약·준비물·링크·구간 불러오기도 같은 수법 — 거기엔 짧게만 적었습니다.) */
   const 그여행 = trip.id;
-  const { data, error } = await netTimeout(sb.from('plans')
-    .select('id,date,start_time,end_time,category,title,memo,move_note,sort_order,lat,lng')
-    .eq('trip_id', 그여행)
-    .is('deleted_at', null)                     /* 숨긴 것은 빼고 봅니다 */
-    .order('date').order('start_time', { nullsFirst:false }).order('sort_order'));
+  const { data, error } = await netTimeout(일정읽기(그여행));   /* 숨긴 것 빼고 날짜·시각·차례 순(tripdata.js) */
   if (trip?.id !== 그여행) return;
   const 오늘확인 = rows => {
     if (오늘로연여행 !== 그여행) return;

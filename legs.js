@@ -20,6 +20,8 @@
  *     떼어낸 planline.js · planmap.js · planview.js · review.js 를 씁니다. */
 import { $, esc } from './dom.js?v=b882';
 import { sb } from './db.js?v=b882';
+/* 서버 질의는 tripdata.js 에(2026-10-16) — 여행·일정 기능의 표·칸을 한 곳에서 봅니다. */
+import { 구간읽기 } from './tripdata.js?v=b882';
 import { fail, netTimeout, drawOffbar, cacheGet, cacheSet, NOROW } from './net.js?v=b882';
 import { dateRange, travel, legAt, legNear } from './calc.js?v=b882';
 import { cities, countryName, cityCountry } from './cities.js?v=b882';
@@ -38,17 +40,8 @@ export function setLegsCtx(o){ ctx = { ...ctx, ...o }; }
  * 일정과 지출은 날짜로 저절로 구간에 붙습니다 — 하나하나 고를 필요가 없습니다. */
 export async function loadLegs(){
   const 그여행 = trip.id;          /* 늦은 답 막기(b799) — tripview.js 의 loadPlans 머리말 */
-  const { data, error } = await netTimeout(sb.from('trip_legs')
-    /* 도보 상수 둘을 빼먹어서 "도보 약 NaN분" 이 나왔습니다.
-       travel() 이 쓰는 다섯 개를 다 가져와야 합니다. */
-    /* ⚠ `center_lat/lng` 도 같이 받습니다(b730). **좌표를 찾을 때의
-       «기준점»이 여기서 옵니다** — 전에는 「이미 찍힌 일정들의 평균」을
-       기준으로 썼는데, 그중 하나가 틀리면 기준이 그쪽으로 끌려가고
-       그 다음 것이 더 크게 틀립니다(cands.js 의 `여행기준` 주석). */
-    .select('id,city_id,destination,country,start_date,end_date,timezone,currency,' +
-            'center_lat,center_lng,' +
-            'walk_max_km,walk_min_per_km,walk_base_min,transit_factor,transit_base_min')
-    .eq('trip_id', 그여행).order('start_date'));
+  /* 도보 상수 다섯·좌표 기준점(center_*)까지 받는 것은 tripdata.js 의 구간읽기 머리말에(b730 사연 포함). */
+  const { data, error } = await netTimeout(구간읽기(그여행));
   if (trip?.id !== 그여행) return;
   /* 구간이 없으면 날짜 칩에 도시가 안 붙고 이동 시간도 못 잽니다. 캐시로 버팁니다. */
   const ck = 'legs:' + 그여행;
