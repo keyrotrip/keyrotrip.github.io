@@ -16,11 +16,11 @@
  * 층: dom.js · db.js · net.js · trip.js 만 씁니다. 프로필 화면의 '보관함·지도
  *     열기' 손잡이는 **두고 왔습니다** — 바로 아랫줄에 있었지만 그건 화면
  *     넘기기지 내 계정이 아닙니다. */
-import { $, esc, toast } from './dom.js?v=b883';
-import { sb } from './db.js?v=b883';
-import { fail, netTimeout, forgetLocal } from './net.js?v=b883';
-import { plans, expenses, bookings } from './trip.js?v=b883';
-import { closeSetSub } from './setnav.js?v=b883';
+import { $, esc, toast } from './dom.js?v=b884';
+import { sb } from './db.js?v=b884';
+import { fail, netTimeout, forgetLocal } from './net.js?v=b884';
+import { plans, expenses, bookings } from './trip.js?v=b884';
+import { closeSetSub } from './setnav.js?v=b884';
 
 
 let ctx = { me: () => null, logError: () => {} };
@@ -183,7 +183,7 @@ $('rp_send').addEventListener('click', async () => {
 const TABLES = ['trips', 'trip_legs', 'trip_members', 'plans', 'expenses',
                 'expense_shares', 'bookings', 'packing', 'links', 'candidates',
                 'city_ratings', 'plan_ratings', 'trip_reviews', 'chats',
-                'profiles', 'user_prefs'];
+                'profiles', 'user_prefs', 'guestbook'];
 /* 표 이름을 한국어로 옮기는 짝. **위로 올려두었습니다** — 아래 목록만
    쓰고 있었고, 정작 오류 문구는 `city_ratings(PGRST301)` 처럼 표 이름과
    오류 코드를 그대로 내보내고 있었습니다. 둘이 같은 짝을 써야 합니다. */
@@ -192,13 +192,14 @@ const NAME = { trips:'여행', trip_legs:'구간', trip_members:'일행', plans:
                packing:'준비물', links:'링크', candidates:'후보',
                city_ratings:'도시 별점', plan_ratings:'맛집 별점',
                trip_reviews:'여행 후기', chats:'AI 대화',
-               profiles:'프로필', user_prefs:'설정' };
+               profiles:'프로필', user_prefs:'설정', guestbook:'방명록' };
 
 async function 모으기(){
   const out = { app:'기로', savedAt:new Date().toISOString(), user:ctx.me().id, data:{} };
   const failed = [];
   for (const t of TABLES){
-    const r = await sb.from(t).select('*');
+    /* 방명록은 표를 직접 못 읽습니다(db/138 — 비밀 글 때문에 정책 없음). 내가 쓴 글·받은 글만 주는 함수로. */
+    const r = t === 'guestbook' ? await sb.rpc('my_guestbook_dump') : await sb.from(t).select('*');
     if (r.error){
       failed.push(NAME[t] || t);
       ctx.logError(`내려받기 실패 ${t}: ${r.error.code || ''} ${r.error.message || ''}`, 'dump');
@@ -249,11 +250,11 @@ async function 받기(단추, 종류){
     /* 쓸 때 불러옵니다 — 받기 단추를 누르는 사람은 드뭅니다.
        ⚠ 도시 이름은 앱이 불러 둔 도시 목록에서 찾습니다. 아직 안 불러졌으면 파일에 «도시 번호»가 찍히므로
          한 번 불러 둡니다(이미 있으면 바로 돌아옵니다). 못 불러도 파일은 내립니다. */
-    try { await (await import('./citysearch.js?v=b883')).loadCities(); } catch {}
+    try { await (await import('./citysearch.js?v=b884')).loadCities(); } catch {}
     /* ⚠ `[{ 보기파일 }, 지도, { cities }]` 처럼 겹쳐 꺼내면 tools/check-refs.mjs 가 cities 를 못 읽어
          「import 없이 씀」으로 잡습니다(재 봄) — 모듈째 받고 점으로 씁니다. */
     const [기록, 지도, 도시모듈] = await Promise.all([
-      import('./myrecord.js?v=b883'), import('./map.js?v=b883'), import('./cities.js?v=b883')]);
+      import('./myrecord.js?v=b884'), import('./map.js?v=b884'), import('./cities.js?v=b884')]);
     /* 세계지도·나라 수는 **앱 지도·탑승권과 같은 길**(b837) — 서버 my_visited 로 간 도시를 받고 map.js `발자국스펙` 으로
        셉니다(map.js openMap 과 같음). 따로 세면 탑승권은 12개국인데 파일은 11개국이라고 말합니다.
        못 받으면 지도 칸만 빠지고(숫자는 별점에서 셈) 파일은 그대로 내립니다. */
@@ -298,4 +299,4 @@ $('dumpbtn').addEventListener('click', () => 받기('dumpbtn', 'json'));
 /* 보기 파일(myrecord.js)은 누를 때 불러오므로 CI 의 자가검사 훑기(window.__*Check)가 못 봅니다.
    그래서 여기 — 처음부터 불리는 파일 — 에 걸어 둡니다. 서버도 로그인도 안 씁니다. */
 if (typeof window !== 'undefined')
-  window.__myrecordCheck = async () => (await import('./myrecord.js?v=b883')).검사();
+  window.__myrecordCheck = async () => (await import('./myrecord.js?v=b884')).검사();

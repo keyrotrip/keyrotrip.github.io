@@ -15,28 +15,29 @@
  *
  * 층: dom.js · db.js · cities.js · rate.js · stars.js · net.js 만 씁니다. */
 import { $, esc, toast, emptyDo, josa, toTop, coverDeck, backLabel,
-         flagOf, flagOk, flagSprite } from './dom.js?v=b883';
-import { openCity } from './city.js?v=b883';
-import { sb } from './db.js?v=b883';
-import { cities, countryName, cityCountry, onlyCho } from './cities.js?v=b883';
-import { myRates, cityStat, visited, avgTail } from './rate.js?v=b883';
-import { starHtml, paintStars, starValue, 별갈래, BAND_NAME } from './stars.js?v=b883';
-import { fail } from './net.js?v=b883';
-import { arm } from './ui.js?v=b883';
+         flagOf, flagOk, flagSprite } from './dom.js?v=b884';
+import { openCity } from './city.js?v=b884';
+import { sb } from './db.js?v=b884';
+import { cities, countryName, cityCountry, onlyCho } from './cities.js?v=b884';
+import { myRates, cityStat, visited, avgTail } from './rate.js?v=b884';
+import { starHtml, paintStars, starValue, 별갈래, BAND_NAME } from './stars.js?v=b884';
+import { fail } from './net.js?v=b884';
+import { arm } from './ui.js?v=b884';
 /* 깃발 벽의 공유는 지도·나라 목록과 **같은 카드**입니다(b649) — 셋 다
    「몇 개국 다녀왔다」를 말합니다. map.js 가 만들고 여기서 부르기만
    합니다. ⚠ map.js 는 shelf.js 를 안 가져오므로 고리가 안 생깁니다. */
-import { 발자국스펙 } from './map.js?v=b883';
-import { shareCard } from './card.js?v=b883';
-import { todayYmd } from './calc.js?v=b883';
+import { 발자국스펙 } from './map.js?v=b884';
+import { shareCard } from './card.js?v=b884';
+import { todayYmd } from './calc.js?v=b884';
 /* ⚠ `flagOf`·`flagOk` 는 **dom.js 것**입니다(위 줄) — un.js 에 또 만들었다가
      걷었습니다. `UN_CONT`·`UN_TOTAL` 도 un.js 가 «세어서» 줍니다. map.js 를
      끌어오지 않는 이유가 이것입니다 — 195 라는 수를 두 곳에서 적으면
      언젠가 갈라집니다. 두 곳이 같은지는 un.js 의 `검산()` 이 봅니다. */
-import { UN_CODES, UN_TOTAL } from './un.js?v=b883';
-import { loadCities } from './citysearch.js?v=b883';
-import { loadRateData, saveRate } from './rating.js?v=b883';
-import { openFoodNote } from './cityrev.js?v=b883';
+import { UN_CODES, UN_TOTAL } from './un.js?v=b884';
+import { loadCities } from './citysearch.js?v=b884';
+import { loadRateData, saveRate } from './rating.js?v=b884';
+import { openFoodNote } from './cityrev.js?v=b884';
+import { openGuestbookShelf } from './guestbook.js?v=b884';   /* 보관함 → 방명록(2026-10-16) */
 
 let ctx = {
   me: () => null,
@@ -58,7 +59,8 @@ export function setShelfCtx(o){ ctx = { ...ctx, ...o }; }
    도시는 '다녀온 도시', 관광지는 '다녀온 관광지'로 갈랐습니다. */
 const SHELF = { been:'방문한 도시', want:'가보고 싶은 곳', mine:'내가 매긴 곳',
                 comment:'한줄평 남긴 곳', place:'다녀온 맛집', spot:'다녀온 관광지',
-                review:'여행 후기', badge:'여행 배지', flag:'나라 깃발', food:'맛집 추천' };
+                review:'여행 후기', badge:'여행 배지', flag:'나라 깃발', food:'맛집 추천',
+                guestbook:'방명록' };
 /* 맛집과 관광지는 같은 방식으로 다룹니다 — 분류만 다릅니다. */
 const SHELF_CAT = { place:['식사','카페'], spot:['관광','쇼핑'] };
 
@@ -562,6 +564,7 @@ export async function openShelf(kind, 다시 = false){
   if (kind === 'flag')   return openFlagShelf();
   if (kind === 'place' || kind === 'spot') return openPlaceShelf(kind);
   if (kind === 'food')   return openFoodShelf(다시);
+  if (kind === 'guestbook') return openGuestbookShelf();   /* 방명록(2026-10-16, guestbook.js) */
   if (kind === 'badge')  return openBadgeShelf();
 
   await loadCities();

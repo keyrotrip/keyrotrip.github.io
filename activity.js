@@ -11,13 +11,13 @@
  *   사진은 첫 글자 동그라미로 — 화면이 안 깨지게.
  * ⚠ 읽음 처리는 열고 1.2초 뒤(notify.js 와 같은 규칙 — 어느 것이 새것인지 눈에 한 번 들어와야).
  */
-import { $, esc, avatarImg } from './dom.js?v=b883';
-import { sb } from './db.js?v=b883';
-import { netTimeout } from './net.js?v=b883';
-import { cities } from './cities.js?v=b883';
-import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b883';
+import { $, esc, avatarImg } from './dom.js?v=b884';
+import { sb } from './db.js?v=b884';
+import { netTimeout } from './net.js?v=b884';
+import { cities } from './cities.js?v=b884';
+import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b884';
 
-let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {}, openFoodNote: () => {}, openCity: () => {},
+let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openGuestbook: () => {}, openCityRev: () => {}, openFoodNote: () => {}, openCity: () => {},
             loadNotifs: () => {}, loadSocialCounts: () => {} };
 export function setActivityCtx(o){ ctx = { ...ctx, ...o }; }
 
@@ -122,7 +122,8 @@ function 요청줄(목록){
 }
 
 /* 알림 한 줄 */
-const 표시 = { review_like: ['♥', 'lk'], review_reply: ['💬', 'rp'], food_reply: ['💬', 'rp'], food_like: ['👍', 'lk'], review_mention: ['💬', 'rp'], food_mention: ['💬', 'rp'], follow_new: ['', ''], follow_accepted: ['', ''] };
+const 표시 = { review_like: ['♥', 'lk'], review_reply: ['💬', 'rp'], food_reply: ['💬', 'rp'], food_like: ['👍', 'lk'], review_mention: ['💬', 'rp'], food_mention: ['💬', 'rp'], follow_new: ['', ''], follow_accepted: ['', ''],
+                guestbook: ['✎', 'rp'], guestbook_reply: ['💬', 'rp'] };
 function 알림줄(x, p, 둘째, 내가){
   const 이름 = p?.name || (x.body || '').split('님')[0] || '';
   const 글 = 이름 && (x.body || '').startsWith(이름)
@@ -141,7 +142,10 @@ function 알림줄(x, p, 둘째, 내가){
   else if (x.kind === 'follow_new' && x.actor_id && !내가.has(x.actor_id))
     오른쪽 = `<button type="button" class="frbtn ac" data-actfb="${esc(x.actor_id)}">맞팔로우</button>`;
   /* 맛집 답글(b866, db/127) — 누르면 그 추천 글과 답글(cityrev.js openFoodNote) */
-  const 가는곳 = x.kind === 'food_like' && x.city_id ? ` data-cityopen="${esc(x.city_id)}"`   /* 👍 알림(b869) — 그 도시 화면 */
+  /* 방명록(db/138): 글이 오면 → 내 사람 화면의 방명록 칸(답 달기가 거기 있음) · 답이 오면 → 그 주인(actor)의 방명록 칸 */
+  const 가는곳 = x.kind === 'guestbook' ? ` data-actgb="${esc(ctx.me()?.id || '')}"`
+               : x.kind === 'guestbook_reply' && x.actor_id ? ` data-actgb="${esc(x.actor_id)}"`
+               : x.kind === 'food_like' && x.city_id ? ` data-cityopen="${esc(x.city_id)}"`   /* 👍 알림(b869) — 그 도시 화면 */
                : /^food_(reply|mention)$/.test(x.kind || '') && x.food_id ? ` data-actfood="${x.food_id}" data-city="${esc(x.city_id || '')}"`
                : /^review_/.test(x.kind || '') && x.city_id ? ` data-actrev="${esc(x.city_id)}" data-actauth="${esc(x.ref_author || '')}"`   /* 답글에 답(review_mention)은 남의 한줄평이라 쓴 사람(ref_author)으로(b869) */
                : x.actor_id && !여행 ? ` data-person="${esc(x.actor_id)}"` : '';
@@ -169,6 +173,8 @@ $('actview')?.addEventListener('click', async e => {
     return;
   }
   if (e.target.closest('[data-actgo="requests"]')) return ctx.openFriends('requests');
+  const 방 = e.target.closest('[data-actgb]');
+  if (방) return ctx.openGuestbook(방.dataset.actgb);
   const 도시칸 = e.target.closest('[data-cityopen]');
   if (도시칸) return ctx.openCity(도시칸.dataset.cityopen);
   const 맛 = e.target.closest('[data-actfood]');

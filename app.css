@@ -5021,7 +5021,7 @@ body.readonly .primary{ opacity:.5; }
   position:fixed; left:0; right:0; bottom:0; z-index:1300;
   height:min(var(--vvh, 100dvh), 780px);
   display:flex; flex-direction:column;
-  background:var(--canvas);
+  background:transparent;   /* 바탕은 ::after (아래) */
   border-radius:var(--r-lg) var(--r-lg) 0 0;
   box-shadow:0 -6px 40px rgba(16,20,35,.18);
   animation:csup .22s var(--ease);
@@ -5032,6 +5032,12 @@ body.readonly .primary{ opacity:.5; }
 #cardsheet::before{
   content:''; position:fixed; inset:0 0 100% 0; height:100vh;
   background:rgba(16,20,35,.34); z-index:-1;
+}
+/* ⚠ 판 바탕은 ::after 로(2026-10-16) — 위 ::before(z-index:-1)가 판 자기 바탕 «위»에 칠해져
+   판이 회색으로 덮였습니다. 자세한 까닭은 #sharesheet 주석. 그래서 #cardsheet 의 background 는 투명. */
+#cardsheet::after{
+  content:''; position:absolute; inset:0; z-index:-1;
+  background:var(--canvas); border-radius:inherit;
 }
 .cshead{ flex:none; display:flex; align-items:center; justify-content:center;
          position:relative; padding:16px 56px 12px; font-weight:600;
@@ -7264,7 +7270,11 @@ body.kbup .tabbar{ display:none; }
  *   가 제 목록에 없는 이 판을 모르고 뒷판만 걷어 갑니다(index.html 주석). */
 #sharesheet{
   position:fixed; left:0; right:0; bottom:0; z-index:1300;
-  background:var(--canvas);
+  /* ⚠⚠ 바탕은 여기가 아니라 아래 ::after 입니다(2026-10-16, 사용자: 「공유 판 컬러가 너무 이질적」).
+     이 판은 z-index 가 있어 제 쌓임 맥락을 만듭니다. 그 안에서 z-index:-1 인 ::before(뒷판 어둠)는
+     **판 자기 바탕보다 위에** 칠해져, 판 전체가 회색으로 덮였습니다(글자·단추만 또렷).
+     바탕을 ::after(같은 -1, 순서상 뒤)로 옮기면 «뒷판 위 · 내용 아래»가 됩니다. */
+  background:transparent;
   border-radius:var(--r-lg) var(--r-lg) 0 0;
   box-shadow:0 -6px 40px rgba(16,20,35,.18);
   padding-bottom:max(10px, env(safe-area-inset-bottom));
@@ -7274,6 +7284,10 @@ body.kbup .tabbar{ display:none; }
 #sharesheet::before{
   content:''; position:fixed; inset:0 0 100% 0; height:100vh;
   background:rgba(16,20,35,.34); z-index:-1;
+}
+#sharesheet::after{
+  content:''; position:absolute; inset:0; z-index:-1;
+  background:var(--canvas); border-radius:inherit;
 }
 .shbody{ padding:2px 10px 6px; }
 /* 한 줄 = 아이콘 + (이름·풀이) + 꺾쇠. 누르는 자리가 줄 통째라 넓습니다. */
@@ -7360,3 +7374,41 @@ body.sharedon{ overflow:hidden; }
 .failist li:first-child{ border-top:0; }
 .failist b{ display:block; font-size:var(--f-lg); font-weight:700; color:var(--ink); }
 .failist span{ display:block; margin-top:3px; font-size:var(--f-md); color:var(--ink-48); word-break:keep-all; }
+
+/* ══ 방명록 (2026-10-16, db/138 · guestbook.js) ════════════════════════════════
+ * 사람 화면 맨 아래 카드(#whogb) · 보관함 → 방명록(.gbshelf) 두 자리가 같은 줄 모양을 씁니다.
+ * 비밀 글(남에게)은 자물쇠 한 줄 · 주인의 답은 살짝 들어간 판 · 단추는 글줄 끝(own-content-actions). */
+.gbbox{ display:block; }
+.gbhd{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+.gbhd b{ font-size:var(--f-xl); font-weight:700; color:var(--ink); }
+.gbwrite{ margin-bottom:6px; }
+.gbin{ resize:vertical; min-height:58px; line-height:1.5; }   /* 테두리·바탕·각진 모서리는 앱 입력칸 기본(input, textarea) 그대로 */
+.gbbar{ display:flex; align-items:center; gap:10px; margin-top:8px; }
+.gbsecret{ display:flex; align-items:center; gap:6px; flex:none; white-space:nowrap; font-size:var(--f-md); color:var(--ink-80); cursor:pointer; }
+.gbsecret input{ width:auto; margin:0; flex:none; }
+/* 앱 단추는 기본이 꽉 찬 폭이라, 한 줄에 같이 놓는 단추는 제 크기로 */
+.gbbar button, .gbedit button, .gbreasons button{ width:auto; flex:none; }
+.gbbar button{ padding:8px 20px; }
+.gbbar .gbn{ margin-left:auto; font-variant-numeric:tabular-nums; }
+.gbrow{ padding:12px 0; border-top:1px solid var(--divider-soft); }
+.gbwrite + .gblist .gbrow:first-child, .gbshelf .gbrow:first-child{ border-top:0; }
+.gbwho{ display:flex; align-items:center; gap:8px; font-size:var(--f-md); }
+.gbwho b{ font-weight:600; color:var(--ink); cursor:pointer; }
+.gbface{ display:inline-flex; cursor:pointer; }
+.gbwho em{ margin-left:auto; font-style:normal; color:var(--ink-48); font-size:var(--f-sm); }
+.gbtag{ font-size:var(--f-xs); color:var(--brand-dark); border:1px solid var(--brand); border-radius:var(--r-sm); padding:0 5px; }
+.gbtag.hid{ color:var(--ink-48); border-color:var(--hairline); }
+.gbbody{ margin:6px 0 0 36px; font-size:var(--f-lg); line-height:1.55; color:var(--ink); white-space:pre-wrap; word-break:keep-all; overflow-wrap:anywhere; }
+.gbreply{ margin:8px 0 0 36px; background:var(--sunk); border-radius:var(--r-sm); padding:8px 10px; font-size:var(--f-md); line-height:1.5; color:var(--ink-80); }
+.gbreply b{ color:var(--brand-dark); font-weight:600; margin-right:6px; }
+.gbacts{ margin:6px 0 0 36px; display:flex; gap:14px; }
+.gbacts button{ border:0; background:none; padding:2px 0; font-size:var(--f-sm); color:var(--ink-48); }
+.gbacts button.danger{ color:var(--danger); font-weight:600; }
+.gbmore:empty{ display:none; }
+.gbedit, .gbreasons{ margin:8px 0 0 36px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.gbedit{ flex-wrap:nowrap; }
+.gbedit .gbrin{ flex:1 1 0; min-width:0; width:auto; }
+.gbreasons .memo{ flex-basis:100%; }
+.gblock{ display:flex; align-items:center; gap:8px; color:var(--ink-48); font-size:var(--f-md); }
+.gblock em{ margin-left:auto; font-style:normal; font-size:var(--f-sm); }
+.gbempty{ padding:14px 0 4px; color:var(--ink-48); font-size:var(--f-md); }

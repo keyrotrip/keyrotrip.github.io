@@ -13,10 +13,10 @@
  *   · 날짜는 **내 출발일로 옮깁니다**(사용자 결정) — 간격은 그대로
  *
  * 층: dom.js · net.js · db.js · calc.js · ctx(openTrip·me) */
-import { $, esc, toast } from './dom.js?v=b883';
-import { fail, netTimeout } from './net.js?v=b883';
-import { sb } from './db.js?v=b883';
-import { dayLabel, hm, dateRange, todayYmd, asDate, D1 } from './calc.js?v=b883';
+import { $, esc, toast } from './dom.js?v=b884';
+import { fail, netTimeout } from './net.js?v=b884';
+import { sb } from './db.js?v=b884';
+import { dayLabel, hm, dateRange, todayYmd, asDate, D1 } from './calc.js?v=b884';
 
 let ctx = { openTrip: async () => {}, me: () => null, showApp: () => {} };
 export function setSharedCtx(o){ ctx = { ...ctx, ...o }; }

@@ -8,7 +8,7 @@
  *     로기는 서버 표를 앱이 못 읽어서 이름으로 가립니다(131 이 넣을 때도 이름으로 찾았음).
  * ⚠ 방은 누구나 들을 수 있습니다 — 그래서 사람을 알아볼 것은 아예 안 보냅니다. 숫자는 관리자 화면만 그립니다.
  * ⚠ 실패해도(실시간이 끊김) 아무 말 안 합니다. 층: db 만 씁니다. */
-import { sb } from './db.js?v=b883';
+import { sb } from './db.js?v=b884';
 
 const 번호 = (() => { try { return crypto.randomUUID(); } catch { return String(Math.random()).slice(2) + Date.now(); } })();
 const 앱인가 = () => !!navigator.standalone || matchMedia('(display-mode: standalone)').matches;

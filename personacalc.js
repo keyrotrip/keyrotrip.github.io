@@ -19,7 +19,7 @@
  */
 /* 모험력이 서울에서의 거리를 씁니다. calc.js 는 아무것도 import 하지 않는
    잎이라 고리가 안 생깁니다. */
-import { distKm, distN, fameN, SEOUL } from './calc.js?v=b883';
+import { distKm, distN, fameN, SEOUL } from './calc.js?v=b884';
 
 /* ── 성향이 «확정»되는 문턱 — 해외 도시 10곳 ────────────────────────────────────────
  * 2026-10-03 사용자 「문턱 10곳으로 하자」. 5곳이면 한 곳 더 매길 때 유형이 바뀌는 사람이 61%,
