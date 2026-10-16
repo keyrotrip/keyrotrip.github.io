@@ -397,19 +397,42 @@ export function 막힌주소(ip: string): boolean {
 /* DNS 를 못 푸는 환경에서도 받는 이름 — 이 기능이 실제로 받는 곳들(블로그·지도). */
 const 알려진이름 = /(^|\.)(naver\.com|naver\.me|tistory\.com|brunch\.co\.kr|velog\.io|blogspot\.com|wordpress\.com|medium\.com|goo\.gl|google\.(com|co\.[a-z]{2}|[a-z]{2}))$/;
 
-const 기본해석: 해석기 = async (host) => {
+/* DNS 한 번에 기다리는 상한(2026-10-16 — 밖 리뷰 지적). 전엔 제한이 없어, DNS 가 답을 안 주면 아래
+   `안전요청` 의 제한 시간과 상관없이 그만큼 붙잡혔습니다(제한 시간은 fetch 에만 걸려 있었음).
+   넘으면 «확인 불가»(null) — 알려진 블로그·지도만 받습니다. */
+const DNS_한번ms = 3000;
+
+export const 기본해석: 해석기 = async (host) => {
   // deno-lint-ignore no-explicit-any
   const R = (Deno as any).resolveDns;
   if (typeof R !== 'function') return null;
+  const ac = new AbortController();
   let 못씀 = false;
   const 묻기 = async (t: string): Promise<string[]> => {
-    try { return await R(host, t) as string[]; }
+    try { return await R(host, t, { signal: ac.signal }) as string[]; }
     catch (e) { if (e instanceof Deno.errors.NotFound) return []; 못씀 = true; return []; }
   };
-  const [a, b] = await Promise.all([묻기('A'), 묻기('AAAA')]);
-  if (못씀 && !a.length && !b.length) return null;
-  return [...a, ...b];
+  let 타이머 = 0;
+  const 늦음 = new Promise<'늦음'>((ok) => { 타이머 = setTimeout(() => { ac.abort(); ok('늦음'); }, DNS_한번ms); });
+  try {
+    const 답 = await Promise.race([Promise.all([묻기('A'), 묻기('AAAA')]), 늦음]);
+    if (답 === '늦음') return null;
+    const [a, b] = 답;
+    if (못씀 && !a.length && !b.length) return null;
+    return [...a, ...b];
+  } finally { clearTimeout(타이머); }
 };
+
+/* 끊김 신호가 오면 기다리던 것을 내려놓습니다(DNS 처럼 스스로는 안 끊기는 일에 씀). */
+function 끊기면그만<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(new DOMException('aborted', 'AbortError'));
+  return new Promise<T>((ok, bad) => {
+    const 그만 = () => bad(new DOMException('aborted', 'AbortError'));
+    signal.addEventListener('abort', 그만, { once: true });
+    p.then((v) => { signal.removeEventListener('abort', 그만); ok(v); },
+           (e) => { signal.removeEventListener('abort', 그만); bad(e); });
+  });
+}
 
 /* 시험이 모의 네트워크를 끼울 자리. 운영에서는 진짜 fetch·DNS 입니다. */
 const 바깥망 = { fetch: (u: string, i?: RequestInit) => fetch(u, i), resolve: 기본해석 };
@@ -479,7 +502,8 @@ export async function 안전요청(raw: string, o: {
   try {
     let 지금 = raw;
     for (let 단계 = 0; ; 단계++) {
-      const 검 = await 주소검사(지금);
+      /* 주소 검사(DNS 포함)도 이 요청의 제한 시간 안에서 — 넘으면 아래 catch 에서 «시간 초과». */
+      const 검 = await 끊기면그만(주소검사(지금), ac.signal);
       if (!검.ok) return { ok: false, why: 검.why };
       if (ac.signal.aborted) return { ok: false, why: '시간 초과' };
       const res = await 바깥망.fetch(검.url.href, { signal: ac.signal, redirect: 'manual', headers: o.headers });
@@ -534,7 +558,7 @@ const BODY_PATTERNS: RegExp[] = [
 
 /** 시간 제한을 건 받기. 없으면 느린 블로그 하나가 요청 전체를 붙잡습니다.
  *  ⚠ 2026-10-16 부터 `안전요청` 을 지납니다(위 머리말) — 주소·리다이렉트 매 단계·DNS 검사. */
-async function fetchText(u: string, ms: number) {
+async function fetchText(u: string, ms: number, signal?: AbortSignal) {
   // ── 크기를 재고 받습니다 ──
   // 크기를 안 재고 받으면 큰 페이지에서 손해입니다. 네이버·티스토리 글 한 장의 HTML 이
   // 수 MB 인데 그걸 **셋을 동시에** 받아서, 각각 정규식 여덟 번을 통과시켰습니다.
@@ -545,7 +569,7 @@ async function fetchText(u: string, ms: number) {
   // ⚠ 전에는 Content-Length 머리만 보고 거르고 `res.text()` 로 끝까지 받았습니다 — 머리가
   //   없거나 거짓이면 그대로 다 받았습니다. 이제 흘려 받으며 HTML_MAX 바이트에서 끊습니다.
   const r = await 안전요청(u, {
-    ms, maxBytes: HTML_MAX,
+    ms, maxBytes: HTML_MAX, signal,
     headers: {
       // 모바일 브라우저인 척해야 모바일 본문이 옵니다.
       'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ' +
@@ -582,13 +606,13 @@ function htmlToText(html: string) {
     .trim();
 }
 
-async function readBlog(raw: string) {
+async function readBlog(raw: string, signal?: AbortSignal) {
   let u = String(raw || '').trim().replace(/[)\]},.;]+$/, '');  // 문장 끝 기호가 붙어 옵니다
   if (!/^https?:\/\//i.test(u)) return null;
   // 네이버는 본문을 iframe 안에 넣어서 원래 주소로 받으면 껍데기만 옵니다.
   u = u.replace('://blog.naver.com', '://m.blog.naver.com');
 
-  let html = await fetchText(u, BLOG_MS);
+  let html = await fetchText(u, BLOG_MS, signal);
   let text = html ? htmlToText(html) : '';
 
   // 네이버 구형 주소는 모바일로 바꿔도 iframe 껍데기가 옵니다.
@@ -601,7 +625,7 @@ async function readBlog(raw: string) {
          검사를 합니다. 상대 주소는 예전처럼 m.blog.naver.com 기준으로 풉니다(`//다른곳` 꼴도). */
       let abs = '';
       try { abs = new URL(inner.replace(/&amp;/g, '&'), 'https://m.blog.naver.com/').href; } catch { /* 이상한 주소는 버림 */ }
-      html = abs ? await fetchText(abs, BLOG_MS) : null;
+      html = abs ? await fetchText(abs, BLOG_MS, signal) : null;
       text = html ? htmlToText(html) : '';
     }
   }
@@ -638,7 +662,7 @@ const GMAP_RE = /^https?:\/\/(?:[a-z0-9-]+\.)*(?:google\.[a-z.]+\/maps|goo\.gl\/
 const isGoogleMap = (u: string) => GMAP_RE.test(String(u || '').trim());
 
 /** 단축 주소를 펼칩니다. 실패하면 원래 주소를 그대로 씁니다. */
-async function unshortenMap(u: string) {
+async function unshortenMap(u: string, signal?: AbortSignal) {
   /* ⚠ 전에는 `/goo\.gl/` 글자가 주소 «어디에든» 있으면 받았습니다 — `http://내부주소/?goo.gl`
      꼴로 아무 곳이나 받게 할 수 있었습니다. 이제 **주소의 이름**이 goo.gl 일 때만 받습니다. */
   let host = '';
@@ -649,7 +673,7 @@ async function unshortenMap(u: string) {
     // 동의 페이지(consent.google.com)로 보내서, 이름조차 못 뽑게 됐습니다 —
     // 고치기 전보다 나빠졌습니다. 재보고 알았습니다. 원래대로 둡니다.
     // ⚠ 리다이렉트는 안전요청 이 한 단계씩 검사하며 따라갑니다(최종 주소는 r.url).
-    const r = await 안전요청(u, { ms: BLOG_MS, maxBytes: HTML_MAX, headers: { 'user-agent': 'Mozilla/5.0' } });
+    const r = await 안전요청(u, { ms: BLOG_MS, maxBytes: HTML_MAX, headers: { 'user-agent': 'Mozilla/5.0' }, signal });
     if (!r.ok) return u;
     const res = { url: r.url };
     const html = r.text;
@@ -711,8 +735,8 @@ function parseMapUrl(raw: string) {
   return { name, lat, lng };
 }
 
-async function readGoogleMap(raw: string) {
-  const full = await unshortenMap(String(raw || '').trim().replace(/[)\]},.;]+$/, ''));
+async function readGoogleMap(raw: string, signal?: AbortSignal) {
+  const full = await unshortenMap(String(raw || '').trim().replace(/[)\]},.;]+$/, ''), signal);
   const got = parseMapUrl(full);
   if (!got) return null;
   // 글(모델에게 줄 것)과 값(우리가 그대로 쓸 것)을 같이 돌려줍니다.
@@ -726,14 +750,15 @@ async function readGoogleMap(raw: string) {
 }
 
 /* 시험(supabase/tests/chat_safe_fetch_test.ts)이 부르려고 내보냅니다 — 하는 일은 그대로입니다. */
-export async function readLinks(message: string) {
+/* `signal` — 요청 마감(2026-10-16): 끊기면 받던 링크를 다 내려놓습니다. */
+export async function readLinks(message: string, signal?: AbortSignal) {
   const urls = [...new Set(String(message ?? '')
     .match(/https?:\/\/[^\s<>"']+/g) ?? [])].slice(0, BLOG_MAX);
   if (!urls.length) return { block: '', report: [] as { link: string; ok: boolean }[] };
 
   const got = await Promise.all(urls.map(async (u) => {
-    if (!isGoogleMap(u)) return { link: u, map: false, text: await readBlog(u), place: null };
-    const r = await readGoogleMap(u);
+    if (!isGoogleMap(u)) return { link: u, map: false, text: await readBlog(u, signal), place: null };
+    const r = await readGoogleMap(u, signal);
     return { link: u, map: true, text: r?.text ?? null, place: r?.place ?? null };
   }));
   const okOnes = got.filter((g) => g.text);
@@ -852,16 +877,34 @@ export async function 처리(req: Request): Promise<Response> {
   const T0 = Date.now();
   const lap: string[] = [];
   const mark = (name: string) => lap.push(`${name} ${Date.now() - T0}ms`);
-  /* 요청 전체의 끝(위 「시간 예산」). 바깥 호출은 모두 이 시각을 넘기지 않습니다. */
-  const 마감 = T0 + 요청예산ms;
+  /* 요청 전체의 끝(위 「시간 예산」). 바깥 호출은 모두 이 시각을 넘기지 않습니다.
+     화면이 «이만큼만 기다린다»(wait_ms)고 알려 오면 그보다 앞당깁니다(아래 마감맞추기). */
+  let 마감 = T0 + 요청예산ms;
+  /* ── 마감 신호(2026-10-16 — 밖 리뷰: «입력 읽기·DB 조회·검색·모델 호출이 같은 마감을 따르게») ──
+     Gemini·Tavily 는 `마감` 시각으로 스스로 끊지만, 입력 읽기·DB 조회·링크 읽기는 끊을 길이 없었습니다.
+     마감이 되면 이 신호가 켜지고, 그 셋이 다 이 신호로 멈춥니다(DB 는 아래 `마감fetch` 하나로 전부). */
+  const 끊김 = new AbortController();
+  let 끊김타이머 = setTimeout(() => 끊김.abort(), 요청예산ms);
+  const 마감맞추기 = (ms: number) => {
+    마감 = Math.min(마감, T0 + ms);
+    clearTimeout(끊김타이머);
+    끊김타이머 = setTimeout(() => 끊김.abort(), Math.max(0, 마감 - Date.now()));
+  };
+  const 마감fetch = ((input: string | URL | Request, init: RequestInit = {}) =>
+    fetch(input, { ...init, signal: init.signal ? AbortSignal.any([init.signal, 끊김.signal]) : 끊김.signal })
+  ) as typeof fetch;
   /* 사용자에게는 쉬운 말과 이 번호만, 로그에는 자세한 까닭과 이 번호를 남깁니다.
      문의가 오면 번호로 로그를 찾습니다(2026-10-16 — 전에는 내부 오류 글을 그대로 돌려줬습니다). */
   const 요청번호 = crypto.randomUUID().slice(0, 8);
+  const 늦음말 = '답을 만드는 데 시간이 너무 걸렸어요. 잠시 뒤 다시 해주세요.';
   const 내부오류 = (어디: string, e: unknown, 말 = '잠시 문제가 생겼어요. 조금 뒤 다시 해주세요.',
                     status = 500) => {
     // deno-lint-ignore no-explicit-any
     const x = e as any;
-    console.error(`[${요청번호}] ${어디}`, x?.code ?? '', String(x?.message ?? x ?? '').slice(0, 300));
+    console.error(`[${요청번호}] ${어디}`, x?.code ?? '', String(x?.message ?? x ?? '').slice(0, 300),
+                  끊김.signal.aborted ? '(마감 지남)' : '');
+    /* 마감에 걸려 생긴 실패면 «시간이 너무 걸렸다»고 말합니다(DB 가 끊겨 난 오류도 여기로 옵니다). */
+    if (끊김.signal.aborted) return json({ error: 늦음말, ref: 요청번호, timeout: true }, 504);
     return json({ error: 말, ref: 요청번호 }, status);
   };
 
@@ -875,7 +918,7 @@ export async function 처리(req: Request): Promise<Response> {
     const url = Deno.env.get('SUPABASE_URL')!;
     // 부른 사람의 토큰으로 읽습니다 — RLS 가 그대로 걸립니다.
     const asUser = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: auth } }, auth: 서버용인증,
+      global: { headers: { Authorization: auth }, fetch: 마감fetch }, auth: 서버용인증,
     });
     const { data: { user } } = await asUser.auth.getUser();
     if (!user) return json({ error: '로그인이 필요해요.' }, 401);
@@ -888,13 +931,20 @@ export async function 처리(req: Request): Promise<Response> {
     // deno-lint-ignore no-explicit-any
     let body: any = {};
     {
-      const 받음 = await 상한까지(new Response(req.body), 요청최대바이트 + 1);
+      /* 입력 읽기도 마감 안에서 — 느리게 흘려 보내는 요청이 함수를 붙잡지 못하게. */
+      const 받음 = await 끊기면그만(상한까지(new Response(req.body), 요청최대바이트 + 1), 끊김.signal);
       if (받음.truncated)
         return json({ error: '보낸 것이 너무 커요. 사진을 줄이거나 나눠서 보내주세요.' }, 413);
       try { body = JSON.parse(받음.text || '{}'); } catch { body = {}; }
       if (!body || typeof body !== 'object' || Array.isArray(body)) body = {};
     }
     const { trip_id, message, mode, prefs, image, images } = body;
+    /* 화면이 기다리는 시간(2026-10-16). 화면이 먼저 포기한 뒤에도 서버가 검색하고 답을 만들면 사용량·돈만
+       나갑니다. 그보다 5초 일찍 접습니다(오가는 길 몫). 10초 미만·이상한 값은 무시 — 늘리지는 않습니다. */
+    {
+      const 화면기다림 = Number(body.wait_ms);
+      if (Number.isFinite(화면기다림) && 화면기다림 >= 10_000) 마감맞추기(화면기다림 - 5_000);
+    }
 
     /* 모양 검사(2026-10-16). 예전엔 무엇이 와도 String() 으로 펴서 썼습니다. */
     const 모드들 = [undefined, null, 'map', 'draft', 'import', 'places', 'addr'];
@@ -918,7 +968,7 @@ export async function 처리(req: Request): Promise<Response> {
     // 여기 이미 unshortenMap·parseMapUrl 이 있어서 통로만 냅니다 —
     // 함수를 하나 더 만들면 배포할 것이 하나 더 늘 뿐입니다.
     if (mode === 'map'){
-      const got = await readGoogleMap(String(message || ''));
+      const got = await readGoogleMap(String(message || ''), 끊김.signal);
       if (!got?.place) return json({ error: '이 주소에서는 위치를 못 찾았어요.' }, 200);
       const { name, lat, lng } = got.place;
       return json({ name: name || null,
@@ -989,7 +1039,8 @@ export async function 처리(req: Request): Promise<Response> {
     // 둘은 서로를 안 기다려도 되는 일입니다.
     // 관리자가 화면에서 바꾸는 값들입니다(db/047). 표가 비었거나 못 읽으면
     // 아래 기본값으로 갑니다 — 설정을 못 읽었다고 답을 안 해주면 안 됩니다.
-    const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: 서버용인증 });
+    const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+                               { auth: 서버용인증, global: { fetch: 마감fetch } });
     /* 생각 정도(위 「AI 가 속으로 생각하는 정도」) — 대화일 때만. 관리자 전용 값이 있으면 관리자인지도
        **같이** 묻습니다(따로 물으면 왕복이 하나 더 붙습니다). 못 물으면 관리자가 아닌 것으로 — 지금과 같게. */
     const 대화 = !draft && !imp && !geo && !addrMode;
@@ -1229,7 +1280,7 @@ export async function 처리(req: Request): Promise<Response> {
     // 링크 읽기를 **여기서 미리 걸어둡니다.** 아래 여행 자료를 받아오는 동안
     // 같이 돌게 하려는 것입니다. 예전에는 자료를 다 받은 뒤에야 시작해서
     // 그 둘이 순서대로 더해졌습니다. 결과는 쓸 자리에서 기다립니다.
-    const linksP = readLinks(String(message ?? ''));
+    const linksP = readLinks(String(message ?? ''), 끊김.signal);
     /* 지난 대화도 **여기서 미리 출발시킵니다**(2026-10-16). 예전엔 웹 검색이 끝난 뒤에야
        읽기 시작해 그 시간이 그대로 더해졌습니다. 여행 id 만 있으면 되는 일이라 여행 자료·검색과
        같이 돌아도 됩니다. 결과는 아래 「여태 나눈 이야기」에서 기다립니다.
@@ -1936,7 +1987,10 @@ export async function 처리(req: Request): Promise<Response> {
       if (r.code !== 200){
         // HTTP 코드를 사용자에게 보여줄 이유가 없습니다. 로그에는 남습니다.
         console.error('gemini 최종실패', r.code, 오류요약(r.body));
-        return json({ error: 'AI가 답을 안 줬어요. 잠시 뒤 다시 물어봐주세요.' }, 502);
+        /* 마감에 걸린 실패면 «시간이 너무 걸렸다»로(화면이 다시 시도를 권할 수 있게 timeout 표시). */
+        if (Date.now() >= 마감 - 최소남은ms)
+          return json({ error: 늦음말, ref: 요청번호, timeout: true }, 504);
+        return json({ error: 'AI가 답을 안 줬어요. 잠시 뒤 다시 물어봐주세요.', ref: 요청번호 }, 502);
       }
 
       const parsed = JSON.parse(r.body);
@@ -2102,6 +2156,8 @@ export async function 처리(req: Request): Promise<Response> {
        이제 로그에만 남기고 사용자에겐 쉬운 말과 번호만(2026-10-16). */
     console.error(`[${요청번호}] 예상 못 한 오류 | ` + lap.join(' | '));
     return 내부오류('catch', e);
+  } finally {
+    clearTimeout(끊김타이머);   /* 다 끝났으면 마감 타이머를 치웁니다(함수 인스턴스는 다음 요청에도 씀) */
   }
 }
 

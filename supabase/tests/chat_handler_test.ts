@@ -398,6 +398,60 @@ Deno.test('대화 답에서 «넣었어요»를 고쳐 보낸다(카드가 있�
   } finally { 끝(); }
 });
 
+/* ── 4-4. 한 요청 = 한 마감(2026-10-16 — 밖 리뷰) ─────────────────────────────────
+   화면이 «10초만 기다린다»(wait_ms)고 하면 서버 마감은 5초. 무엇이 멈춰도 그 근처에서 504 로 끝나야 합니다. */
+Deno.test('화면이 기다리는 시간보다 먼저 접는다 — Gemini 가 안 돌아와도 504', async () => {
+  기본길([[/generativelanguage\.googleapis\.com/, () => 'hang']]);
+  try {
+    const t = Date.now();
+    const r = await 답(await 처리(요청({ message: '안녕', wait_ms: 10_000 })));
+    const 걸림 = Date.now() - t;
+    assertEquals(r.status, 504);
+    assertEquals(r.body.timeout, true);
+    assert(r.body.ref);
+    assert(걸림 < 7000, `화면(10초)보다 먼저 끝나야 함 — ${걸림}ms`);
+  } finally { 끝(); }
+});
+
+Deno.test('DB 조회가 멈춰도 마감에서 끊고 504(«여행 없음»으로 답하지 않음)', async () => {
+  기본길([[/\/rest\/v1\/trips$/, () => 'hang']]);
+  try {
+    const t = Date.now();
+    const r = await 답(await 처리(요청({ message: '내일 뭐 해?', trip_id: TRIP, wait_ms: 10_000 })));
+    assertEquals(r.status, 504);
+    assert(Date.now() - t < 7000);
+    assertEquals(제미니부름().length, 0, '여행을 못 읽었으면 AI 를 부르지 않음');
+  } finally { 끝(); }
+});
+
+Deno.test('링크 서버가 응답이 없어도 마감 안에서 끝난다', async () => {
+  기본길();
+  // deno-lint-ignore no-explicit-any
+  (chat as any).__시험용망({ fetch: (_u: string, i?: RequestInit) => new Promise((_ok, bad) => {
+    i?.signal?.addEventListener('abort', () => bad(new DOMException('aborted', 'AbortError')));
+  }), resolve: () => Promise.resolve(['93.184.216.34']) });
+  try {
+    const t = Date.now();
+    const r = await 처리(요청({ message: 'https://blog.example.com/a 이거 읽어줘', wait_ms: 10_000 }));
+    assert([200, 504].includes(r.status), String(r.status));
+    await r.body?.cancel();
+    assert(Date.now() - t < 7000, `마감 안에서 끝나야 함 — ${Date.now() - t}ms`);
+  } finally {
+    끝();
+    // deno-lint-ignore no-explicit-any
+    (chat as any).__시험용망({ fetch: (u: string, i?: RequestInit) => fetch(u, i), resolve: () => Promise.resolve(null) });
+  }
+});
+
+Deno.test('wait_ms 가 이상하거나 너무 작으면 무시(늘리지도 않음)', async () => {
+  기본길();
+  try {
+    for (const w of ['abc', -5, 3000, null]) {
+      assertEquals((await 처리(요청({ message: '안녕', wait_ms: w }))).status, 200, String(w));
+    }
+  } finally { 끝(); }
+});
+
 /* ── 5. 바깥 호출의 시간 상한 ──────────────────────────────────────── */
 Deno.test('callGemini: 마감이 지났으면 부르지 않고 599', async () => {
   기본길();

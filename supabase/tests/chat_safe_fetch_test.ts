@@ -11,7 +11,7 @@ const 원래serve = Deno.serve; (Deno as any).serve = () => ({ finished: Promise
 const chat = await import('../functions/chat/index.ts');
 // deno-lint-ignore no-explicit-any
 (Deno as any).serve = 원래serve;
-const { 막힌주소, 주소검사, 안전요청, __시험용망, readLinks } = chat;
+const { 막힌주소, 주소검사, 안전요청, __시험용망, readLinks, 기본해석 } = chat;
 
 /* ── 모의 네트워크 ───────────────────────────────────────────────────── */
 type 가짜응답 = { status?: number; headers?: Record<string, string>; body?: string | Uint8Array[]; 늦게?: number; 안끝남?: boolean };
@@ -183,4 +183,57 @@ Deno.test('진짜 지도 단축 주소는 한 단계씩 검사하며 펼친다',
   assertEquals(r.maps?.length, 1);
   assertEquals(r.maps?.[0]?.name, 'Tokyo Tower');
   assertEquals(불림.length, 2);
+});
+
+/* ── 느린 DNS(2026-10-16 — 밖 리뷰: «DNS 조회에도 대기 제한») ─────────────────────── */
+Deno.test('DNS 가 답을 안 주면 요청 제한 시간에서 끊고 받으러 가지 않는다', async () => {
+  새로();
+  __시험용망({ fetch: 가짜fetch, resolve: () => new Promise(() => {}) });   // 영영 안 돌아오는 DNS
+  const t = Date.now();
+  const r = await 안전요청('https://slow-dns.example/a', { ms: 300, maxBytes: 1000 });
+  assertEquals(r.ok, false);
+  if (!r.ok) assertEquals(r.why, '시간 초과');
+  assert(Date.now() - t < 2000, '제한 시간 근처에서 끊겨야 함');
+  assertEquals(불림.length, 0, 'DNS 가 안 끝났으면 받으러 가면 안 됨');
+});
+
+Deno.test('기본해석: Deno.resolveDns 가 영영 안 돌아오면 3초 뒤 «확인 불가»(null)', async () => {
+  // deno-lint-ignore no-explicit-any
+  const D = Deno as any; const 원래 = D.resolveDns;
+  D.resolveDns = (_h: string, _t: string, o?: { signal?: AbortSignal }) => new Promise((_ok, bad) => {
+    o?.signal?.addEventListener('abort', () => bad(new DOMException('aborted', 'AbortError')));
+  });
+  try {
+    const t = Date.now();
+    assertEquals(await 기본해석('slow.example'), null);
+    const 걸림 = Date.now() - t;
+    assert(걸림 >= 2900 && 걸림 < 4500, `3초 근처여야 함 — ${걸림}ms`);
+  } finally { D.resolveDns = 원래; }
+});
+
+Deno.test('기본해석: 정상이면 A·AAAA 를 합쳐 돌려준다 · 이름 없음은 빈 목록', async () => {
+  // deno-lint-ignore no-explicit-any
+  const D = Deno as any; const 원래 = D.resolveDns;
+  D.resolveDns = (h: string, t: string) => h === 'none.example'
+    ? Promise.reject(new Deno.errors.NotFound('x'))
+    : Promise.resolve(t === 'A' ? ['93.184.216.34'] : ['2606:4700::1111']);
+  try {
+    assertEquals(await 기본해석('ok.example'), ['93.184.216.34', '2606:4700::1111']);
+    assertEquals(await 기본해석('none.example'), []);
+  } finally { D.resolveDns = 원래; }
+});
+
+Deno.test('응답이 중간에 멈추면(본문이 안 끝남) 제한 시간에서 끊는다', async () => {
+  새로();
+  /* 머리는 바로 오고 본문 흐름이 멈춘 서버 */
+  __시험용망({ fetch: (_u: string, i?: RequestInit) => Promise.resolve(new Response(new ReadableStream<Uint8Array>({
+    start(c) {
+      c.enqueue(new TextEncoder().encode('<html>앞부분'));
+      i?.signal?.addEventListener('abort', () => c.error(new DOMException('aborted', 'AbortError')));
+    },
+  }), { status: 200, headers: { 'content-type': 'text/html' } })), resolve: 가짜dns });
+  const t = Date.now();
+  const r = await 안전요청('https://stall.example/a', { ms: 300, maxBytes: 100000 });
+  assertEquals(r.ok, false);
+  assert(Date.now() - t < 2000);
 });

@@ -202,7 +202,10 @@ $('ai_send').addEventListener('click', async () => {
       { body: { trip_id: tripId || null, message: msg,
                 /* 한 장만 보낼 때도 images 로 보냅니다. 서버가 옛 image 도 받아주지만
                    보내는 쪽이 두 갈래면 언젠가 한쪽만 고칩니다. */
-                images: shots.map(s => ({ mime: s.mime, data: s.data })) } }),
+                images: shots.map(s => ({ mime: s.mime, data: s.data })),
+                /* 화면이 이만큼만 기다립니다(2026-10-16). 서버는 이보다 몇 초 일찍 접어, 화면이 포기한 뒤에
+                   혼자 검색하고 답을 만드는 일(사용량·돈만 나감)을 줄입니다. */
+                wait_ms: wait } }),
     new Promise(r => setTimeout(() => r({ data:null, error:{ message:
       shots.length
         ? `사진을 읽는 데 ${Math.round(wait / 1000)}초를 넘겼어요. ` +
