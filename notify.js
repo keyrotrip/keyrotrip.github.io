@@ -14,11 +14,11 @@
  * 밖으로 나가는 길은 `loadNotifPrefs` 하나입니다.
  *
  * 층: dom.js · db.js · net.js 만 씁니다. */
-import { $, esc, toast } from './dom.js?v=b884';
-import { sb } from './db.js?v=b884';
-import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b884';
+import { $, esc, toast } from './dom.js?v=b885';
+import { sb } from './db.js?v=b885';
+import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b885';
 /* 「읽은 알림 지우기」를 한 번 더 눌러 정하는 장치(b799). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm, disarm } from './ui.js?v=b884';
+import { arm, disarm } from './ui.js?v=b885';
 
 let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {}, openFoodNote: () => {}, openCity: () => {} };
 export function setNotifyCtx(o){ ctx = { ...ctx, ...o }; }

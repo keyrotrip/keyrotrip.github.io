@@ -1,7 +1,7 @@
 /* ── 방명록 (2026-10-16, db/138 · 사용자: 보관함 빈 칸 → 「방명록으로 가자」 · 「비밀 댓글도 가능하게」) ─────────
  *
  * 두 자리에서 같은 그림을 씁니다:
- *   ① 사람 화면(people.js) 맨 아래 — 남의 방명록: 쓰기 칸 + 목록 / 내 사람 화면이면 목록만
+ *   ① 사람 화면(people.js) 머리 「방명록」 단추 → 들어간 판 — 남의 방명록: 쓰기 칸 + 목록 / 내 사람 화면이면 목록만
  *   ② 보관함 → 방명록(shelf.js) — 내 방명록: 목록 + 글마다 한 줄 답 · 지우기 · 신고
  * 정한 것(사용자): 쓰기는 그 사람 화면을 볼 수 있는 사람 · 보기는 그 화면을 보는 사람 모두 ·
  *   비밀 글은 주인과 쓴 사람만(남에게는 «비밀 글이에요» 자리만) · 답은 주인만 한 줄.
@@ -9,10 +9,10 @@
  * ⚠ 내 글엔 내 반응 없음(메모 own-content-actions): 내가 쓴 글에는 «신고»가 없고 «지우기»만.
  * ⚠ 지우기는 두 번 눌러야(첫 번에 «정말 지우기»로 바뀜 — 맛집 내 글 삭제와 같음, b866).
  * 층: dom · net · guestdata(서버) · cityrev(«2일 전»). 사람 열기는 ctx 로 받습니다(people.js 를 읽으면 고리). */
-import { $, esc, toast, avatarImg, emptyDo } from './dom.js?v=b884';
-import { netTimeout } from './net.js?v=b884';
-import { 방명록읽기, 내방명록숫자, 방명록쓰기, 방명록답, 방명록지우기, 방명록신고 } from './guestdata.js?v=b884';
-import { 언제 } from './cityrev.js?v=b884';
+import { $, esc, toast, avatarImg, emptyDo } from './dom.js?v=b885';
+import { netTimeout } from './net.js?v=b885';
+import { 방명록읽기, 내방명록숫자, 방명록쓰기, 방명록답, 방명록지우기, 방명록신고 } from './guestdata.js?v=b885';
+import { 언제 } from './cityrev.js?v=b885';
 
 let ctx = { me: () => null, openPerson: () => {} };
 export function setGuestCtx(o){ ctx = { ...ctx, ...o }; }
@@ -62,7 +62,8 @@ async function 채우기(칸){
   }
   const 글들 = r.data || [];
   const 수 = 글들.filter(x => !x.hidden).length;
-  const 수칸 = 칸.querySelector('.gbcount');
+  /* 들어간 판이면 머리(.whosubhd)가 칸 바로 앞에 따로 있습니다(방명록칸 판:true) */
+  const 수칸 = 칸.querySelector('.gbcount') || 칸.previousElementSibling?.querySelector?.('.gbcount');
   if (수칸) 수칸.textContent = 수 ? `${수}개` : '';
   if (보관함 && $('shelfcount')){
     const 기다림 = 글들.filter(x => !x.hidden && x.owner_me && !x.reply && x.body != null).length;
@@ -78,9 +79,12 @@ async function 채우기(칸){
 }
 
 /* ① 사람 화면 — 칸 HTML 을 돌려주고, 붙인 뒤 `방명록채우기` 를 부릅니다. */
-export function 방명록칸(주인, { self = false, 이름 = '' } = {}){
-  return `<div class="card gbbox" id="whogb" data-gbowner="${esc(주인)}" data-gbself="${self ? 1 : 0}" data-gbname="${esc(이름)}">
-    <div class="gbhd"><b>방명록</b><span class="gbcount memo"></span></div>
+export function 방명록칸(주인, { self = false, 이름 = '', 판 = false } = {}){
+  /* 판: 사람 화면의 들어간 판으로 열 때 — 머리를 다른 판(people.js 판머리)과 같은 모양으로 */
+  const 머리 = 판 ? `<div class="whosubhd"><h2>방명록 <span class="gbcount memo"></span></h2></div>`
+                  : `<div class="gbhd"><b>방명록</b><span class="gbcount memo"></span></div>`;
+  return `${판 ? 머리 : ''}<div class="card gbbox" id="whogb" data-gbowner="${esc(주인)}" data-gbself="${self ? 1 : 0}" data-gbname="${esc(이름)}">
+    ${판 ? '' : 머리}
     ${self ? '' : `<div class="gbwrite">
       <textarea class="gbin" rows="2" maxlength="${글상한}" placeholder="${esc(이름 || '이 사람')}님에게 한마디 남겨요"></textarea>
       <div class="gbbar"><label class="gbsecret"><input type="checkbox" class="gbsec"> <span aria-hidden="true">🔒</span> 비밀 글</label>

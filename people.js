@@ -35,26 +35,26 @@
  * ⚠ 지구본은 열 때마다 새로 띄우고 닫을 때 `끝()` 으로 치웁니다 — 안 치우면
  *   보이지도 않는 지구가 뒤에서 계속 돕니다.
  */
-import { $, esc, toast, avatarImg, flagOf, flagOk, emptyDo } from './dom.js?v=b884';
-import { sb } from './db.js?v=b884';
-import { netTimeout } from './net.js?v=b884';
-import { cities, countryName } from './cities.js?v=b884';
-import { myRates, visited, 별받음 } from './rate.js?v=b884';
+import { $, esc, toast, avatarImg, flagOf, flagOk, emptyDo } from './dom.js?v=b885';
+import { sb } from './db.js?v=b885';
+import { netTimeout } from './net.js?v=b885';
+import { cities, countryName } from './cities.js?v=b885';
+import { myRates, visited, 별받음 } from './rate.js?v=b885';
 /* 내 별점이 아직 안 왔으면 받는 곳(b797 — 아래 `알맹이그림`). rating.js 는 이 파일을 안 읽으므로 고리가 없습니다. */
-import { loadRateData } from './rating.js?v=b884';
+import { loadRateData } from './rating.js?v=b885';
 import { PERSONA16, personaMatch, personaMateLine, personaAxes, personaRank,
          personaMates, axisSpectrum, AXIS_WORD,
-         personaSaved, personaWhyHtml } from './card.js?v=b884';
-import { 성향문턱 } from './personacalc.js?v=b884';
+         personaSaved, personaWhyHtml } from './card.js?v=b885';
+import { 성향문턱 } from './personacalc.js?v=b885';
 /* 내 코드는 서버에 올린 것(흔들림 막기까지 거친 것)을 먼저 씁니다 — 분석 탭과 같은 유형이어야 궁합이 맞습니다. */
-import { knownPersona } from './pshift.js?v=b884';
-import { starsRo } from './stars.js?v=b884';
-import { mountGlobe } from './globe.js?v=b884';
-import { arm } from './ui.js?v=b884';
+import { knownPersona } from './pshift.js?v=b885';
+import { starsRo } from './stars.js?v=b885';
+import { mountGlobe } from './globe.js?v=b885';
+import { arm } from './ui.js?v=b885';
 /* 친구가 매긴 도시를 누르면 여는 화면(b789). city.js 는 이 파일을 안 읽으므로 고리가 없습니다. */
-import { openCity } from './city.js?v=b884';
+import { openCity } from './city.js?v=b885';
 /* 방명록(2026-10-16, db/138) — 알맹이를 볼 수 있을 때만 맨 아래에. guestbook.js 는 이 파일을 안 읽습니다(고리 없음). */
-import { 방명록칸, 방명록채우기 } from './guestbook.js?v=b884';
+import { 방명록칸, 방명록채우기 } from './guestbook.js?v=b885';
 
 let ctx = { me: () => null, openFriends: () => {}, onFollowChange: () => {} };
 export function setPeopleCtx(o){ ctx = { ...ctx, ...o }; }
@@ -125,6 +125,12 @@ export function closePerson(fromPop){
 
 /* 뒤로(b799) — 들어간 판이 있으면 한 겹만, 없으면 사람 화면을 닫습니다.
    tripview.js 의 뒤로가기 사슬과 「← 뒤로」 단추가 부릅니다. */
+/* 알림에서 — 그 사람 화면을 열고 바로 방명록 판으로(뒤로 = 그 사람 첫 판) */
+export async function openPersonGuestbook(uid){
+  await openPerson(uid);
+  if (지금 === uid && 알) 들어가기('guestbook');
+}
+
 export function personBack(fromPop){
   if (층.length) return 나오기(fromPop);
   closePerson(fromPop);
@@ -166,7 +172,6 @@ async function 그리기(){
   if (!알) 층 = [];
   몸.innerHTML = `<div id="whosum">${머리그림(머리) + 아래}</div><div id="whosub" class="hide"></div>`;
   if (알) 지구본올리기(알);
-  if (알) 방명록채우기();   /* 칸은 위에서 그렸고 글은 따로 받습니다 — 못 받아도 사람 화면은 그대로 */
   /* 들어간 판에서 다시 그렸으면(⋯ 의 팔로워 빼기 등) 그 판을 새 자료로 다시 폅니다. */
   if (층.length) 서브그리기(false);
 }
@@ -175,18 +180,34 @@ function 이름(h){ return h?.name || '여행자'; }   /* b799: 「이름 없음
 /* 공개 범위(b799, db/106). 옛 서버(106 전)는 visibility 를 안 보내므로 잠금에서 셉니다. */
 const 범위 = h => h?.visibility || (h?.locked ? 'off' : 'private');
 
+/* 머리 단추 그림 — 보관함 칸 그림과 같은 선 굵기(1.8) */
+const 선 = d => `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const 사람선 = '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 19.5a6.5 6.5 0 0 1 13 0"/>';
+const 그림 = {
+  follow:    선(사람선 + '<path d="M19 8v6M16 11h6"/>'),
+  following: 선(사람선 + '<path d="M16 11l2 2 4-4"/>'),
+  person:    선(사람선),
+  friends:   선('<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2a5 5 0 0 1 6 5.3"/>'),
+  book:      선('<path d="M5 4.5h11.5a2 2 0 0 1 2 2v13H7a2 2 0 0 1-2-2z"/><path d="M5 17.5a2 2 0 0 1 2-2h11.5"/><path d="M9 8.5h6M9 11.5h4"/>'),
+};
+
 function 머리그림(h){
   /* 비활성화한 사람(db/106 — 옛 「비공개로 잠그기」). 서버가 수·소개·알맹이를 안 보냅니다.
      이미 팔로우 중이거나 요청해 둔 것은 끊거나 거둘 수 있게 둡니다. */
   const 꺼짐 = 범위(h) === 'off' && !h.self;
   const 단추 = (() => {
-    if (h.self) return `<button class="small" data-who="friends">내 친구 보기</button>`;
-    if (h.mine === 'accepted') return `<button class="small on" data-who="unfollow">팔로잉 ✓</button>`;
-    if (h.mine === 'requested') return `<button class="small" data-who="cancel">요청됨</button>`;
+    if (h.self) return `<button class="small" data-who="friends">${그림.friends}내 친구 보기</button>`;
+    if (h.mine === 'accepted') return `<button class="small on" data-who="unfollow">${그림.following}팔로잉</button>`;
+    if (h.mine === 'requested') return `<button class="small" data-who="cancel">${그림.person}요청됨</button>`;
     if (꺼짐) return `<button class="small" disabled>비활성화된 계정</button>`;
     const 글 = h.theirs === 'accepted' ? '맞팔로우' : '팔로우';
-    return `<button class="primary" data-who="follow">${글}</button>`;
+    return `<button class="small primary" data-who="follow">${그림.follow}${글}</button>`;
   })();
+  /* 방명록(2026-10-16 사용자: 「맨 아래라 보이지도 않아 — 팔로우 | 방명록 둘로 나누고 아이콘도 각각」 · 「누르면 새로 열자」)
+     — 팔로우 단추 옆 반쪽. 누르면 들어간 판(판그림.guestbook). 알맹이를 못 보는 사람(잠김·비활성화)에게는 없습니다. */
+  const 방명록단추 = (h.self || (h.can_see && !꺼짐))
+    ? `<button class="small" data-whosub="guestbook">${그림.book}방명록</button>` : '';
   /* 나에게 온 요청은 여기서 바로 답합니다(인스타그램과 같은 자리). */
   const 요청 = !h.self && h.theirs === 'requested'
     ? `<div class="whoask">${esc(이름(h))}님이 팔로우를 요청했어요
@@ -212,7 +233,7 @@ function 머리그림(h){
     ${h.bio ? `<p class="whobio">${esc(h.bio)}</p>` : ''}
     ${내범위 ? `<div class="memo">${내범위}</div>` : ''}
     ${함께}
-    <div class="whobtns">${단추}</div>
+    <div class="whobtns">${단추}${방명록단추}</div>
     ${요청}
   </div>`;
 }
@@ -343,8 +364,7 @@ async function 알맹이그림(h, b){
     </div>
     ${h.self ? '' : 궁합카드(h, b, 너)}
     ${분석카드(b)}
-    ${성향카드(h, 너, b.foot || {}, b)}
-    ${방명록칸(지금, { self: !!h.self, 이름: 이름(h) })}`;
+    ${성향카드(h, 너, b.foot || {}, b)}`;
 }
 
 /* ── 궁합 ── 성향 코드(원래 궁합 공식 그대로) + 「흥미로운 사실」(왓챠).
@@ -394,8 +414,8 @@ function 성향카드(h, 너, 발, b){
       aria-label="${esc(h.self ? '나' : 이름(h))}의 여행 유형 ${esc(t.n)} — 여행 성향 보기">
     <div class="whocardhd"><b>여행 성향</b><span class="whomore">자세히 ›</span></div>
     <div class="phero">
-      <div class="psizer" style="background-image:url('./persona/t/${esc(너)}.jpg?v=b884')"></div>
-      <img src="./persona/m/${esc(너)}.jpg?v=b884" alt=""
+      <div class="psizer" style="background-image:url('./persona/t/${esc(너)}.jpg?v=b885')"></div>
+      <img src="./persona/m/${esc(너)}.jpg?v=b885" alt=""
            onerror="this.closest('.phero').classList.add('noart')">
       <div class="pscrim"></div>
       <div class="ptxt">
@@ -461,6 +481,8 @@ function 짝줄(x, 누구){
 }
 
 const 판그림 = {
+  /* 방명록 — 머리의 「방명록」 단추로 들어옵니다. 글은 붙인 뒤 따로 받습니다(서브그리기). */
+  guestbook(){ return 방명록칸(지금, { self: !!머리?.self, 이름: 이름(머리), 판: true }); },
   /* 도시 — 별점 높은 순 · 나라별 · 한줄평. 나라 판에서 들어오면 그 나라만(cc). */
   city(위, b){
     let 목록 = 도시목록(b);
@@ -519,7 +541,7 @@ const 판그림 = {
     const { 둘다, 짝, 좋게, 엇갈림, 차이 } = 견주기(b);
     /* 그림은 작은 것(t/, 23KB) — 성향 탭 「여행 궁합」 칸과 같습니다. */
     const 사람 = (누, 코드) => `<div class="whomate">${코드 && PERSONA16[코드]
-        ? `<img src="./persona/t/${esc(코드)}.jpg?v=b884" alt="" loading="lazy" decoding="async">
+        ? `<img src="./persona/t/${esc(코드)}.jpg?v=b885" alt="" loading="lazy" decoding="async">
            <span class="memo">${esc(누)}</span><b>${esc(PERSONA16[코드].n)}</b><span class="memo">${esc(코드)}</span>`
         : `<span class="memo">${esc(누)}</span><b>아직 없어요</b>
            <span class="memo">${누 === '나' ? `해외 도시를 ${문턱}곳 매기면 나와요` : '별점이 더 쌓이면 나와요'}</span>`}</div>`;
@@ -603,7 +625,7 @@ const 판그림 = {
                                                               : '별점이 더 쌓이면 근거가 나와요'}</div>`;
     const m = personaMates(너);
     const 짝 = (결, 말, 코드, 점) => `<div class="mate ${결}">
-        <img class="mateimg" src="./persona/t/${esc(코드)}.jpg?v=b884" alt="" loading="lazy" decoding="async">
+        <img class="mateimg" src="./persona/t/${esc(코드)}.jpg?v=b885" alt="" loading="lazy" decoding="async">
         <span class="ml">${말} · ${점}%</span>
         <b>${esc(PERSONA16[코드]?.n || 코드)}</b><span class="mc">${esc(코드)}</span></div>`;
     return 판머리('여행 성향') +
@@ -630,6 +652,7 @@ function 서브그리기(맨위로 = true){
     return;
   }
   서.innerHTML = 판그림[위.종류](위, 알);
+  if (위.종류 === 'guestbook') 방명록채우기();   /* 칸 먼저, 글은 따로 — 못 받아도 판은 그대로 */
   합.classList.add('hide');
   서.classList.remove('hide');
   if (맨위로) $('whoview').scrollTop = 0;

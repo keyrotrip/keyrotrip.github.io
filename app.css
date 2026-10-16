@@ -6403,6 +6403,9 @@ body:has(#crvview:not(.hide)) .tabbar{ display:none; }
 .whobtns{ display:flex; gap:8px; margin-top:2px; }
 .whobtns > *{ flex:1; }
 .whobtns .on{ font-weight:700; }
+/* 팔로우 | 방명록 반반(2026-10-16) — 그림 + 글자 한 줄 */
+.whobtns > button{ display:inline-flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; }
+.whobtns > button svg{ flex:none; }
 .whoask{ display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
          margin-top:8px; padding:10px 12px; border-radius:var(--r-sm); background:var(--pearl);
          font-size:var(--f-sm); text-align:left; }

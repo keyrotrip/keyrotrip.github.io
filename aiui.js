@@ -11,10 +11,10 @@
  * 큰 덩어리는 작은 조각부터 떼어내면 남은 것이 저절로 작아집니다.
  *
  * 층: dom.js 만 씁니다. 여행도 로그인한 사람도 모릅니다. */
-import { $, esc, toast } from './dom.js?v=b884';
-import { sb } from './db.js?v=b884';
-import { fail } from './net.js?v=b884';
-import { AI오류글 } from './aierr.js?v=b884';   /* AI 오류 글은 한 곳에서(2026-10-16) */
+import { $, esc, toast } from './dom.js?v=b885';
+import { sb } from './db.js?v=b885';
+import { fail } from './net.js?v=b885';
+import { AI오류글 } from './aierr.js?v=b885';   /* AI 오류 글은 한 곳에서(2026-10-16) */
 
 /* 대화를 저장할 때 로그인한 사람이 필요합니다. app.js 만 아는 값이라 받습니다 —
    로그인할 때마다 바뀌므로 값이 아니라 **함수**로 받습니다. */
@@ -253,9 +253,9 @@ async function 좌표채우기답(tripId){
     await ctx.loadChats(tripId);
     ctx.aiToBottom();
   };
-  const { trip } = await import('./trip.js?v=b884');
+  const { trip } = await import('./trip.js?v=b885');
   if (!tripId || trip?.id !== tripId) return 말('좌표를 채우려면 그 여행을 열어 둔 채로 다시 말해 주세요.');
-  const { 일정좌표채우기 } = await import('./cands.js?v=b884');
+  const { 일정좌표채우기 } = await import('./cands.js?v=b885');
   showTyping();
   let r;
   try { r = await 일정좌표채우기(); }

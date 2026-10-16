@@ -15,12 +15,12 @@
  *   shrink」는 그 옛 함수 이야기입니다 — 후기·일기 사진은 여전히 비를 지키는 `fitImage` 입니다.
  *
  * 층: dom.js · db.js · net.js · crop.js 만 씁니다. */
-import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b884';
-import { sb } from './db.js?v=b884';
-import { fail, NOROW } from './net.js?v=b884';
+import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b885';
+import { sb } from './db.js?v=b885';
+import { fail, NOROW } from './net.js?v=b885';
 /* 글자 크기를 바꾸면 탭바도 자랍니다 — 아래 여백을 다시 재게 합니다(b503). */
-import { fitTabBar } from './ui.js?v=b884';
-import { openCrop } from './crop.js?v=b884';
+import { fitTabBar } from './ui.js?v=b885';
+import { openCrop } from './crop.js?v=b885';
 
 let ctx = { me: () => null };
 export function setProfileCtx(o){ ctx = { ...ctx, ...o }; }
