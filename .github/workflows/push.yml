@@ -19,10 +19,13 @@
 
 name: push-reminders
 
+# ⚠⚠ 2026-10-16 부터 **때가 되면 부르는 일은 Supabase 예약(pg_cron «keyro-push», 5분마다)이 맡습니다**(db/137).
+#   이 GitHub 예약은 «15분마다»라고 적혀 있었지만 실제로는 2시간 10분~9시간 40분 간격(가운데 4시간 48분,
+#   10-01~10-16 실행 71번)이라, 20분 창에 걸리는 일정 알림이 열에 하나도 안 됐습니다. 그래서 schedule 을 걷었습니다.
+#   손으로 돌리는 버튼(workflow_dispatch)은 남깁니다 — 함수·열쇠가 살아 있는지 한 번 볼 때 씁니다.
+#   위 머리말의 «15분마다»·«20분 창» 이야기는 옛 사정입니다.
 on:
-  schedule:
-    - cron: '*/15 * * * *'
-  workflow_dispatch:          # 손으로도 한 번 돌려볼 수 있게
+  workflow_dispatch:          # 손으로 한 번 돌려볼 수 있게(예약은 Supabase 가 함)
 
 jobs:
   send:
