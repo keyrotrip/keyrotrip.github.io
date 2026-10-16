@@ -23,6 +23,7 @@
  *     이미 떼어낸 aiui.js · cards.js · sheetimp.js 를 씁니다. */
 import { $, esc, toast } from './dom.js?v=b882';
 import { sb } from './db.js?v=b882';
+import { AI오류글 } from './aierr.js?v=b882';   /* AI 오류 글은 한 곳에서(2026-10-16) */
 import { fail } from './net.js?v=b882';
 import { trip } from './trip.js?v=b882';
 import { syncSheets } from './ui.js?v=b882';
@@ -388,9 +389,7 @@ $('imp_go').addEventListener('click', async () => {
                            : `링크 ${bad.length}개는 못 읽었어요`);
 
   if (error || data?.error){
-    let why = data?.error || error?.message || '';
-    try { const 몸 = await error?.context?.json(); if (몸?.error) why = 몸.error + (몸.ref ? ` (문의 번호 ${몸.ref})` : ''); } catch {}   /* 문의 번호: 함수 로그의 [번호] 와 같음(10-16) */
-    return fail(why, 'imp');
+    return fail(await AI오류글(error, data), 'imp');
   }
   /* **후보(places)만 나올 수 있습니다.** 구글 지도 링크처럼 날짜가 없는 것은
      일정이 아니라 후보로 옵니다. actions 만 세면 멀쩡히 읽어놓고

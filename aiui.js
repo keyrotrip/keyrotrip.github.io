@@ -14,6 +14,7 @@
 import { $, esc, toast } from './dom.js?v=b882';
 import { sb } from './db.js?v=b882';
 import { fail } from './net.js?v=b882';
+import { AI오류글 } from './aierr.js?v=b882';   /* AI 오류 글은 한 곳에서(2026-10-16) */
 
 /* 대화를 저장할 때 로그인한 사람이 필요합니다. app.js 만 아는 값이라 받습니다 —
    로그인할 때마다 바뀌므로 값이 아니라 **함수**로 받습니다. */
@@ -170,7 +171,8 @@ $('chat').addEventListener('click', e => {
 $('ai_send').addEventListener('click', async () => {
   const shots = aiShots.slice();
   /* 사진만 보내도 됩니다. "이거 뭐야?"를 매번 타이핑하게 할 이유가 없습니다. */
-  const msg = $('ai_msg').value.trim() ||
+  const 쓴글 = $('ai_msg').value.trim();   /* 실패하면 칸에 되돌려 놓을 글(아래) */
+  const msg = 쓴글 ||
               (shots.length ? '이 사진에 대해 알려줘.' : '');
   const tripId = $('ai_trip').value;
   $('aierr').classList.add('hide');
@@ -206,7 +208,7 @@ $('ai_send').addEventListener('click', async () => {
                 /* 화면이 이만큼만 기다립니다(2026-10-16). 서버는 이보다 몇 초 일찍 접어, 화면이 포기한 뒤에
                    혼자 검색하고 답을 만드는 일(사용량·돈만 나감)을 줄입니다. */
                 wait_ms: wait } }),
-    new Promise(r => setTimeout(() => r({ data:null, error:{ message:
+    new Promise(r => setTimeout(() => r({ data:null, error:{ 화면시간초과: true, message:
       shots.length
         ? `사진을 읽는 데 ${Math.round(wait / 1000)}초를 넘겼어요. ` +
           '사진을 한 장으로 줄이거나 다시 찍어서 올려보세요.'
@@ -217,22 +219,16 @@ $('ai_send').addEventListener('click', async () => {
   $('ai_send').disabled = false; $('ai_send').classList.remove('sending');
   hideTyping();          /* 실패해도 반드시 걷습니다. 남으면 영영 생각하는 척합니다 */
 
-  if (error){
-    /* 함수가 오류를 내면 본문에 이유가 들어 있습니다. 그대로 보여줍니다. */
-    let why = error.message;
-    try { const 몸 = await error.context?.json(); if (몸?.error) why = 몸.error + (몸.ref ? ` (문의 번호 ${몸.ref})` : ''); } catch {}   /* 문의 번호: 함수 로그의 [번호] 와 같음(10-16) */
-    /* 예전에는 'Failed to send'(요청이 도중에 끊김)까지 "함수가 안 올라갔다"로
-       묶어놨습니다. 둘은 전혀 다릅니다 — 하나는 배포 문제고 하나는 서버가
-       일하다 죽은 것입니다. 같은 문구를 내놓으니 엉뚱한 데를 보게 됩니다. */
-    return fail(
-      /not found|404/i.test(why)
-        ? 'AI 기능이 아직 준비되지 않았어요. 만든 사람에게 알려주세요.'
-      : /Failed to send|Load failed|NetworkError/i.test(why)
-        ? '답을 만들다 끊겼어요. 글이 너무 길거나 링크가 무거우면 그럴 수 있어요. ' +
-          '링크를 하나만 넣거나 글을 줄여서 다시 해보세요.'
-      : why, 'ai');
+  if (error || data?.error){
+    /* 오류 글은 aierr.js 한 곳에서(2026-10-16 — 다섯 화면이 갈라져 있었음). 서버 문구 + 문의 번호,
+       본문이 없으면 404 / 시간 초과 / 연결 끊김을 가릅니다(둘을 «함수가 없다»로 묶지 않습니다). */
+    const why = await AI오류글(error, data);
+    /* **쓴 글과 사진을 되돌려 놓습니다**(2026-10-16). 보낼 때 칸을 비웠으니, 실패하면 다시 쓰게 했습니다.
+       그 사이 새로 쓰기 시작했으면 덮지 않습니다. 사진만 보냈을 때의 «이 사진에 대해…» 는 넣지 않습니다. */
+    if (!$('ai_msg').value.trim() && 쓴글) { $('ai_msg').value = 쓴글; growMsg(); }
+    if (!aiShots.length && shots.length) { aiShots = shots; drawShot(); }
+    return fail(why, 'ai');
   }
-  if (data?.error) return fail(data.error, 'ai');
 
   await sb.from('chats').insert({ trip_id: tripId || null, user_id: ctx.me().id,
                                   role: 'model', content: data.reply });

@@ -23,6 +23,7 @@
  * 층: dom.js · db.js · trip.js · cands.js 만 씁니다. 화면(불러오기 카드)은
  *     bring.js 가 그립니다 — 여기는 읽고·넣고·찾는 일만 합니다. */
 import { sb } from './db.js?v=b882';
+import { AI오류글 } from './aierr.js?v=b882';   /* AI 오류 글은 한 곳에서(2026-10-16) */
 import { trip, plans, legs } from './trip.js?v=b882';
 import { 여행기준, osmLookup, addressQueries } from './cands.js?v=b882';
 import { distKm } from './calc.js?v=b882';
@@ -325,8 +326,7 @@ export async function 좌표찾기(넣은, 진행 = () => {}, 그만 = () => fal
                                 memo: [x.memo, x.move_note].filter(Boolean).join(' · ') })),
   } });
   if (error || data?.error || !Array.isArray(data?.rows)){
-    let 이유 = data?.error || '';
-    try { const 몸 = await error?.context?.json(); if (몸?.error) 이유 = 몸.error + (몸.ref ? ` (문의 번호 ${몸.ref})` : ''); } catch {}   /* 문의 번호: 함수 로그의 [번호] 와 같음(10-16) */
+    const 이유 = (error || data?.error) ? await AI오류글(error, data) : '';
     return { 찍음: 0, 못찾음: [], 장소아님: 0, 안됨: true, 이유 };
   }
 

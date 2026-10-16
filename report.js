@@ -15,6 +15,7 @@
  * 층: dom.js · db.js · calc.js · card.js · trip.js · net.js 만 씁니다. */
 import { $, esc, toast, copyText, md } from './dom.js?v=b882';
 import { sb } from './db.js?v=b882';
+import { AI오류글 } from './aierr.js?v=b882';   /* AI 오류 글은 한 곳에서(2026-10-16) */
 import { fail, netTimeout } from './net.js?v=b882';
 import { money, distKm, D1, asDate } from './calc.js?v=b882';
 import { REPORT_ICON, REPORT_BG, shareCard, PERSONA_ICON } from './card.js?v=b882';
@@ -393,9 +394,7 @@ async function askReportAi(id, f){
              'places 와 actions 는 빈 배열로 둘 것.\n\n' + facts } });
   b.disabled = false; b.textContent = 'AI 한마디 다시 듣기';
   if (error || data?.error){
-    let why = data?.error || error.message;
-    try { const 몸 = await error?.context?.json(); if (몸?.error) why = 몸.error + (몸.ref ? ` (문의 번호 ${몸.ref})` : ''); } catch {}   /* 문의 번호: 함수 로그의 [번호] 와 같음(10-16) */
-    return toast(why);
+    return toast(await AI오류글(error, data));
   }
   $('rv_ai').classList.remove('hide');
   $('rv_ai').innerHTML = `<div class="h">AI 한마디</div>

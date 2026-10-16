@@ -22,6 +22,7 @@
  *     citysearch.js · newtrip.js · plancheck.js 를 씁니다. */
 import { $, esc } from './dom.js?v=b882';
 import { sb } from './db.js?v=b882';
+import { AI오류글 } from './aierr.js?v=b882';   /* AI 오류 글은 한 곳에서(2026-10-16) */
 import { fail } from './net.js?v=b882';
 import { D1, asDate, todayYmd, dayLabel } from './calc.js?v=b882';
 import { plans, legs } from './trip.js?v=b882';
@@ -184,14 +185,8 @@ $('d_go').addEventListener('click', async () => {
 
   $('d_go').disabled = false; $('d_go').textContent = '다시 짜기';
 
-  if (error){
-    let why = error.message;
-    try { const 몸 = await error.context?.json(); if (몸?.error) why = 몸.error + (몸.ref ? ` (문의 번호 ${몸.ref})` : ''); } catch {}   /* 문의 번호: 함수 로그의 [번호] 와 같음(10-16) */
-    return fail(/not found|Failed to send/i.test(why)
-      ? 'AI 기능이 아직 준비되지 않았어요. 만든 사람에게 알려주세요.'
-      : why, 'draft');
-  }
-  if (data?.error) return fail(data.error, 'draft');
+  /* ⚠ 전엔 연결 끊김(Failed to send)도 «AI 기능이 아직 준비되지 않았어요»로 보였습니다 — aierr.js 가 가릅니다. */
+  if (error || data?.error) return fail(await AI오류글(error, data), 'draft');
   if (!data?.actions?.length)
     return fail('일정을 만들지 못했습니다. 다시 눌러보세요.', 'draft');
 
