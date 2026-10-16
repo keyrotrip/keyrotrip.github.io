@@ -20,15 +20,15 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · trip.js 와 이미 떼어낸
  *     citysearch.js · newtrip.js · plancheck.js 를 씁니다. */
-import { $, esc } from './dom.js?v=b887';
-import { sb } from './db.js?v=b887';
-import { AI오류글 } from './aierr.js?v=b887';   /* AI 오류 글은 한 곳에서(2026-10-16) */
-import { fail } from './net.js?v=b887';
-import { D1, asDate, todayYmd, dayLabel } from './calc.js?v=b887';
-import { plans, legs } from './trip.js?v=b887';
-import { loadCities } from './citysearch.js?v=b887';
-import { openNew, movePrefs } from './newtrip.js?v=b887';
-import { review } from './plancheck.js?v=b887';
+import { $, esc } from './dom.js?v=b888';
+import { sb } from './db.js?v=b888';
+import { AI오류글 } from './aierr.js?v=b888';   /* AI 오류 글은 한 곳에서(2026-10-16) */
+import { fail } from './net.js?v=b888';
+import { D1, asDate, todayYmd, dayLabel } from './calc.js?v=b888';
+import { plans, legs } from './trip.js?v=b888';
+import { loadCities } from './citysearch.js?v=b888';
+import { openNew, movePrefs } from './newtrip.js?v=b888';
+import { review } from './plancheck.js?v=b888';
 
 let ctx = { me: () => null, fillCityList: () => {},
             showApp: () => {}, openTrip: async () => {} };

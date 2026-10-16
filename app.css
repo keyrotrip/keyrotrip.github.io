@@ -7423,3 +7423,15 @@ body.sharedon{ overflow:hidden; }
 .nmhint{ min-height:1.4em; margin:6px 0 0; font-size:var(--f-sm); color:var(--ink-48); }
 .nmhint[data-s="ok"]{ color:var(--brand-dark); }
 .nmhint[data-s="bad"]{ color:var(--danger); }
+
+/* 대시보드 실시간(2026-10-16): 앱 연 사람 줄(o) · 한줄평·일기·맛집 접는 칸 */
+.aubars .o{ fill:var(--brand); }
+.aufold{ margin-top:10px; border-top:1px solid var(--divider-soft); padding-top:8px; }
+.aufold > summary{ cursor:pointer; list-style:none; display:flex; align-items:baseline; gap:8px;
+  font-size:var(--f-sm); color:var(--ink-48); padding:4px 0; }
+.aufold > summary::-webkit-details-marker{ display:none; }
+.aufold > summary::before{ content:'›'; display:inline-block; transition:transform .15s; }
+.aufold[open] > summary::before{ transform:rotate(90deg); }
+.aufold > summary em{ margin-left:auto; font-style:normal; font-variant-numeric:tabular-nums; }
+.aufold > .aulrows{ margin-top:8px; }
+@media (prefers-reduced-motion: reduce){ .aufold > summary::before{ transition:none; } }

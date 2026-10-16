@@ -19,10 +19,10 @@
  * ⚠ 114 를 아직 안 돌린 서버(112)도 그립니다 — 새 숫자(다시 온 사람·새 여행·평소 범위·열지도…)가 없으면 그 자리에
  *   「db/114 를 돌리면 나와요」만 둡니다.
  * 층: dom · db · net. admin.js 가 부릅니다(loadUsage). 화면 자리는 index.html 의 #adm_use. */
-import { $, esc, toast } from './dom.js?v=b887';
-import { sb } from './db.js?v=b887';
-import { netTimeout } from './net.js?v=b887';
-import { liveWatch } from './live.js?v=b887';
+import { $, esc, toast } from './dom.js?v=b888';
+import { sb } from './db.js?v=b888';
+import { netTimeout } from './net.js?v=b888';
+import { liveWatch } from './live.js?v=b888';
 
 const 지표들 = [
   { k: 'a', kpi: 'active',  이름: '쓴 사람',     단위: '명', 기록: true },
@@ -36,9 +36,14 @@ const 지표들 = [
 ];
 const 기간들 = [[1, '1일'], [7, '7일'], [28, '28일'], [90, '90일'], [365, '365일'], [0, '전체']];   /* 1일 = 오늘 하루(b870, 사용자) — 앞 기간(어제)과 견줌 */
 const 칸들 = [['ov', '개요'], ['en', '참여'], ['au', '사람들'], ['ad', '고급']];
-let 기간 = 7, 보는칸 = 'ov', 지표 = 'a', 깔때기 = 'all';
+let 기간 = 1, 보는칸 = 'ov', 지표 = 'a', 깔때기 = 'all';   /* 기본 1일(10-16 사용자: 「개요는 7일이 아니라 1일이 기본」) */
 let 자료 = null, 받은기간 = null, 받은때 = 0, 차례 = 0;
 let 실시간자료 = [];   /* 실시간 막대 누르기용(b870) */
+/* 앱 연 시간(db/141) — 시간 시작(ms) → 그 시간에 앱을 연 수. null = 141 전 서버(줄 안 그림) */
+let 연시간 = null;
+/* 한줄평·일기·맛집 줄은 접어 둡니다(10-16 사용자: 「거의 안 올라오니 접어둘 수 있게」) — 펼친 것만 기기에 기억 */
+const 접기열쇠 = 't2:aufold';
+const 펼침 = () => { try { return localStorage.getItem(접기열쇠) === '1'; } catch { return false; } };
 /* 「1일」 보기의 날짜(b871, 사용자 시안 승인) — null 이면 오늘. ‹ › 로 하루씩 · 날짜를 누르면 달력. 다른 기간을 고르면 오늘로. */
 let 끝날 = null, 받은끝 = null;
 const 오늘글 = () => new Date().toLocaleDateString('sv');
@@ -72,8 +77,12 @@ export async function loadUsage(force){
   if (!자료 || 받은기간 !== 기간 || 받은끝 !== 끝날)
     판.innerHTML = 머리() + `<div class="card auc"><div class="empty"><span class="load">세는 중…</span></div></div>`;
   /* p_end 는 날짜를 옮겼을 때만 보냅니다 — db/132 전 서버(인자 하나)에서도 오늘 보기는 그대로 돌게 */
-  const r = await netTimeout(sb.rpc('admin_usage', { p_days: 기간, ...(기간 > 0 && 끝날 ? { p_end: 끝날 } : {}) }), 15000);
-  if (이번 !== 차례) return;                       /* 그 사이 기간을 또 바꿨으면 늦은 답은 버립니다 */
+  const [r, 시] = await Promise.all([
+    netTimeout(sb.rpc('admin_usage', { p_days: 기간, ...(기간 > 0 && 끝날 ? { p_end: 끝날 } : {}) }), 15000),
+    netTimeout(sb.rpc('admin_open_hours', { p_hours: 48 }), 15000),
+  ]);
+  if (이번 !== 차례) return;
+  연시간 = 시 && !시.error && Array.isArray(시.data) ? new Map(시.data.map(x => [new Date(x.hour).getTime(), Number(x.n || 0)])) : null;                       /* 그 사이 기간을 또 바꿨으면 늦은 답은 버립니다 */
   if (r.error || !r.data){
     const 없음 = /admin_usage|does not exist|schema cache|could not find/i.test(r.error?.message || '');
     판.innerHTML = 머리() + `<div class="card auc"><div class="empty">${없음
@@ -327,11 +336,18 @@ function 실시간(D){
   const L = D.live || {}, hs = L.hours || [];
   /* b870(사용자: 「실시간은 막대만 있고 숫자를 모르니 감이 안오네」 → 셋 다): ① 줄마다 「48시간 N」 ② 가장 높은 막대 위에 그 숫자
      ③ 막대를 누르거나 훑으면 그 줄 머리에 「10/13 22시 · 3개」(아래 문서 하나에 단 손잡이 — 자료는 실시간자료). 위 10 은 숫자 자리. */
+  /* 앱 연 사람(db/141) — 같은 48칸에 시간을 맞춰 끼웁니다(o). 오늘 = 서울 날짜가 오늘인 칸의 합. */
+  let 오늘연 = 0;
+  if (연시간){
+    const 오늘 = new Date().toLocaleDateString('sv', { timeZone: 'Asia/Seoul' });
+    for (const h of hs) h.o = 연시간.get(new Date(h.h).getTime()) || 0;
+    for (const [t, n] of 연시간) if (new Date(t).toLocaleDateString('sv', { timeZone: 'Asia/Seoul' }) === 오늘) 오늘연 += n;
+  }
   실시간자료 = hs;
   const W = 320, H = 40, 위 = 10, 칸폭 = W / Math.max(1, hs.length);
-  const 줄들 = [['r', '새 별점', L.ratings], ['s', '가입', L.signups],
+  const 줄들 = [...(연시간 ? [['o', '앱 연 사람', 오늘연]] : []), ['r', '새 별점', L.ratings], ['s', '가입', L.signups],
                ['c', '새 한줄평', L.comments], ['j', '새 일기', L.journals], ['m', '새 맛집', L.foods]]
-    .filter(([k]) => k === 'r' || k === 's' || hs.some(h => k in h));
+    .filter(([k]) => k === 'o' || k === 'r' || k === 's' || hs.some(h => k in h));
   const 줄 = ([k, 이름, 오늘]) => {
     const 값들 = hs.map(h => Number(h[k] || 0));
     const 최대 = Math.max(1, ...값들), 합 = 값들.reduce((a, b) => a + b, 0);
@@ -347,12 +363,19 @@ function 실시간(D){
     return `<div class="aulrow"><div class="hd"><span>${이름}</span><em class="aurtcap" data-sum="48시간 ${수(합)}">48시간 ${수(합)}</em><b>오늘 ${수(오늘)}</b></div>
       <svg class="aubars" viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 48시간 한 시간마다 ${이름} — 모두 ${합}" data-k="${k}">${막대}${꼭대기글}</svg></div>`;
   };
+  /* 거의 안 올라오는 줄 — 접는 칸 안으로(머리에 48시간 합만) */
+  const 드문 = new Set(['c', 'j', 'm']);
+  const 접힌줄 = 줄들.filter(([k]) => 드문.has(k));
+  const 접힌합 = 접힌줄.reduce((a, [k]) => a + hs.reduce((b, h) => b + Number(h[k] || 0), 0), 0);
   const 지금 = new Date(받은때 || Date.now());
   const 시각 = `${String(지금.getHours()).padStart(2, '0')}:${String(지금.getMinutes()).padStart(2, '0')}`;
   return `<div class="card auc">
     <h2><span class="grow">실시간</span><span class="aulv"><i aria-hidden="true"></i>${시각} 기준</span></h2>
     <div class="aulvn"><div><b>${수(L.active)}</b><span>오늘 연 사람</span></div></div>
-    <div class="aulrows">${줄들.map(줄).join('')}</div>
+    <div class="aulrows">${줄들.filter(([k]) => !드문.has(k)).map(줄).join('')}</div>
+    ${접힌줄.length ? `<details class="aufold" ${펼침() ? 'open' : ''}>
+      <summary>${접힌줄.map(([, 이름]) => 이름.replace(/^새 /, '')).join(' · ')} <em>48시간 ${수(접힌합)}</em></summary>
+      <div class="aulrows">${접힌줄.map(줄).join('')}</div></details>` : ''}
     <div class="aux"><span>48시간 전</span><span>지금</span></div>
   </div>`;
 }
@@ -362,7 +385,7 @@ function 막대말(svg, ev){
   const r = svg.getBoundingClientRect(); if (!r.width || !실시간자료.length) return;
   const i = Math.max(0, Math.min(실시간자료.length - 1, Math.floor((ev.clientX - r.left) / r.width * 실시간자료.length)));
   const h = 실시간자료[i], k = svg.dataset.k, 때 = new Date(h.h);
-  const 말 = `${때.getMonth() + 1}/${때.getDate()} ${때.getHours()}시 · ${수(h[k] || 0)}개`;
+  const 말 = `${때.getMonth() + 1}/${때.getDate()} ${때.getHours()}시 · ${수(h[k] || 0)}${k === 'o' ? '명' : '개'}`;
   const 칸 = svg.closest('.aulrow')?.querySelector('.aurtcap'); if (칸){ 칸.textContent = 말; 칸.classList.add('on'); }
   svg.querySelectorAll('rect.sel').forEach(x => x.classList.remove('sel'));
   svg.querySelector(`rect[data-i="${i}"]`)?.classList.add('sel');
@@ -602,6 +625,12 @@ async function CSV받기(){
   setTimeout(() => URL.revokeObjectURL(a.href), 1500);
   toast('CSV 파일을 받았어요');
 }
+
+/* 접는 칸(한줄평·일기·맛집) 펼침을 기기에 기억 — toggle 은 거품이 없어 capture 로 */
+$('adm_use')?.addEventListener('toggle', e => {
+  if (e.target.classList?.contains('aufold') !== true) return;
+  try { localStorage.setItem(접기열쇠, e.target.open ? '1' : '0'); } catch {}
+}, true);
 
 /* ── 누르기 ── 칸은 index.html 에 늘 있으므로 한 번만 답니다. */
 $('adm_use')?.addEventListener('click', e => {

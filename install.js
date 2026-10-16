@@ -21,7 +21,7 @@
  *   적으면 둘이 갈립니다).
  * ⚠ 안드로이드 크롬·엣지·삼성 인터넷처럼 설치 창을 띄울 수 있는 곳은 「앱 설치」 단추 하나로 끝납니다.
  *   그 창(beforeinstallprompt)은 모듈보다 먼저 올 수 있어 index.html 머리에서 `window.__설치창` 으로 붙잡아 둡니다. */
-import { $ } from './dom.js?v=b887';
+import { $ } from './dom.js?v=b888';
 
 /* 링크를 연 기기. 앱 안 브라우저는 따로(위 ⚠). */
 export function 기기알기(ua = navigator.userAgent || '', 터치 = navigator.maxTouchPoints || 0){

@@ -10,7 +10,7 @@
  * ⚠ 날짜는 서울 기준입니다(서버 touch_day 와 같은 자). 기기 시계가 다른 나라여도 같은 날로 셉니다.
  * ⚠ 실패해도(112 를 안 돌렸거나 끊김) 아무 말 안 합니다 — 안 적었으니 다음에 다시 합니다.
  * 층: db 만 씁니다. 화면은 모릅니다. */
-import { sb } from './db.js?v=b887';
+import { sb } from './db.js?v=b888';
 
 const 열쇠 = 't2:dayseen';
 let 누구 = null;
@@ -29,6 +29,7 @@ const 기기 = () => {
 
 export function markDay(uid){
   누구 = uid || null;
+  markHour();
   if (!누구 || 보내는중) return;
   /* 같은 날이라도 앱↔웹을 바꿔 열면 한 번 더 보냅니다(서버가 합침) — 안드로이드는 둘이 저장 공간을 같이 써서 */
   const 앱 = 앱인가(), 기 = 기기();
@@ -41,6 +42,25 @@ export function markDay(uid){
     .finally(() => { 보내는중 = false; });
 }
 
+/* ── 몇 시에 열었나(2026-10-16, db/141) — 대시보드 실시간 「앱 연 사람」 ──
+ * 서버는 «이름 없는» 숫자만 올립니다(touch_hour — 시간마다 숫자 하나, 누가 열었는지는 안 남김).
+ * 기기마다 한 시간에 한 번만 보냅니다(t2:hourseen = 사람|서울 날짜 시) — 그래서 그 시간 숫자 ≈ 연 사람(기기) 수.
+ * 141 을 안 돌렸으면 실패하고 아무 말 안 합니다(안 적었으니 다음에 다시). */
+const 시열쇠 = 't2:hourseen';
+let 시보내는중 = false;
+const 서울시 = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit',
+  day: '2-digit', hour: '2-digit', hourCycle: 'h23' }).format(new Date());
+function markHour(){
+  if (!누구 || 시보내는중) return;
+  const 값 = `${누구}|${서울시()}`;
+  try { if (localStorage.getItem(시열쇠) === 값) return; } catch {}
+  시보내는중 = true;
+  sb.rpc('touch_hour')
+    .then(r => { if (!r.error){ try { localStorage.setItem(시열쇠, 값); } catch {} } })
+    .catch(() => {})
+    .finally(() => { 시보내는중 = false; });
+}
+
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && 누구) markDay(누구);
+  if (document.visibilityState === 'visible' && 누구){ markDay(누구); markHour(); }
 });
