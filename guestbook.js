@@ -9,10 +9,10 @@
  * ⚠ 내 글엔 내 반응 없음(메모 own-content-actions): 내가 쓴 글에는 «신고»가 없고 «지우기»만.
  * ⚠ 지우기는 두 번 눌러야(첫 번에 «정말 지우기»로 바뀜 — 맛집 내 글 삭제와 같음, b866).
  * 층: dom · net · guestdata(서버) · cityrev(«2일 전»). 사람 열기는 ctx 로 받습니다(people.js 를 읽으면 고리). */
-import { $, esc, toast, avatarImg, emptyDo } from './dom.js?v=b885';
-import { netTimeout } from './net.js?v=b885';
-import { 방명록읽기, 내방명록숫자, 방명록쓰기, 방명록답, 방명록지우기, 방명록신고 } from './guestdata.js?v=b885';
-import { 언제 } from './cityrev.js?v=b885';
+import { $, esc, toast, avatarImg, emptyDo } from './dom.js?v=b886';
+import { netTimeout } from './net.js?v=b886';
+import { 방명록읽기, 내방명록숫자, 방명록쓰기, 방명록답, 방명록지우기, 방명록신고 } from './guestdata.js?v=b886';
+import { 언제 } from './cityrev.js?v=b886';
 
 let ctx = { me: () => null, openPerson: () => {} };
 export function setGuestCtx(o){ ctx = { ...ctx, ...o }; }

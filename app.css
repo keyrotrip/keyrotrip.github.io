@@ -6825,6 +6825,7 @@ body:not(.hastab) #a2hs .shwrap{ padding-bottom:calc(var(--sab) + 10px); }
 .actgo{ flex:none; font-size:22px; color:var(--ink-48); line-height:1; }
 /* 사진 — 한 장 또는 두 장 겹침(인스타처럼) */
 .actav{ position:relative; width:44px; height:44px; flex:none; }
+.actav[data-actperson]{ cursor:pointer; }   /* 사진 = 그 사람 화면(activity.js) */
 .actav > .thumb, .actav > img{ position:absolute; left:0; top:0; }
 .actav.two > :nth-child(1){ left:0; top:0; }
 .actav.two > :nth-child(2){ left:auto; right:0; top:auto; bottom:0; box-shadow:0 0 0 2px var(--bg); }

@@ -7,8 +7,8 @@
  * ⚠ 소식은 **한 시간 안에 한 사람이 여러 곳을 매기면 한 줄로 묶습니다**
  *   (쭉 매기기로 서른 곳을 매기면 소식이 서른 줄이 됩니다 — Letterboxd 도 몰아
  *   적은 기록은 한 시간에 한 번만 흘립니다).
- * ⚠ 이름 찾기는 **이름이 똑같을 때만** 나옵니다(서버 people_find) — 목록을 훑어
- *   사람을 긁어 갈 수 없게. 이름은 겹치지 않으므로(db/100) 정확히 한 사람입니다.
+ * ⚠ 이름 찾기는 **앞글자가 같으면** 나옵니다(서버 people_find, db/121) — 한 번에 20명까지.
+ *   기본 이름 「여행자 1234」도 같은 규칙(db/139 — 사용자: 누군지 알 수 없는 이름이라).
  * ⚠ SQL(101)을 아직 안 돌렸으면 친구 줄 · 설정 카드를 통째로 숨깁니다 —
  *   눌러도 안 되는 단추를 두면 안 됩니다.
  *
@@ -25,14 +25,14 @@
  * ⚠ 줄 전체를 단추 하나로 만들지 않습니다 — 오른쪽 사진·단추가 따로 눌려야 해서 «사람 단추 + 옆 단추»
  *   형제로 둡니다(단추 안에 단추는 안 됩니다). 그래서 누르기 처리는 도시·단추를 사람보다 «먼저» 봅니다.
  */
-import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b885';
-import { sb } from './db.js?v=b885';
-import { netTimeout } from './net.js?v=b885';
-import { cities, countryName } from './cities.js?v=b885';
+import { $, esc, toast, avatarImg, copyText, flagOf, flagOk, josa, emptyDo } from './dom.js?v=b886';
+import { sb } from './db.js?v=b886';
+import { netTimeout } from './net.js?v=b886';
+import { cities, countryName } from './cities.js?v=b886';
 /* 소식의 도시 사진을 누르면 여는 화면(b789). city.js 는 이 파일을 안 읽으므로 고리가 없습니다. */
-import { openCity } from './city.js?v=b885';
+import { openCity } from './city.js?v=b886';
 /* 「팔로잉」·「삭제」를 한 번 더 눌러 정하는 장치(b800). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm } from './ui.js?v=b885';
+import { arm } from './ui.js?v=b886';
 
 let ctx = { me: () => null, openPerson: () => {} };
 export function setFriendsCtx(o){ ctx = { ...ctx, ...o }; }

@@ -11,11 +11,11 @@
  *   사진은 첫 글자 동그라미로 — 화면이 안 깨지게.
  * ⚠ 읽음 처리는 열고 1.2초 뒤(notify.js 와 같은 규칙 — 어느 것이 새것인지 눈에 한 번 들어와야).
  */
-import { $, esc, avatarImg } from './dom.js?v=b885';
-import { sb } from './db.js?v=b885';
-import { netTimeout } from './net.js?v=b885';
-import { cities } from './cities.js?v=b885';
-import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b885';
+import { $, esc, avatarImg } from './dom.js?v=b886';
+import { sb } from './db.js?v=b886';
+import { netTimeout } from './net.js?v=b886';
+import { cities } from './cities.js?v=b886';
+import { 언제, 묶기, 소식줄, 구간 } from './friends.js?v=b886';
 
 let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openGuestbook: () => {}, openCityRev: () => {}, openFoodNote: () => {}, openCity: () => {},
             loadNotifs: () => {}, loadSocialCounts: () => {} };
@@ -132,7 +132,7 @@ function 알림줄(x, p, 둘째, 내가){
   const 여행 = !x.actor_id || /^(invited|member_joined|joined|expense_added|plan_changed|depart_soon)$/.test(x.kind || '');
   const 얼굴 = 여행
     ? `<span class="actav"><span class="acttrip" aria-hidden="true">✈</span></span>`
-    : `<span class="actav${둘째?.length ? ' two' : ''}">${사진(p?.avatar_url, x.actor_id, 이름 || '여행자', 둘째?.length ? 32 : 44)}${
+    : `<span class="actav${둘째?.length ? ' two' : ''}" data-actperson="${esc(x.actor_id)}">${사진(p?.avatar_url, x.actor_id, 이름 || '여행자', 둘째?.length ? 32 : 44)}${
         둘째?.length ? 사진(둘째[0].avatar, 둘째[0].id, 둘째[0].name, 32) : ''}${표 ? `<i class="actbadge ${칠}">${표}</i>` : ''}</span>`;
   /* 오른쪽 — 한줄평 알림은 그 도시 사진(누르면 그 한줄평), 새 팔로워는 「맞팔로우」(아직 안 했으면) */
   let 오른쪽 = '';
@@ -173,6 +173,10 @@ $('actview')?.addEventListener('click', async e => {
     return;
   }
   if (e.target.closest('[data-actgo="requests"]')) return ctx.openFriends('requests');
+  /* 프로필 사진은 어느 알림이든 그 사람 화면(인스타처럼) — 줄의 다른 곳은 그 알림이 가리키는 곳
+     (사용자 10-16: 방명록 알림의 사진을 눌렀는데 내 방명록이 열림) */
+  const 얼 = e.target.closest('[data-actperson]');
+  if (얼 && 얼.dataset.actperson) return ctx.openPerson(얼.dataset.actperson);
   const 방 = e.target.closest('[data-actgb]');
   if (방) return ctx.openGuestbook(방.dataset.actgb);
   const 도시칸 = e.target.closest('[data-cityopen]');
