@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b890';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b891';
 /* 성향 «셈»은 personacalc.js 로 옮겼습니다(2026-10-16). 이 파일은 그림·HTML 만 맡습니다.
    예전처럼 card.js 에서 가져가는 곳(14파일)이 그대로 돌도록 같은 이름으로 다시 내보냅니다. */
-import { personaStats, 흔들림폭, 별가운데, PERSONA_VER, personaAxes, AXIS_WORD, AXIS_NAME, personaSaved, personaShiftWhy, PERSONA16, personaRank, personaMatch, personaMateLine, personaMates, personaMrz } from './personacalc.js?v=b890';
+import { personaStats, 흔들림폭, 별가운데, PERSONA_VER, personaAxes, AXIS_WORD, AXIS_NAME, personaSaved, personaShiftWhy, PERSONA16, personaRank, personaMatch, personaMateLine, personaMates, personaMrz } from './personacalc.js?v=b891';
 export { personaStats, 흔들림폭, 별가운데, PERSONA_VER, personaAxes, AXIS_WORD, AXIS_NAME, personaSaved, personaShiftWhy, PERSONA16, personaRank, personaMatch, personaMateLine, personaMates, personaMrz };
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
@@ -295,7 +295,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b890`;
+    img.src = `./persona/${code}.webp?v=b891`;
   });
 }
 
@@ -566,7 +566,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b890`;
+    img.src = `./persona/m/${code}.jpg?v=b891`;
   });
 }
 
@@ -1228,179 +1228,8 @@ async function drawStamps(s, W, H, F){
   return new Promise(r => cv.toBlob(r, 'image/png'));
 }
 
-/* ── 일정 카드(b879) ──────────────────────────────────────────────────
- * 사용자: 「내가 짠 일정을 다른 사람이 달라고 했을 경우나 카톡으로 공유하고
- * 싶을 때」. 시안 셋(탑승권 / 종이 일정표 / 하루 한 장)을 보고 **「종이
- * 일정표 + 탑승권 머리띠」, 그 중 머리띠 밝은 판**을 골랐습니다(사용자).
- *
- * ⚠⚠ **높이를 안 막습니다 — 일정 수만큼 길어집니다.** 다른 카드는 전부
- *   정해진 비(스토리 9:16)로 그리지만 이것만 다릅니다. 9:16 에 욱여넣으면
- *   일정이 많은 여행은 글씨를 줄여야 하고(안 읽힘), 적은 여행은 아래가
- *   휑하게 빕니다 — 시안에서 둘 다 눈으로 봤습니다. 스토리 비는 발자국
- *   카드(drawStamps)가 이미 하고 있으니 여기서 겹칠 이유가 없습니다.
- *   그래서 `cardImage` 가 넘겨주는 `H` 를 **버리고** 제가 셉니다.
- *
- * ⚠ **메모는 안 그립니다**(주소·가격·이동편). 제목과 시간만입니다. 넣어보면
- *   금방 빽빽해져서 「보고 다닐 수 있는 표」라는 이 카드의 쓸모가 사라집니다.
- *   그 내용이 필요한 사람에게는 **글**이 갑니다(planview.js 의 일정글 —
- *   그림을 못 보내는 기기에서는 그 글이 대신 나갑니다).
- *
- * ⚠ 지출·일행 이름·일기는 여기에도 안 옵니다. 거르는 곳은 부르는 쪽
- *   (planview.js 의 일정카드)이고, 여기는 받은 것만 그립니다.
- */
-async function drawPlan(s, W, _H, F){
-  let 날들 = (s.days || []).filter(d => (d.items || []).length);
-
-  /* ── 높이를 먼저 셉니다 ──────────────────────────────────────────
-     캔버스는 만든 뒤에 늘리면 그려둔 것이 날아갑니다. 그래서 글을 한 줄도
-     그리기 전에 몇 «자»가 될지를 전부 더해 둡니다(시안 폭 360 기준의 단위).
-     아래 그리는 자리의 숫자와 **반드시 같아야 합니다** — 어긋나면 발이
-     잘리거나 뜹니다. */
-  const 날자 = d => (9 + 16 + 3) + 20 * d.items.length + 8;
-  const 머리자 = 84, 절취자 = 13, 발자 = 53, 더자 = 22;
-  const 틀자 = 머리자 + 절취자 + 3 + 발자;
-  let 높이자 = 틀자 + 날들.reduce((a, d) => a + 날자(d), 0);
-
-  /* ⚠⚠ **아주 긴 여행을 두 단계로 막습니다.** ⚠⚠
-   * 높이가 자유라는 말은 **한없이 길어질 수 있다**는 말이기도 합니다. 폭 1080
-   * 그대로 두면 하루 여덟 개씩 한 달이면 17,000px 이 넘는데, 아이폰 사파리는
-   * 캔버스 «넓이»에 한계가 있어서 그 위로는 **빈 그림**이 나옵니다(`toBlob` 이
-   * null 을 주고 미리보기가 「그림을 못 만들었어요」가 됩니다).
-   *
-   * ① 먼저 **통째로 조금 작게** 그립니다 — 일정이 한 줄도 안 빠지는 쪽이
-   *    먼저입니다. 보통 여행(백 개 남짓까지)은 폭 1080 그대로입니다.
-   * ② 그런데 줄이기만 하면 ⚠ **글씨가 못 읽을 만큼 작아집니다** — 30일·240개를
-   *    그려 보니 폭 489px, 60일·600개는 206px 이 나왔습니다(실측). 그래서 폭
-   *    720(자 2) 아래로는 안 줄이고, 거기서도 안 들어가면 **들어가는 날까지만
-   *    담고 「+ N일 더」를 적습니다.** 읽을 수 없는 그림보다 낫습니다.
-   * ⚠ 한계값은 넉넉히 잡았습니다(기기마다 달라 실측으로 못 박습니다). */
-  const 자최대 = W / 360, 자최소 = 자최대 * 2 / 3;
-  let u = Math.min(자최대, 8192 / 높이자, Math.sqrt(16e6 / (360 * 높이자)));
-  let 더날 = 0;
-  if (u < 자최소){
-    u = 자최소;
-    const 칸 = 8192 / u - 틀자 - 더자;
-    let 쌓임 = 0, 끝 = 0;
-    for (const d of 날들){ const h = 날자(d); if (쌓임 + h > 칸) break; 쌓임 += h; 끝++; }
-    더날 = 날들.length - 끝;
-    날들 = 날들.slice(0, 끝);
-    높이자 = 틀자 + 쌓임 + 더자;
-  }
-  const px = v => v * u;
-  W = Math.round(360 * u);
-  const H = Math.round(높이자 * u);
-  const 좌 = px(22), 우 = W - px(22), 폭 = 우 - 좌;
-  const 머리h = px(머리자), 절취h = px(절취자), 발h = px(발자);
-
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const g = cv.getContext('2d');
-
-  /* ⚠ 바탕을 반드시 칠합니다 — 안 칠하면 투명이고, 인스타가 올릴 때
-     투명을 검게 메웁니다(drawStamps 머리말, b850). */
-  g.fillStyle = P16N.종이; g.fillRect(0, 0, W, H);
-
-  /* ── 머리띠 ── 밝은 판(종이색 + 굵은 밑줄). 어두운 띠도 그려봤지만
-     사용자가 이쪽을 골랐습니다 — 종이 느낌이 끝까지 이어집니다. */
-  g.textAlign = 'left';
-  g.fillStyle = P16N.주황;
-  g.font = F(700, px(9.5));
-  자간쓰기(g, 'KEYRO · ITINERARY', 좌, px(23), px(2.1));
-
-  g.fillStyle = P16N.잉크;
-  g.font = F(800, px(27));
-  g.fillText(줄여쓰기(g, s.title || '내 여행', 폭), 좌, px(52));
-
-  g.fillStyle = P16N.흐림;
-  g.font = F(400, px(11.5));
-  /* 첫 토막(「3박 4일」)만 주황입니다 — 눈이 먼저 가야 하는 값입니다. */
-  const 토막 = String(s.meta || '').split(' · ');
-  let mx = 좌;
-  토막.forEach((t, i) => {
-    g.fillStyle = i === 0 ? P16N.주황 : P16N.흐림;
-    g.font = F(i === 0 ? 700 : 400, px(11.5));
-    g.fillText(t, mx, px(73));
-    mx += g.measureText(t).width;
-    if (i < 토막.length - 1){
-      g.fillStyle = P16N.흐림; g.font = F(400, px(11.5));
-      g.fillText(' · ', mx, px(73));
-      mx += g.measureText(' · ').width;
-    }
-  });
-
-  /* 굵은 밑줄 — 머리와 본문을 가릅니다. */
-  g.fillStyle = P16N.잉크;
-  g.fillRect(좌, px(82), 폭, px(2));
-
-  /* ── 절취선 ── 「탑승권」이라는 표시. 이것 하나로 발자국 카드와 한 식구가
-     됩니다(시안에서 이 줄을 빼 보니 그냥 표가 됐습니다). */
-  g.strokeStyle = P16N.홈;
-  g.lineWidth = px(2);
-  g.setLineDash([px(2), px(3)]);
-  g.beginPath();
-  g.moveTo(좌 - px(10), px(90.5)); g.lineTo(우 + px(10), px(90.5));
-  g.stroke();
-  g.setLineDash([]);
-
-  /* ── 하루씩 ───────────────────────────────────────────────────── */
-  let y = 머리h + 절취h + px(3);
-  날들.forEach((d, di) => {
-    y += px(9);
-    /* 날 이름(Day 1) 다음에 날짜를 잇습니다 — 재서 붙여야 간격이 일정합니다. */
-    g.fillStyle = P16N.잉크; g.font = F(800, px(12));
-    const 이름 = String(d.label || '');
-    g.fillText(이름, 좌, y + px(11));
-    if (d.date){
-      const w = g.measureText(이름).width;
-      g.fillStyle = P16N.흐림; g.font = F(400, px(10.5));
-      g.fillText(d.date, 좌 + w + px(7), y + px(11));
-    }
-    y += px(16 + 3);
-
-    d.items.forEach(it => {
-      /* 시간은 별색 굵게, 제목은 잉크. 시간이 없으면 가운뎃점입니다 —
-         화면(planview)과 글(일정글)에서 쓰는 표시와 같습니다. */
-      g.fillStyle = it.t ? P16N.별 : P16N.흐림;
-      g.font = F(it.t ? 700 : 400, px(11.5));
-      /* 시각 없는 줄의 점은 시각 칸 «가운데»에 둡니다 — 왼쪽에 붙이면
-         제목과 사이가 휑하게 비어 딴 줄처럼 읽힙니다(시안에서 봤습니다). */
-      g.textAlign = it.t ? 'left' : 'center';
-      g.fillText(it.t || '·', it.t ? 좌 : 좌 + px(16), y + px(14));
-      g.textAlign = 'left';
-      g.fillStyle = P16N.잉크; g.font = F(400, px(12.5));
-      g.fillText(줄여쓰기(g, it.n || '', 폭 - px(41)), 좌 + px(41), y + px(14));
-      y += px(20);
-    });
-
-    y += px(8);
-    /* 마지막 날 밑에는 줄을 안 긋습니다 — 발의 줄과 두 줄이 됩니다. */
-    if (di < 날들.length - 1){
-      g.fillStyle = P16N.선;
-      g.fillRect(좌, Math.round(y - px(4)), 폭, Math.max(1, px(1)));
-    }
-  });
-
-  /* 못 담은 날이 있으면 숨기지 않고 적습니다 — 받는 사람이 「이게 전부」라고
-     믿어버리면 일정에 구멍이 납니다(위 ②). */
-  if (더날){
-    g.fillStyle = P16N.흐림; g.font = F(600, px(11.5));
-    g.fillText(`+ ${더날}일 더 있어요 (그림 한 장에 다 못 담았어요)`, 좌, y + px(14));
-  }
-
-  /* ── 발 ── 받은 사람이 갈 곳. 글이 버려지는 앱이 있어서 **그림 안에도**
-     주소를 적어 둡니다(sendCardBlob 머리말과 같은 까닭). */
-  const 발y = H - 발h;
-  g.fillStyle = P16N.선;
-  g.fillRect(좌, 발y, 폭, Math.max(1, px(1)));
-  g.fillStyle = P16N.흐림;
-  g.font = F(400, px(10));
-  g.fillText('기로에서 짠 일정이에요', 좌, 발y + px(21));
-  g.fillText(appUrlText(), 좌, 발y + px(35));
-  /* 바코드는 장식입니다 — 여권 카드의 MRZ 와 같은 역할(바코드그리기 머리말). */
-  바코드그리기(g, s.seed || s.title || '', 우 - px(96), px(96), 발y + px(20), px(16));
-
-  return new Promise(r => cv.toBlob(r, 'image/png'));
-}
+/* ⚠ 옛 일정 카드(b879 · drawPlan — 「종이 일정표 + 탑승권 머리띠」, 높이가 자유로운 긴 한 장)는 10-17 에 지웠습니다.
+     일정 보내기 「그림」은 아래 일정 책(drawPlanbook)입니다(사용자: 「십며칠 되면 어떻게 뽑으려고?」). */
 
 /* ── 일정 책(2026-10-17) — 표지 한 장 + 하루 한 장(1080×1350) ─────────────────────────
  * 사용자: 「이거 디자인도 너무 구린데? … 십며칠 되면 어떻게 뽑으려고?」 → 참고 그림(잡지 같은 일정 노트) → 「이렇게 못 만드냐?」.
@@ -1409,7 +1238,7 @@ async function drawPlan(s, W, _H, F){
  *   ① 표지: 첫 도시 사진 크게 · 여행 제목 · 「3박 4일 · 일정 24개」 · 지나는 곳(도쿄 → 하코네) · 날마다 한 줄
  *   ② 하루: DAY 숫자 · 날짜 · 지역 이름(명조) · 오른쪽 위 도시 사진 작게 · 시간 묶음별 일정
  *   일정이 많아 한 장에 안 들어가면 «다음 장으로 이어서»(지역 이름 · 이어서) — 글씨를 줄이지 않습니다.
- * ⚠ 높이가 정해져 있어(4:5) 옛 일정 카드(drawPlan)의 「캔버스 넓이 한계」 걱정이 없습니다 — 장 수가 늘 뿐.
+ * ⚠ 키는 4:5~9:16 로 묶여 있어 옛 긴 한 장 카드(b879, 지움)의 「캔버스 넓이 한계」 걱정이 없습니다 — 장 수가 늘 뿐.
  * ⚠ 사진은 우리 저장통(Supabase)에서 crossOrigin 으로 받습니다(photoImage). 못 받으면 사진 자리 없이 그립니다.
  * ⚠ 위키미디어 사진은 찍은 사람·라이선스 표기가 조건입니다(photos.html) — 그 장 아래에 한 줄(credit).
  * ⚠ 메모·지출·일행 이름은 안 그립니다(옛 카드와 같은 규칙 — 거르는 곳은 planview.js 일정책).
@@ -1730,9 +1559,6 @@ export async function cardImage(spec, mode = 'square'){
   /* 여행 영수증. 성향 카드와 **일부러 다른 그림**입니다(위 drawReceipt 머리말). */
   if (spec && spec.kind === 'receipt')
     return { blob: await drawReceipt(spec, W, H, F), fontOk: ok };
-  /* 일정 카드. ⚠ **이것만 높이가 자유입니다** — 넘겨준 H 를 안 씁니다(위 drawPlan 머리말). */
-  if (spec && spec.kind === 'plan')
-    return { blob: await drawPlan(spec, W, H, F), fontOk: ok };
 
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;

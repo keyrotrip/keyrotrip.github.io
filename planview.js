@@ -18,24 +18,24 @@
  *
  * 층: dom.js · net.js · calc.js · trip.js 와 이미 떼어낸
  *     planline.js · planmap.js · plancheck.js 를 씁니다. */
-import { $, esc, emptyDo } from './dom.js?v=b890';
-import { featOn, flags } from './flags.js?v=b890';
-import { fail, write } from './net.js?v=b890';
-import { dayLabel, hm, hop, money, legNear, dateRange, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b890';
-import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b890';
-import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b890';
-import { drawPlanMap, mapLinks } from './planmap.js?v=b890';
-import { STAY_MIN, mins } from './plancheck.js?v=b890';
+import { $, esc, emptyDo } from './dom.js?v=b891';
+import { featOn, flags } from './flags.js?v=b891';
+import { fail, write } from './net.js?v=b891';
+import { dayLabel, hm, hop, money, legNear, dateRange, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b891';
+import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b891';
+import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b891';
+import { drawPlanMap, mapLinks } from './planmap.js?v=b891';
+import { STAY_MIN, mins } from './plancheck.js?v=b891';
 /* 좌표 없는 줄에서 그 한 곳만 찾습니다. **cands.js 는 이 파일을 안 부르므로
    고리가 안 생깁니다**(b375 에 확인). */
-import { fillOnePlan } from './cands.js?v=b890';
-/* 일정을 그림 카드로 보냅니다(b879) — 아래 `일정카드`. */
-import { shareCard } from './card.js?v=b890';
+import { fillOnePlan } from './cands.js?v=b891';
+/* 일정을 그림으로 보냅니다 — 아래 `일정책`(10-17, 옛 일정카드 b879 는 지움). */
+import { shareCard } from './card.js?v=b891';
 /* 보내는 길이 셋이 되어(그림·링크·글) 고르는 판이 생겼습니다(b880). */
-import { openShareSheet } from './share.js?v=b890';
+import { openShareSheet } from './share.js?v=b891';
 /* 일정 책(2026-10-17) — 날마다 그 지역 도시 사진·사진 출처 */
-import { cities } from './cities.js?v=b890';
-import { sb } from './db.js?v=b890';
+import { cities } from './cities.js?v=b891';
+import { sb } from './db.js?v=b891';
 
 let ctx = { loadPlans: async () => {} };
 export function setPlanViewCtx(o){ ctx = { ...ctx, ...o }; }
@@ -319,46 +319,8 @@ function 줄글(p){
   return `${t ? t + ' ' : '· '}${nice(p.title || '').trim()}`;
 }
 
-/* ── 일정을 «그림 카드»로 (b879) ──────────────────────────────────────
- * 처음에는 글만 보냈는데, 사용자가 「걍 단순 텍스트야?」 — 시안 셋을 그려
- * 보이고 **「종이 일정표 + 밝은 탑승권 머리띠」**를 골랐습니다.
- * 그리는 곳은 card.js 의 `drawPlan` 입니다(높이가 자유로운 유일한 카드).
- *
- * ⚠ **글(`일정글`)은 그대로 삽니다** — 그림을 못 보내는 기기에서 `shareText`
- *   로 대신 나갑니다(card.js 의 `sendCardBlob`). 지우면 그런 기기에서 보내기가
- *   통째로 막힙니다.
- * ⚠ 날 이름은 `dayLabel` 이 만든 것을 쪼개 씁니다 — 「Day 1 · 11월 12일 목요일」.
- *   카드에서는 좁아서 「목요일」을 「목」으로 줄입니다. 규칙을 새로 적지 않습니다.
- * ⚠ 안 나가는 것은 글과 같습니다: 지출·일행 이름·일기·메모. 거르는 곳은
- *   **여기 하나**입니다 — card.js 는 받은 것만 그립니다. */
-function 일정카드(){
-  const 날 = [...new Set(plans.map(p => p.date).filter(Boolean))].sort();
-  const 줄 = p => ({ t: hm(p.start_time), n: nice(p.title || '').trim() });
-  const 때순 = (a, b) => String(a.start_time || '99').localeCompare(String(b.start_time || '99'));
-  const days = 날.map(d => {
-    const [라벨, 날짜] = String(dayLabel(d, trip)).split(' · ');
-    return { label: 라벨, date: (날짜 || '').replace(/요일$/, ''),
-             items: plans.filter(x => x.date === d).sort(때순).map(줄) };
-  });
-  const 미정 = plans.filter(x => !x.date);
-  if (미정.length) days.push({ label: '날짜 미정', date: '', items: 미정.map(줄) });
-
-  return {
-    kind: 'plan',
-    title: trip.title || '내 여행',
-    meta: [밤글(), dateRange(trip.start_date, trip.end_date),
-           `일정 ${plans.length}개`].filter(Boolean).join(' · '),
-    days,
-    /* 바코드 무늬를 여행마다 다르게, 같은 여행이면 늘 같게 (바코드그리기). */
-    seed: trip.id,
-    /* 시트에 띄울 말 — 「보내기」로 들어왔으니 시트도 보내기라고 말해야 합니다. */
-    sheetTitle: '일정 카드',
-    goText: '보내기',
-    /* 받은 사람이 링크를 누를 까닭(b822 의 `shareLine` 과 같은 자리). */
-    shareLine: `${trip.title} 일정이에요. 기로에서 짰어요.`,
-    shareText: 일정글(),
-  };
-}
+/* ⚠ 옛 그림 카드(b879 · 일정카드 → card.js drawPlan, 긴 한 장)는 10-17 에 지웠습니다 — 아래 일정 책.
+   ⚠ 글(`일정글`)은 그대로 삽니다 — 그림을 못 보내는 기기에서 shareText 로 대신 나갑니다(card.js sendCardBlobs). */
 
 /* ── 일정 책(2026-10-17) — 표지 + 하루 한 장(card.js drawPlanbook) ──────────────────
  * 사용자가 고른 것: 하루 제목은 «지역 이름만»(그 날에 걸린 구간들의 도시 — 옮겨 가는 날은 「도쿄 → 하코네」),
@@ -371,7 +333,7 @@ const 사진출처이름 = s => String(s || '').replace(/^Photo:\s*/i, '').repla
 const 위키사진 = c => /wikimedia|wikipedia/i.test(c?.image_page || '') || /wikimedia/i.test(c?.image_credit || '')
   || !!(c?.image_license && !/^pexels$/i.test(c.image_license));
 async function 일정책(){
-  if (!cities?.length){ try { await (await import('./citysearch.js?v=b890')).loadCities(); } catch {} }
+  if (!cities?.length){ try { await (await import('./citysearch.js?v=b891')).loadCities(); } catch {} }
   const 도시 = id => (cities || []).find(c => c.id === id) || null;
   const 날 = [...new Set(plans.map(p => p.date).filter(Boolean))].sort();
   const 줄 = p => ({ t: hm(p.start_time), n: nice(p.title || '').trim() });

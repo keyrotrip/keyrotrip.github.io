@@ -15,11 +15,11 @@
  *   trip.js 만 있으면 됩니다.
  *
  * 층: dom.js · net.js · db.js · trip.js · card.js(그림은 부르는 쪽이 넘겨줌) */
-import { $, esc, toast, copyText } from './dom.js?v=b890';
-import { fail, netTimeout } from './net.js?v=b890';
-import { sb } from './db.js?v=b890';
-import { trip } from './trip.js?v=b890';
-import { appUrl } from './card.js?v=b890';
+import { $, esc, toast, copyText } from './dom.js?v=b891';
+import { fail, netTimeout } from './net.js?v=b891';
+import { sb } from './db.js?v=b891';
+import { trip } from './trip.js?v=b891';
+import { appUrl } from './card.js?v=b891';
 
 /* 지금 열린 판이 들고 있는 것. 닫으면 비웁니다. */
 let 짐 = null;

@@ -7378,3 +7378,9 @@ body.sharedon{ overflow:hidden; }
   font-size:calc(25px * var(--ts)); color:#8A6A52; }
 .dgs-a .dgacts{ border-top:1px dashed #DCCDB4; }
 
+
+/* 알림 받기 묻기(2026-10-17, notify.js pushAutoAsk) — 판은 이름 묻기와 같은 카드(.pshpop/.pshcard/.nmcard) */
+.pushask{ text-align:center; }
+.pushask .nmsub{ margin-bottom:6px; }
+.pabell{ width:46px; height:46px; margin:0 auto 10px; border-radius:50%; display:grid; place-items:center;
+  background:#FBE9E1; color:var(--brand-dark); }

@@ -14,23 +14,23 @@
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · cities.js · rate.js ·
  *     city.js · citysearch.js 를 씁니다. */
-import { $, esc, josa, tipOff } from './dom.js?v=b890';
-import { sb } from './db.js?v=b890';
-import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b890';
-import { dateRange } from './calc.js?v=b890';
-import { starHtml, paintStars, starValue } from './stars.js?v=b890';
+import { $, esc, josa, tipOff } from './dom.js?v=b891';
+import { sb } from './db.js?v=b891';
+import { fail, netTimeout, netIsDown, drawOffbar, NOROW } from './net.js?v=b891';
+import { dateRange } from './calc.js?v=b891';
+import { starHtml, paintStars, starValue } from './stars.js?v=b891';
 import { cities, countryName, cityCountry, continentOf,
-         countryInfo } from './cities.js?v=b890';
+         countryInfo } from './cities.js?v=b891';
 import { myRates, cityStat, visited, justRated, avgTail,
          setRateData, setVisited, applyRate, putCityStat, clearJustRated,
-         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b890';
-import { openCity } from './city.js?v=b890';
-import { loadCities } from './citysearch.js?v=b890';
+         removeRate, 별받음, 넘긴줄, 인기 } from './rate.js?v=b891';
+import { openCity } from './city.js?v=b891';
+import { loadCities } from './citysearch.js?v=b891';
 /* 한줄평 · 맛집 묻기(b861). cmtask.js 는 rating.js 를 안 읽습니다(저장은 ctx) — 고리 없음. */
-import { 물을까, 묻기Html } from './cmtask.js?v=b890';
+import { 물을까, 묻기Html } from './cmtask.js?v=b891';
 /* 성향 확정 문턱(해외 10곳)은 personacalc.js 한 곳에. 그 파일은 아무 화면도 안 읽어 고리가 안 생깁니다. */
-import { 성향문턱 } from './personacalc.js?v=b890';
-import { 이름먼저 } from './nameask.js?v=b890';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
+import { 성향문턱 } from './personacalc.js?v=b891';
+import { 이름먼저 } from './nameask.js?v=b891';   /* 이름이 남에게 처음 보일 때 「이름을 정하고 남길까요?」(2026-10-16) */
 
 let ctx = { me: () => null, fillCityList: () => {}, showApp: () => {} };
 export function setRatingCtx(o){ ctx = { ...ctx, ...o }; }

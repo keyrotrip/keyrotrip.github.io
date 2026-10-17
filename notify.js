@@ -14,11 +14,11 @@
  * 밖으로 나가는 길은 `loadNotifPrefs` 하나입니다.
  *
  * 층: dom.js · db.js · net.js 만 씁니다. */
-import { $, esc, toast } from './dom.js?v=b890';
-import { sb } from './db.js?v=b890';
-import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b890';
+import { $, esc, toast } from './dom.js?v=b891';
+import { sb } from './db.js?v=b891';
+import { fail, netTimeout, netIsDown, NOROW } from './net.js?v=b891';
 /* 「읽은 알림 지우기」를 한 번 더 눌러 정하는 장치(b799). ui.js 는 dom.js 만 읽어 고리가 없습니다. */
-import { arm, disarm } from './ui.js?v=b890';
+import { arm, disarm } from './ui.js?v=b891';
 
 let ctx = { me: () => null, openPerson: () => {}, openFriends: () => {}, openCityRev: () => {}, openFoodNote: () => {}, openCity: () => {} };
 export function setNotifyCtx(o){ ctx = { ...ctx, ...o }; }
@@ -178,6 +178,7 @@ $('notifprefcard').addEventListener('change', async e => {
   if (!reg){ $('nf_push').checked = false; return fail('앱을 새로고침한 뒤 다시 켜주세요.', 'nf'); }
 
   if (!on){
+    try { localStorage.setItem(끔열쇠(), '1'); } catch {}   /* 직접 끈 사람은 아래 「처음 쓸 때 묻기」가 다시 안 켬 */
     const sub = await reg.pushManager.getSubscription();
     if (sub){
       /* **표에서 먼저 지우고 기기에서 뗍니다.** 순서가 반대면 표에 죽은
@@ -189,40 +190,103 @@ $('notifprefcard').addEventListener('change', async e => {
     return drawPushRow();
   }
 
-  /* 허락은 **사용자가 스위치를 켠 그 순간**에만 물을 수 있습니다.
-     앱을 열자마자 물으면 대부분 거절합니다. */
+  try { localStorage.removeItem(끔열쇠()); } catch {}
+  /* 허락은 **사용자가 무언가를 누른 그 순간**에만 물을 수 있습니다(스위치를 켠 지금). */
   const perm = await Notification.requestPermission();
   if (perm !== 'granted'){ $('nf_push').checked = false; return drawPushRow(); }
+  const 됨 = await 기기등록(reg);
+  if (됨 !== true){ $('nf_push').checked = false; return fail(됨, 'nf'); }
+  toast('이제 잠금화면으로 알려드려요');
+  drawPushRow();
+});
 
+/* 이 기기를 푸시 받을 곳으로 등록(허락은 이미 받은 뒤) — 됐으면 true, 아니면 오류(글·객체).
+   스위치와 「처음 쓸 때 묻기」(아래)가 같이 씁니다 — 두 벌이면 언젠가 갈라집니다. */
+async function 기기등록(reg){
+  reg = reg || await navigator.serviceWorker.getRegistration();
+  if (!reg) return '앱을 새로고침한 뒤 다시 켜주세요.';
   let sub;
   try {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true, applicationServerKey: b64ToBytes(VAPID_PUB) });
-  } catch (err){
-    $('nf_push').checked = false;
-    return fail('알림을 켜지 못했어요. 잠시 뒤 다시 눌러주세요.', 'nf');
-  }
-
+  } catch { return '알림을 켜지 못했어요. 잠시 뒤 다시 눌러주세요.'; }
   const j = sub.toJSON();
   const r = await sb.from('push_subs').upsert({
     user_id: ctx.me().id, endpoint: sub.endpoint,
     p256dh: j.keys.p256dh, auth: j.keys.auth,
     ua: navigator.userAgent.slice(0, 200),
   }, { onConflict: 'endpoint' }).select('id');
-
   if (r.error || !r.data?.length){
     await sub.unsubscribe();          /* 표에 못 넣었으면 기기 등록도 물립니다 */
-    $('nf_push').checked = false;
-    return fail(r.error || NOROW.save, 'nf');
+    return r.error || NOROW.save;
   }
-  /* **집 시간대를 여기서도 씁니다.** 위의 loadNotifPrefs 가 이미 하지만,
-     그건 "설정 화면을 열었다"에 기대고 있습니다. 스위치가 나중에 다른
-     자리로 옮겨가면 집 시간대가 조용히 안 채워지고, 그러면 출국편 알림이
-     다시 1시간 일찍 옵니다. 켜는 자리에서 챙기면 그 고리가 끊어집니다. */
+  /* **집 시간대를 여기서도 씁니다.** loadNotifPrefs 는 «설정 화면을 열었다»에 기대고 있어서,
+     켜는 자리에서 챙기지 않으면 출국편 알림이 1시간 일찍 옵니다. */
   saveHomeTz();
-  toast('이제 잠금화면으로 알려드려요');
-  drawPushRow();
-});
+  return true;
+}
+
+/* ── 처음 쓸 때 한 번 「알림 허용?」(2026-10-17) ─────────────────────────────
+ * 사용자: 「대부분 앱들도 기본이 알람 켜져 있고, 사용자들이 듣기 싫으면 직접 끄잖아」 → 앱을 열면 한 번 묻기.
+ * 폰의 허락 창은 글을 못 바꾸므로 그 앞에 «우리 카드» 하나(사용자가 고른 글):
+ *   「친구 소식, 바로 받아 볼까요?」 / 「방명록 · 답글 · 팔로우 소식과 여행 일정 30분 전 알림을 폰으로 받아요. 언제든 설정에서 끌 수 있어요.」
+ *   [알림 켜기] → 그 누름 안에서 폰의 허락 창 → 허락이면 등록(「잠금화면 알림을 켰어요」) · [나중에]·바깥·뒤로 → 7일 쉼
+ *   거절한 사람(denied)·설정에서 직접 끈 사람(t2:pushoff)은 다시 안 물음 · 이미 허락했는데 이 기기 등록이 없으면 조용히 등록
+ *   아이폰 사파리 탭처럼 못 받는 곳은 건너뜀 · 다른 카드(이름 묻기 등 .pshpop)가 떠 있으면 닫힐 때까지 기다림.
+ * ⚠ requestPermission 은 누름 처리 «안에서 곧바로» 불러야 합니다(먼저 await 하면 사파리가 누름으로 안 침).
+ * ⚠ 뒤로가기 = 「나중에」 — tripview.js 사슬 맨 위(알림묻기열림/닫기). */
+const 끔열쇠 = () => 't2:pushoff:' + (ctx.me()?.id || '');
+const 물음열쇠 = () => 't2:pushask:' + (ctx.me()?.id || '');
+let 카드 = null, 기다림 = 0;
+export const 알림묻기열림 = () => !!카드;
+export async function pushAutoAsk(){
+  if (!pushOk() || !ctx.me()) return;
+  try { if (localStorage.getItem(끔열쇠()) === '1') return; } catch {}
+  if (Notification.permission === 'denied') return;
+  if (Notification.permission === 'granted'){
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg && !(await reg.pushManager.getSubscription())) 기기등록(reg);
+    return;
+  }
+  try { if (Date.now() - Number(localStorage.getItem(물음열쇠()) || 0) < 7 * 864e5) return; } catch {}
+  clearTimeout(기다림);
+  let 번 = 0;
+  const 띄우기 = () => {
+    if (카드 || !ctx.me() || Notification.permission !== 'default') return;
+    /* 다른 카드(이름 묻기·성향 바뀜 등)가 떠 있으면 3초 뒤 다시 — 두 장이 겹치지 않게(1분까지) */
+    if (document.querySelector('.pshpop')){ if (++번 < 20) 기다림 = setTimeout(띄우기, 3000); return; }
+    try { localStorage.setItem(물음열쇠(), String(Date.now())); } catch {}
+    카드 = document.createElement('div');
+    카드.className = 'pshpop';
+    카드.innerHTML = `<div class="pshcard nmcard pushask" role="dialog" aria-modal="true" aria-label="알림 받기">
+        <div class="pabell" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+          stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></div>
+        <p class="pshtitle">친구 소식, 바로 받아 볼까요?</p>
+        <p class="nmsub">방명록 · 답글 · 팔로우 소식과<br>여행 일정 30분 전 알림을 폰으로 받아요.<br>언제든 설정에서 끌 수 있어요.</p>
+        <div class="pshbtns"><button type="button" class="primary paok">알림 켜기</button>
+          <button type="button" class="pshx palater">나중에</button></div>
+      </div>`;
+    카드.querySelector('.paok').onclick = () => {
+      /* 이 누름 «안에서 곧바로» 폰의 창(사파리 규칙) — 그다음에 카드를 닫습니다 */
+      const 물음 = Notification.requestPermission();
+      알림묻기닫기();
+      물음.then(async perm => {
+        if (perm === 'granted' && (await 기기등록()) === true) toast('잠금화면 알림을 켰어요 · 설정에서 끌 수 있어요');
+      }).catch(() => {});
+    };
+    카드.querySelector('.palater').onclick = () => 알림묻기닫기();
+    카드.addEventListener('click', e => { if (e.target === 카드) 알림묻기닫기(); });
+    document.body.appendChild(카드);
+    if (history.state?.t2 !== 'pushask') history.pushState({ t2:'pushask' }, '');
+  };
+  기다림 = setTimeout(띄우기, 2500);   /* 첫 화면이 자리 잡은 뒤 */
+}
+/* 닫기 — 단추에서 부르면 뒤로가기를 거치고(사슬이 다시 불러 진짜로 닫음), 사슬에서 부르면(뒤로온것) 바로 닫습니다. */
+export function 알림묻기닫기(뒤로온것){
+  if (!카드) return;
+  if (!뒤로온것 && history.state?.t2 === 'pushask'){ history.back(); return; }
+  카드.remove(); 카드 = null;
+}
 
 
 /* ── 종 알림 — 읽는 자리 ──────────────────────────────────────────────
