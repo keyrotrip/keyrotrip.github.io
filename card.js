@@ -8,10 +8,10 @@
  * 이 파일도 앱 전체를 알아야 합니다.
  *
  * 층: dom.js 만 씁니다. */
-import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b889';
+import { $, esc, toast, josa, flagSprite, flagSvgOf } from './dom.js?v=b890';
 /* 성향 «셈»은 personacalc.js 로 옮겼습니다(2026-10-16). 이 파일은 그림·HTML 만 맡습니다.
    예전처럼 card.js 에서 가져가는 곳(14파일)이 그대로 돌도록 같은 이름으로 다시 내보냅니다. */
-import { personaStats, 흔들림폭, 별가운데, PERSONA_VER, personaAxes, AXIS_WORD, AXIS_NAME, personaSaved, personaShiftWhy, PERSONA16, personaRank, personaMatch, personaMateLine, personaMates, personaMrz } from './personacalc.js?v=b889';
+import { personaStats, 흔들림폭, 별가운데, PERSONA_VER, personaAxes, AXIS_WORD, AXIS_NAME, personaSaved, personaShiftWhy, PERSONA16, personaRank, personaMatch, personaMateLine, personaMates, personaMrz } from './personacalc.js?v=b890';
 export { personaStats, 흔들림폭, 별가운데, PERSONA_VER, personaAxes, AXIS_WORD, AXIS_NAME, personaSaved, personaShiftWhy, PERSONA16, personaRank, personaMatch, personaMateLine, personaMates, personaMrz };
 
 /* ── 성향 카드 ───────────────────────────────────────────────────────
@@ -295,7 +295,7 @@ function p16Image(code){
     /* 꼬리표를 붙입니다 — 서비스워커의 `versioned` 갈래가 **본 것만** 담고
        옛 판을 지웁니다(sw.js). 열여섯 장 612KB 를 미리 담을 이유가 없습니다.
        한 사람은 자기 유형 하나만 봅니다. */
-    img.src = `./persona/${code}.webp?v=b889`;
+    img.src = `./persona/${code}.webp?v=b890`;
   });
 }
 
@@ -566,7 +566,7 @@ function p16Thumb(code){
     const img = new Image();
     img.onload = () => ok(img);
     img.onerror = () => ok(null);      /* 그림 하나 때문에 카드를 못 만들면 안 됩니다 */
-    img.src = `./persona/m/${code}.jpg?v=b889`;
+    img.src = `./persona/m/${code}.jpg?v=b890`;
   });
 }
 
@@ -1420,15 +1420,23 @@ async function drawPlan(s, W, _H, F){
 /* 색 — 화면 종이(P16N.종이)보다 한 톤 따뜻하게(사용자: 「좀 더 감성있게」) · 녹슨 주황은 작은 글씨도 읽히는 짙기 */
 const PB = { 종이: '#F5F0E6', 잉크: P16N.잉크, 흐림: P16N.흐림, 선: '#DDD5C7', 녹: '#B5451B', 흐린녹: '#D7A88F' };
 async function drawPlanbook(s, F){
-  const u = 3, W = 360 * u, H = 450 * u, px = v => v * u;
+  /* ⚠⚠ 하루는 «한 장»에(10-17 사용자: 「일정이 너무 쪼개진다 — 일정은 다 한 장에 들어가야지」). ⚠⚠
+   *   전에는 4:5 에 안 들어가면 다음 장으로 이어서 하루가 두세 장으로 쪼개졌습니다.
+   *   이제 ① 글씨는 그대로 두고 «모든 장의 키를 같이» 늘립니다(4:5 → 최대 9:16 — 장마다 키가 다르면 인스타 넘김판이 자름)
+   *   ② 9:16 에도 안 들어가면 «모든 장의 글씨를 같이» 조금씩 줄입니다(최소 75% — 「날마다 글씨 크기 다르게 하지 말 것」, 사용자)
+   *   ③ 그래도 안 되면(하루 일정이 스물대여섯 개 넘게) 그때만 다음 장으로 이어서.
+   * 높 = 장 키(자 단위, 폭 360 기준) · sc = 본문 글씨 배율. */
+  const u = 3, W = 360 * u, px = v => v * u;
+  let 높 = 450, sc = 1, H = 450 * u;
   const 좌 = px(28), 우 = W - px(28), 폭 = 우 - 좌;
   const 명조 = (w, v) => `${w} ${px(v)}px "Nanum Myeongjo", "AppleMyungjo", "Batang", serif`;
   const 고딕 = (w, v) => F(w, px(v));
   /* 본문 글자(사용자 10-17: 「폰에서 확대 없이 읽히는지가 기준」 → 모든 장 같은 크기로 키우고 행간 넓힘) */
-  const 글크기 = 15, 시크기 = 13.5, 행간 = 22, 줄틈 = 10;
+  const 기본 = { 글크기: 15, 시크기: 13.5, 행간: 22, 줄틈: 10, 묶첫: 20, 묶: 32 };
+  let 글크기 = 기본.글크기, 시크기 = 기본.시크기, 행간 = 기본.행간, 줄틈 = 기본.줄틈;
   const 시칸 = px(50), 점x = 좌 + px(56), 글x = 좌 + px(68), 글폭 = 우 - 글x;
   const 본문시작 = px(180);
-  const 발위 = px(450 - 60);              /* 본문이 내려갈 수 있는 끝(「다음 장에 계속」·사진 출처 줄 위) */
+  let 발위 = px(450 - 60);                /* 본문이 내려갈 수 있는 끝(「다음 장에 계속」·사진 출처 줄 위) — 높이 정해지면 다시 */
 
   /* 사진은 한 번만 받습니다(같은 도시가 여러 날이면 같은 그림) */
   const 사진들 = new Map();
@@ -1452,21 +1460,41 @@ async function drawPlanbook(s, F){
     return 좋은 ? 좋은.줄 : wrapText(잼, 글, 최대).slice(0, 2);
   };
 
-  /* ── 하루를 장으로 나눕니다 ───────────────────────────────────── */
+  /* ── 하루마다 블록(묶음 이름 줄 · 일정 줄)을 셉니다 — 배율(sc)에 따라 글씨·행간이 같이 줄어듭니다 ── */
   const 때묶음 = t => !t ? '' : t < '12' ? '아침' : t < '17' ? '오후' : '저녁';
+  const 블록세기 = 배 => {
+    글크기 = 기본.글크기 * 배; 시크기 = 기본.시크기 * 배; 행간 = 기본.행간 * 배; 줄틈 = 기본.줄틈 * 배;
+    return (s.days || []).map(d => {
+      const 시간있음 = d.items.some(x => x.t);
+      const 블록 = [];
+      let 앞묶음 = null;
+      const 순 = [...d.items].sort((a, b) => (a.t ? 0 : 1) - (b.t ? 0 : 1));   /* 시간 없는 것은 맨 뒤 */
+      for (const it of 순){
+        const 묶 = 시간있음 ? (때묶음(it.t) || '시간 미정') : '';
+        if (묶 && 묶 !== 앞묶음){ 블록.push({ 종류: '묶음', 글: 묶, h: px((블록.length ? 기본.묶 : 기본.묶첫) * 배) }); 앞묶음 = 묶; }
+        const 줄 = 줄들(it.n || '', 고딕(400, 글크기), 글폭).slice(0, 3);
+        블록.push({ 종류: '일정', t: it.t, 줄, h: px(줄.length * 행간 + 줄틈) });
+      }
+      return 블록;
+    });
+  };
+  /* 높이·배율 정하기 — 제일 긴 날이 들어가는 가장 작은 키(450~640), 안 되면 배율을 0.05씩 */
+  const 최대높 = 640, 최소배 = .75, 아래 = 60;
+  let 날블록 = null;
+  for (sc = 1; ; sc = Math.round((sc - .05) * 100) / 100){
+    날블록 = 블록세기(sc);
+    const 제일 = Math.max(0, ...날블록.map(b => b.reduce((a, x) => a + x.h, 0))) / u;   /* 자 단위 */
+    const 필요 = 180 + 제일 + 아래;
+    if (필요 <= 최대높 || sc <= 최소배){ 높 = Math.max(450, Math.min(최대높, Math.ceil(필요))); break; }
+  }
+  H = 높 * u;
+  발위 = px(높 - 아래);
+
+  /* ── 하루를 장으로 — 보통은 하루 한 장. 위 ③(그래도 안 들어가는 날)만 이어서 ── */
   const 장들 = [{ 종류: '표지' }];
-  for (const d of s.days || []){
-    const 시간있음 = d.items.some(x => x.t);
-    const 블록 = [];
-    let 앞묶음 = null;
-    const 순 = [...d.items].sort((a, b) => (a.t ? 0 : 1) - (b.t ? 0 : 1));   /* 시간 없는 것은 맨 뒤 */
-    for (const it of 순){
-      const 묶 = 시간있음 ? (때묶음(it.t) || '시간 미정') : '';
-      if (묶 && 묶 !== 앞묶음){ 블록.push({ 종류: '묶음', 글: 묶, h: px(블록.length ? 32 : 20) }); 앞묶음 = 묶; }
-      const 줄 = 줄들(it.n || '', 고딕(400, 글크기), 글폭).slice(0, 3);
-      블록.push({ 종류: '일정', t: it.t, 줄, h: px(줄.length * 행간 + 줄틈) });
-    }
-    if (!블록.length){ 장들.push({ 종류: '하루', d, 블록: [], 이어서: false, k: 1 }); continue; }
+  (s.days || []).forEach((d, di) => {
+    const 블록 = 날블록[di];
+    if (!블록.length){ 장들.push({ 종류: '하루', d, 블록: [], 이어서: false, k: 1 }); return; }
     let 남은 = 블록, 이어서 = false;
     while (남은.length){
       const 칸 = 발위 - 본문시작;
@@ -1481,7 +1509,7 @@ async function drawPlanbook(s, F){
       장들.push({ 종류: '하루', d, 블록: 남은.slice(0, i), 이어서, k: 1 });
       남은 = 남은.slice(i); 이어서 = true;
     }
-  }
+  });
   /* 다음 장이 같은 날이면 그 장 아래에 「다음 장에 계속 →」 */
   장들.forEach((장, i) => { 장.계속 = 장.종류 === '하루' && 장들[i + 1]?.d === 장.d; });
   const N = 장들.length;
@@ -1489,7 +1517,7 @@ async function drawPlanbook(s, F){
   /* ── 공통 ─────────────────────────────────────────────────────── */
   const 가는줄 = (g, y, x = 좌, w = 폭) => { g.fillStyle = PB.선; g.fillRect(x, y, w, Math.max(2, px(.7))); };
   const 발그리기 = (g, n, 사진글, 계속) => {
-    const y = px(450 - 47);
+    const y = px(높 - 47);
     if (계속){
       g.fillStyle = PB.녹; g.font = 고딕(600, 10.5); g.textAlign = 'right';
       g.fillText('다음 장에 계속 →', 우, y); g.textAlign = 'left';
@@ -1498,11 +1526,11 @@ async function drawPlanbook(s, F){
       g.fillStyle = PB.흐림; g.font = 고딕(400, 7.5);
       g.fillText(줄여쓰기(g, 사진글, 폭 - (계속 ? px(92) : 0)), 좌, y);
     }
-    가는줄(g, px(450 - 36));
+    가는줄(g, px(높 - 36));
     g.fillStyle = PB.흐림; g.font = 고딕(400, 9);
-    g.fillText(`기로에서 짠 일정 · ${appUrlText()}`, 좌, px(450 - 19));
+    g.fillText(`기로에서 짠 일정 · ${appUrlText()}`, 좌, px(높 - 19));
     g.textAlign = 'right'; g.font = 명조(400, 10.5);
-    g.fillText(`${n} / ${N}`, 우, px(450 - 19));
+    g.fillText(`${n} / ${N}`, 우, px(높 - 19));
     g.textAlign = 'left';
   };
   const 새장 = () => {
@@ -1560,7 +1588,7 @@ async function drawPlanbook(s, F){
       let y = px(72);
       const 표지사진 = await 사진(s.cover?.photo);
       if (표지사진){
-        const pw = 폭 - px(14), ph = px(184), b = px(7);
+        const pw = 폭 - px(14), ph = px(184 + (높 - 450) * .6), b = px(7);
         붙인사진(g, 표지사진, W / 2, y + (ph + b * 2.9) / 2, pw, ph, b, -1.2);
         y += ph + b * 2.9;
         /* 계절 도장 — 사진 오른쪽 아래 귀퉁이에 걸쳐서 */
@@ -1579,8 +1607,8 @@ async function drawPlanbook(s, F){
           g.textAlign = 'center'; g.font = 명조(700, 13); g.fillText(해, 0, px(13));
           g.textAlign = 'left'; g.restore();
         }
-        y += px(40);
-      } else y += px(60);
+        y += px(40 + (높 - 450) * .18);   /* 장이 길어지면 사진 아래 숨을 조금 더(표지 아래가 휑하지 않게) */
+      } else y += px(60 + (높 - 450) * .4);
       /* 제목(명조, 뜻 단위 두 줄) */
       g.fillStyle = PB.잉크;
       const 제목줄 = 뜻줄(s.title || '내 여행', 명조(700, 29), 폭);
@@ -1635,14 +1663,14 @@ async function drawPlanbook(s, F){
       const k = 장.k || 1, 점들 = [];
       for (const b of 장.블록){
         if (b.종류 === '묶음'){
-          g.fillStyle = PB.녹; g.font = 고딕(700, 11);
-          자간쓰기(g, b.글, 좌, y + b.h * k - px(9), px(1.8));
+          g.fillStyle = PB.녹; g.font = 고딕(700, 11 * Math.max(sc, .85));
+          자간쓰기(g, b.글, 좌, y + b.h * k - px(9 * sc), px(1.8));
           y += b.h * k; continue;
         }
-        const 기준 = y + px(15);
+        const 기준 = y + px(15 * sc);
         g.fillStyle = b.t ? PB.잉크 : PB.흐림; g.font = 명조(700, 시크기);
         g.fillText(b.t || '—', 좌, 기준);
-        점들.push({ y: 기준 - px(5), 찬: !!b.t });
+        점들.push({ y: 기준 - px(5 * sc), 찬: !!b.t });
         g.fillStyle = PB.잉크; g.font = 고딕(400, 글크기);
         b.줄.forEach((t, i) => g.fillText(t, 글x, 기준 + px(i * 행간 * Math.max(k, .9))));
         y += b.h * k;

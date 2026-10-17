@@ -2,7 +2,7 @@
  * 데이터 모듈(personadata · tripdata 와 같은 규칙): 질의만 둡니다. 화면 판단은 guestbook.js.
  * ⚠ 표(guestbook)는 앱이 직접 못 읽습니다(정책 없음) — 비밀 글을 서버가 걸러 주는 함수로만.
  * 층: db 만 읽습니다. */
-import { sb } from './db.js?v=b889';
+import { sb } from './db.js?v=b890';
 
 /* 그 사람 방명록 — 비밀 글은 주인·쓴 사람이 아니면 본문·이름이 비어(null) 옵니다 */
 export const 방명록읽기 = owner => sb.rpc('guestbook_list', { p_owner: owner });
