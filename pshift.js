@@ -24,13 +24,13 @@
  *   누르는 것이 곧 봤다는 증거입니다. 그전까지는 홈을 그릴 때마다 다시
  *   붙습니다 — 그게 「다시 열 이유」의 뜻이기도 합니다.
  */
-import { esc } from './dom.js?v=b891';
+import { esc } from './dom.js?v=b892';
 /* 서버 질의는 personadata.js 에(2026-10-16) — 성향 기능의 표·칸을 한 곳에서 봅니다. */
-import { 내별점읽기, 성향재료칸, 올린성향읽기, 성향올리기 } from './personadata.js?v=b891';
-import { netTimeout } from './net.js?v=b891';
-import { cities } from './cities.js?v=b891';
-import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b891';
-import { 성향문턱 } from './personacalc.js?v=b891';
+import { 내별점읽기, 성향재료칸, 올린성향읽기, 성향올리기 } from './personadata.js?v=b892';
+import { netTimeout } from './net.js?v=b892';
+import { cities } from './cities.js?v=b892';
+import { personaAxes, personaShiftWhy, PERSONA16, PERSONA_VER } from './card.js?v=b892';
+import { 성향문턱 } from './personacalc.js?v=b892';
 
 let ctx = { me: () => null, 열기: () => {} };
 export function setShiftCtx(o){ ctx = { ...ctx, ...o }; }
@@ -176,10 +176,10 @@ function 그리기(){
   팝.innerHTML = `<div class="pshcard" role="dialog" aria-modal="true" aria-label="성향이 바뀌었어요">
       <p class="pshtitle">성향이 바뀌었어요</p>
       <div class="pshpair">
-        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b891" alt="">
+        <figure class="old"><img src="./persona/t/${esc(전)}.jpg?v=b892" alt="">
           <figcaption><b>${esc(전)}</b><span>${esc(앞)}</span></figcaption></figure>
         <i aria-hidden="true">→</i>
-        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b891" alt="">
+        <figure class="new"><img src="./persona/t/${esc(지금)}.jpg?v=b892" alt="">
           <figcaption><b>${esc(지금)}</b><span>${esc(뒤)}</span></figcaption></figure>
       </div>
       <p class="pshwhy">${esc(personaShiftWhy(전, 지금, 대기.규칙) || '최근에 매긴 곳들이 그렇게 말해요.')}</p>

@@ -9,13 +9,13 @@
  * ⚠ 평가 탭은 «늘 나라별로» 열립니다(사용자). 「전체 도시」는 예전 화면 그대로입니다.
  * ⚠ 저장·도시 열기·성향 열기는 ctx 로 받습니다 — 이 파일이 rating.js 를 안 읽어야 시연 페이지(_demo_ratecc.html)에서
  *   가짜 저장으로 돌릴 수 있습니다. 고른 나라는 이 기기에만 기억합니다(localStorage, 못 쓰면 매번 고르기). */
-import { $, esc, flagSprite } from './dom.js?v=b891';
-import { cities, countryName, continentOf, chosung, onlyCho } from './cities.js?v=b891';
-import { starHtml, paintStars, starValue } from './stars.js?v=b891';
-import { 인기, 별받음, cityStat, myRates, avgTail } from './rate.js?v=b891';
+import { $, esc, flagSprite } from './dom.js?v=b892';
+import { cities, countryName, continentOf, chosung, onlyCho } from './cities.js?v=b892';
+import { starHtml, paintStars, starValue } from './stars.js?v=b892';
+import { 인기, 별받음, cityStat, myRates, avgTail } from './rate.js?v=b892';
 /* ★4.5 묻기(b861) — 전체 도시 목록(rating.js)은 쓰고 있는데 **나라별 화면만 안 쓰고
    있었습니다**(b878, 사용자 신고: 「별 4.5 이상이면 한줄평이랑 맛집추천도 떠야 하는데 안 떠」). */
-import { 물을까, 묻기Html } from './cmtask.js?v=b891';
+import { 물을까, 묻기Html } from './cmtask.js?v=b892';
 
 let ctx = {
   별: () => null,              /* 도시 id → 내 별점(없으면 null) */

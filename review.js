@@ -30,11 +30,11 @@
  *   으로 좁힐 이유가 없습니다.
  *
  * 층: dom.js · db.js · net.js · calc.js · stars.js · trip.js · cmtask.js */
-import { $ } from './dom.js?v=b891';
-import { sb } from './db.js?v=b891';
-import { netTimeout } from './net.js?v=b891';
-import { todayYmd } from './calc.js?v=b891';
-import { trip, legs } from './trip.js?v=b891';
+import { $ } from './dom.js?v=b892';
+import { sb } from './db.js?v=b892';
+import { netTimeout } from './net.js?v=b892';
+import { todayYmd } from './calc.js?v=b892';
+import { trip, legs } from './trip.js?v=b892';
 
 let ctx = { me: () => null, openReviewTrip: async () => {} };
 export function setReviewCtx(o){ ctx = { ...ctx, ...o }; }

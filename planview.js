@@ -18,24 +18,24 @@
  *
  * 층: dom.js · net.js · calc.js · trip.js 와 이미 떼어낸
  *     planline.js · planmap.js · plancheck.js 를 씁니다. */
-import { $, esc, emptyDo } from './dom.js?v=b891';
-import { featOn, flags } from './flags.js?v=b891';
-import { fail, write } from './net.js?v=b891';
-import { dayLabel, hm, hop, money, legNear, dateRange, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b891';
-import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b891';
-import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b891';
-import { drawPlanMap, mapLinks } from './planmap.js?v=b891';
-import { STAY_MIN, mins } from './plancheck.js?v=b891';
+import { $, esc, emptyDo } from './dom.js?v=b892';
+import { featOn, flags } from './flags.js?v=b892';
+import { fail, write } from './net.js?v=b892';
+import { dayLabel, hm, hop, money, legNear, dateRange, 좌표수상, 같은곳, 붙은칸, 이동줄인가 } from './calc.js?v=b892';
+import { trip, plans, legs, expenses, setPlans, pickedDay, catFilter } from './trip.js?v=b892';
+import { dayStat, lineChips, nice, parseMemo } from './planline.js?v=b892';
+import { drawPlanMap, mapLinks } from './planmap.js?v=b892';
+import { STAY_MIN, mins } from './plancheck.js?v=b892';
 /* 좌표 없는 줄에서 그 한 곳만 찾습니다. **cands.js 는 이 파일을 안 부르므로
    고리가 안 생깁니다**(b375 에 확인). */
-import { fillOnePlan } from './cands.js?v=b891';
+import { fillOnePlan } from './cands.js?v=b892';
 /* 일정을 그림으로 보냅니다 — 아래 `일정책`(10-17, 옛 일정카드 b879 는 지움). */
-import { shareCard } from './card.js?v=b891';
+import { shareCard } from './card.js?v=b892';
 /* 보내는 길이 셋이 되어(그림·링크·글) 고르는 판이 생겼습니다(b880). */
-import { openShareSheet } from './share.js?v=b891';
+import { openShareSheet } from './share.js?v=b892';
 /* 일정 책(2026-10-17) — 날마다 그 지역 도시 사진·사진 출처 */
-import { cities } from './cities.js?v=b891';
-import { sb } from './db.js?v=b891';
+import { cities } from './cities.js?v=b892';
+import { sb } from './db.js?v=b892';
 
 let ctx = { loadPlans: async () => {} };
 export function setPlanViewCtx(o){ ctx = { ...ctx, ...o }; }
@@ -333,7 +333,7 @@ const 사진출처이름 = s => String(s || '').replace(/^Photo:\s*/i, '').repla
 const 위키사진 = c => /wikimedia|wikipedia/i.test(c?.image_page || '') || /wikimedia/i.test(c?.image_credit || '')
   || !!(c?.image_license && !/^pexels$/i.test(c.image_license));
 async function 일정책(){
-  if (!cities?.length){ try { await (await import('./citysearch.js?v=b891')).loadCities(); } catch {} }
+  if (!cities?.length){ try { await (await import('./citysearch.js?v=b892')).loadCities(); } catch {} }
   const 도시 = id => (cities || []).find(c => c.id === id) || null;
   const 날 = [...new Set(plans.map(p => p.date).filter(Boolean))].sort();
   const 줄 = p => ({ t: hm(p.start_time), n: nice(p.title || '').trim() });

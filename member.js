@@ -15,12 +15,12 @@
  * 하나입니다 — 일행 목록도, 정산 송금 줄도 같은 것을 씁니다.
  *
  * 층: dom.js · db.js · net.js · calc.js · trip.js · ui.js 만 씁니다. */
-import { $, esc, toast, copyText, avatarImg } from './dom.js?v=b891';
-import { sb } from './db.js?v=b891';
-import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b891';
-import { dateRange } from './calc.js?v=b891';
-import { trip, members, setMembers, nameOf } from './trip.js?v=b891';
-import { arm } from './ui.js?v=b891';
+import { $, esc, toast, copyText, avatarImg } from './dom.js?v=b892';
+import { sb } from './db.js?v=b892';
+import { fail, netTimeout, offNote, drawOffbar, isOffline, NOROW } from './net.js?v=b892';
+import { dateRange } from './calc.js?v=b892';
+import { trip, members, setMembers, nameOf } from './trip.js?v=b892';
+import { arm } from './ui.js?v=b892';
 
 /* app.js 만 아는 것 셋. **`me` 는 값이 아니라 함수로 받습니다** —
    로그인할 때마다 바뀌는데 값으로 받으면 처음 것을 붙들고 있습니다. */
@@ -118,6 +118,12 @@ export async function loadMembers(){
 
   /* 초대는 소유자만 만듭니다. */
   $('invbtn').classList.toggle('hide', !owner);
+
+  /* 방금 만든 여행이면 「같이 가는 친구가 있나요?」 한 번(2026-10-19). 만든 사람이고 아직 혼자일 때만. */
+  if (초대할여행 === 그여행){
+    초대할여행 = null;
+    if (owner && data.filter(m => !m.left_at).length <= 1) setTimeout(() => { if (trip?.id === 그여행) 초대묻기(); }, 700);
+  }
 }
 
 $('invbtn').addEventListener('click', () => {
@@ -178,18 +184,31 @@ $('i_list').addEventListener('click', async e => {
   drawInvites();
 });
 
+/* 초대 링크 하나 만들기 — 일행 카드의 「초대 링크 만들기」와 새 여행 초대 카드(초대묻기)가 같이 씁니다.
+   돌려주는 것: { link } 또는 { error } / { none:true }(만든 사람이 아님). */
+async function 초대만들기(role, 여행){
+  const { data, error } = await sb.from('trip_invites')
+    .insert({ trip_id: 여행, role })
+    .select('code').maybeSingle();
+  if (error) return { error };
+  if (!data)  return { none: true };
+  return { link: JOIN_URL + '?c=' + data.code };
+}
+/* 메신저로 보낼 글 — 아래 「보내기」 주석(url 을 따로 주면 카톡이 글을 버림)을 볼 것. */
+const 초대글 = url => `${trip.title} 같이 가실까요?\n` +
+  `${trip.destination} · ${dateRange(trip.start_date, trip.end_date)}\n` +
+  `아래 링크로 들어오면 일정을 같이 볼 수 있어요.\n${url}`;
+
 $('i_make').addEventListener('click', async () => {
   const btn = $('i_make');
   $('memerr').classList.add('hide');
   btn.disabled = true; btn.innerHTML = '<span class="load">만드는 중…</span>';
-  const { data, error } = await sb.from('trip_invites')
-    .insert({ trip_id: trip.id, role: $('i_role').value })
-    .select('code').maybeSingle();
+  const r = await 초대만들기($('i_role').value, trip.id);
   btn.disabled = false; btn.textContent = '초대 링크 만들기';
-  if (error) return fail(error, 'mem');
-  if (!data)  return fail('초대 링크를 만들지 못했어요. 만든 사람만 만들 수 있어요.', 'mem');
+  if (r.error) return fail(r.error, 'mem');
+  if (r.none)  return fail('초대 링크를 만들지 못했어요. 만든 사람만 만들 수 있어요.', 'mem');
 
-  const link = JOIN_URL + '?c=' + data.code;
+  const link = r.link;
   $('i_link').textContent = link;
   $('i_result').classList.remove('hide');
   /* 공유 시트를 열 수 있는 기기에서만 보내기 버튼을 답니다.
@@ -207,9 +226,7 @@ $('i_share').addEventListener('click', async () => {
      없었습니다.** 주소를 글 안에 넣고 url 은 안 줍니다. 그러면 메신저는 이걸
      그냥 글로 받아 그대로 보여주고, 주소는 알아서 링크가 됩니다.
      (미리보기 카드는 여전히 뜨는데, 그 내용은 index.html 의 og: 태그입니다.) */
-  const text = `${trip.title} 같이 가실까요?\n` +
-               `${trip.destination} · ${dateRange(trip.start_date, trip.end_date)}\n` +
-               `아래 링크로 들어오면 일정을 같이 볼 수 있어요.\n${url}`;
+  const text = 초대글(url);
   try {
     await navigator.share({ title: `${trip.title} 같이 가요`, text });
   } catch {}   /* 취소를 누르면 거절로 옵니다. 오류가 아닙니다. */
@@ -281,6 +298,73 @@ $('members').addEventListener('change', async e => {
   if (!r.data?.length) return fail(NOROW.edit, 'mem');
   await loadMembers();
 });
+
+/* ── 새 여행을 만들면 바로 「친구 초대」(2026-10-19) ─────────────────────────
+ * 사용자: 「일정 만들면 친구 초대하기 자동으로 뜨게」.
+ * newtrip.js 가 만든 여행 id 를 맡겨 두고(초대예약), 그 여행이 열려 일행을 다 부른 뒤(loadMembers 끝) 한 번 띄웁니다.
+ *   AI 로 짜는 여행은 초안을 저장해 여행이 열릴 때 뜹니다 — 짜는 동안 가리지 않게.
+ * 「친구 초대하기」 = 링크(편집자)를 만들고 곧바로 공유 시트. 안드로이드는 누른 지 몇 초 안이라 바로 열리고,
+ *   아이폰은 기다린 뒤라 막히는 수가 있어 → 둘째 장 「보내기 · 링크 복사」로 넘어갑니다(누르면 그 자리에서 열림).
+ * 판은 알림 묻기와 같은 카드(.pshpop/.pshcard/.nmcard). 뒤로가기 = 닫기(tripview.js 사슬). */
+let 초대할여행 = null, 초대카드 = null;
+export function 초대예약(id){ 초대할여행 = id; }
+export const 초대묻기열림 = () => !!초대카드;
+export function 초대묻기닫기(뒤로온것){
+  if (!초대카드) return;
+  if (!뒤로온것 && history.state?.t2 === 'invask'){ history.back(); return; }
+  초대카드.remove(); 초대카드 = null;
+}
+function 초대묻기(){
+  if (초대카드 || !trip?.id || trip.myRole !== 'owner') return;
+  /* 다른 카드(이름 묻기·알림 묻기)가 떠 있으면 이번엔 안 띄웁니다 — 일행 카드의 「초대」가 늘 있습니다. */
+  if (document.querySelector('.pshpop')) return;
+  const 판 = 초대카드 = document.createElement('div');
+  판.className = 'pshpop';
+  판.innerHTML = `<div class="pshcard nmcard pushask" role="dialog" aria-modal="true" aria-label="친구 초대">
+      <div class="pabell" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+        stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/>
+        <path d="M2.5 20c.6-3.6 3.3-5.8 6.5-5.8s5.9 2.2 6.5 5.8"/><path d="M19 8v6M16 11h6"/></svg></div>
+      <p class="pshtitle">같이 가는 친구가 있나요?</p>
+      <p class="nmsub">초대 링크를 보내면 친구도 이 일정을<br>같이 보고 고칠 수 있어요.</p>
+      <div class="pshbtns"><button type="button" class="primary iaok">친구 초대하기</button>
+        <button type="button" class="pshx iaclose">혼자 가요</button></div>
+    </div>`;
+  판.addEventListener('click', async e => {
+    if (e.target === 판 || e.target.closest('.iaclose')) return 초대묻기닫기();
+    const 보내기 = async () => {
+      try { await navigator.share({ title: `${trip.title} 같이 가요`, text: 초대글(판.dataset.link) }); 초대묻기닫기(); return true; }
+      catch { return false; }   /* 취소도 여기로 옵니다 — 둘째 장에 남겨 다시 누를 수 있게 */
+    };
+    if (e.target.closest('.iasend')) return void 보내기();
+    if (e.target.closest('.iacopy')){
+      const b = e.target.closest('.iacopy');
+      const ok = await copyText(판.dataset.link);
+      b.textContent = ok ? '복사했어요' : '복사하지 못했어요';
+      setTimeout(() => { b.textContent = '링크 복사'; }, 2000);
+      return;
+    }
+    const b = e.target.closest('.iaok'); if (!b) return;
+    b.disabled = true; b.innerHTML = '<span class="load">만드는 중…</span>';
+    const r = await 초대만들기('editor', trip.id);
+    if (초대카드 !== 판) return;                       /* 그새 닫혔으면 그만 */
+    if (!r.link){
+      b.disabled = false; b.textContent = '친구 초대하기';
+      return void toast('초대 링크를 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.');
+    }
+    판.dataset.link = r.link;
+    if (!$('invitebox').classList.contains('hide')) drawInvites();
+    if (navigator.share && await 보내기()) return;
+    /* 둘째 장 — 공유 시트가 안 열렸거나(아이폰) 닫았을 때 */
+    판.querySelector('.pshtitle').textContent = '초대 링크를 만들었어요';
+    판.querySelector('.nmsub').innerHTML = '카톡 등으로 친구에게 보내 주세요.<br>14일 동안 열려요 · 같이 고칠 수 있어요.';
+    판.querySelector('.pshbtns').innerHTML =
+      (navigator.share ? '<button type="button" class="primary iasend">친구에게 보내기</button>' : '') +
+      `<button type="button" class="${navigator.share ? '' : 'primary '}iacopy">링크 복사</button>
+       <button type="button" class="pshx iaclose">닫기</button>`;
+  });
+  document.body.appendChild(판);
+  if (history.state?.t2 !== 'invask') history.pushState({ t2:'invask' }, '');
+}
 
 /* ── 초대 링크로 들어왔을 때 ────────────────────────────────────── */
 export async function handleJoin(){

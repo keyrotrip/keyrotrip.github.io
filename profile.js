@@ -15,13 +15,13 @@
  *   shrink」는 그 옛 함수 이야기입니다 — 후기·일기 사진은 여전히 비를 지키는 `fitImage` 입니다.
  *
  * 층: dom.js · db.js · net.js · crop.js 만 씁니다. */
-import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b891';
-import { sb } from './db.js?v=b891';
-import { fail, NOROW } from './net.js?v=b891';
+import { $, esc, avatarOf, toast, coverDeck, toTop, tipOff } from './dom.js?v=b892';
+import { sb } from './db.js?v=b892';
+import { fail, NOROW } from './net.js?v=b892';
 /* 글자 크기를 바꾸면 탭바도 자랍니다 — 아래 여백을 다시 재게 합니다(b503). */
-import { fitTabBar } from './ui.js?v=b891';
-import { openCrop } from './crop.js?v=b891';
-import { 이름상태 } from './nameask.js?v=b891';   /* 「이름을 정하고 남길까요?」가 지금 이름을 알게(nameask 는 이 파일을 안 읽음) */
+import { fitTabBar } from './ui.js?v=b892';
+import { openCrop } from './crop.js?v=b892';
+import { 이름상태 } from './nameask.js?v=b892';   /* 「이름을 정하고 남길까요?」가 지금 이름을 알게(nameask 는 이 파일을 안 읽음) */
 
 let ctx = { me: () => null };
 export function setProfileCtx(o){ ctx = { ...ctx, ...o }; }
@@ -30,6 +30,20 @@ export function setProfileCtx(o){ ctx = { ...ctx, ...o }; }
    그려 넣습니다(dom.js 의 avatarOf). 로그인 직후 app.js 가 서버 값으로
    한 번 채웁니다. */
 export let myAvatar = null;
+/* 하단바 「프로필」 = 내 사진(2026-10-19, 사용자: 「인스타처럼」). 프로필 머리 사진(#avatar)을 그대로 따라갑니다 —
+   로그인·사진 바꿈·첫 글자 그림(avatarOf) 어느 길로 바뀌든 그 img 의 src 가 바뀌므로 한 곳(지켜보기)에서 맞춥니다. */
+function 탭사진(){
+  const a = $('avatar'), t = $('tabavatar'); if (!a || !t) return;
+  const s = a.getAttribute('src') || '';
+  const 있음 = !!s && !/^\s*$/.test(s);
+  if (있음 && t.getAttribute('src') !== s) t.src = s;
+  t.classList.toggle('hide', !있음);
+  t.closest('button')?.classList.toggle('hasav', 있음);
+}
+if (typeof document !== 'undefined' && $('avatar')){
+  new MutationObserver(탭사진).observe($('avatar'), { attributes: true, attributeFilter: ['src'] });
+  탭사진();
+}
 export function setMyAvatar(v){ myAvatar = v ?? null; }
 
 /* ── 프로필 변경 화면(b791) ───────────────────────────────────────────

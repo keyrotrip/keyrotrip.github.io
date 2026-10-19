@@ -379,10 +379,17 @@ self.addEventListener('fetch', e => {
  * 보내는 쪽(Edge Function)이 JSON 을 실어 보냅니다.
  * **못 읽어도 알림은 띄웁니다** — 빈 알림이라도 뜨는 편이,
  * 왔는데 아무 일도 안 일어나는 것보다 낫습니다. */
+/* ⚠ 앱을 «보고 있으면» 폰 알림을 안 띄웁니다(2026-10-19, 사용자: 「앱을 열고 있을 땐 알람 안 오게」).
+ *   대신 보고 있는 창에 알려(t2:'push') 앱 안에서 짧게 알리고 알림 점·목록을 새로 셉니다(app.js).
+ * ⚠ 애플(아이폰 홈 화면 앱·맥 사파리)은 푸시를 받고 알림을 «안 띄우면» 몇 번 만에 구독을 끊습니다
+ *   (조용한 푸시 금지). 그래서 애플은 띄우고 «곧바로 지웁니다». 다른 브라우저(안드로이드 크롬 등)는
+ *   창이 보이는 동안엔 안 띄워도 됩니다. */
+const 애플 = (() => { const u = self.navigator?.userAgent || '';
+  return /iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && !/Chrome|Chromium|Firefox|Edg/.test(u)); })();
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data?.text() || '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || '기로', {
+  const 띄우기 = () => self.registration.showNotification(d.title || '기로', {
     body: d.body || '',
     icon: './icons/keyro-180.png',
     badge: './icons/keyro-180.png',
@@ -390,7 +397,19 @@ self.addEventListener('push', e => {
        따로 받는 것은 맞지만 한 기기에 두 장이 쌓이면 안 됩니다. */
     tag: d.tag || 't2',
     data: { url: d.url || './' },
-  }));
+  });
+  e.waitUntil((async () => {
+    let 보는창 = [];
+    try {
+      보는창 = (await self.clients.matchAll({ type:'window', includeUncontrolled:true }))
+        .filter(c => c.visibilityState === 'visible' && c.url.includes(self.registration.scope));
+    } catch {}
+    if (!보는창.length) return 띄우기();
+    for (const c of 보는창) c.postMessage({ t2:'push', title: d.title || '', body: d.body || '' });
+    if (!애플) return;
+    await 띄우기();
+    try { (await self.registration.getNotifications({ tag: d.tag || 't2' })).forEach(n => n.close()); } catch {}
+  })());
 });
 
 /* 알림을 누르면 **이미 열려 있는 창을 앞으로 가져옵니다.** 새로 열면
